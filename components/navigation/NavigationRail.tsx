@@ -1,16 +1,3 @@
-import { authService } from "@/services/auth";
-import { Feather } from "@expo/vector-icons";
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Animated, Pressable, StyleSheet, Text, View } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-
-type NavItemProps = {
-  icon: keyof typeof Feather.glyphMap;
-  label: string;
-  isActive: boolean;
-  onPress: () => void;
-};
-
 const NavItem = memo(function NavItem({
   icon,
   label,
@@ -156,7 +143,7 @@ export default function NavigationRail({
         ))}
       </View>
 
-      <Text style={styles.version}>v1.0</Text>
+      <Text style={styles.version}>v{APP_VERSION}</Text>
     </View>
   );
 }
