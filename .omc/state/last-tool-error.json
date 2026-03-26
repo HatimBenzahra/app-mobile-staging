@@ -1,0 +1,7 @@
+{
+  "tool_name": "Bash",
+  "tool_input_preview": "{\"command\":\"sshpass -p '1522' ssh -o StrictHostKeyChecking=no finanssor-data-center-v1@finanssor-data-center-v1.tail446cc0.ts.net 'echo \\\"=== Inspect ===\\\" && METADATA=$(curl -sf -u admin:prowin2026! ...",
+  "error": "Exit code 26\n-----------------------------------------------------------------------------------------------\n-----------------------------------------------------------------------------------------------\n\n     █           ▄                                         ▄                                ▄▄▄   \n  ▄▄▄█   ▄▄▄   ▄▄█▄▄   ▄▄▄           ▄▄▄    ▄▄▄   ▄ ▄▄   ▄▄█▄▄   ▄▄▄    ▄ ▄▄         ▄   ▄    █   \n █▀ ▀█  ▀   █    █    ▀   █         █▀  ▀  █▀  █  █▀  █    █    █▀  █   █▀  ▀        ▀▄ ▄▀    █ ...",
+  "timestamp": "2026-03-21T23:15:33.603Z",
+  "retry_count": 1
+}

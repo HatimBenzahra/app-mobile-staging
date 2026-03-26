@@ -79,6 +79,9 @@ if [[ "$SKIP_BUILD" == false ]]; then
         --exclude='*.apk' \
         --exclude='.DS_Store' \
         --exclude='excalidraw.log' \
+        --exclude='.omc/' \
+        --exclude='.claude/' \
+        --exclude='.sisyphus/' \
         -e "${RSYNC_SSH}" \
         "${LOCAL_DIR}/" \
         "${SERVER_USER}@${SERVER_HOST}:${SERVER_PATH}/" \

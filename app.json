@@ -1,3 +1,19 @@
+{
+  "expo": {
+    "name": "ProWin Staging",
+    "slug": "pro-win-staging",
+    "version": "1.1.0",
+    "orientation": "default",
+    "scheme": "prospection-staging",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "icon": "./assets/images/icon.png",
+    "splash": {
+      "image": "./assets/images/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#000000"
+    },
+    "assetBundlePatterns": [
       "assets/images/*"
     ],
     "ios": {
