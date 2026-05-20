@@ -1,9 +1,9 @@
 import ConfirmActionOverlay from "@/components/immeubles/ConfirmActionOverlay";
+import PortePickerOverlay from "@/components/immeubles/PortePickerOverlay";
 import ProspectedDoorsList from "@/components/immeubles/prospection/ProspectedDoorsList";
 import ProspectionSessionOverlay from "@/components/immeubles/prospection/ProspectionSessionOverlay";
 import {
   DEFAULT_STATUS_OPTION,
-  STATUS_DISPLAY,
   STATUS_OPTIONS,
   getDisplayStatus,
   getDisplayStatusKey,
@@ -16,7 +16,7 @@ import FloorPlanSheet from "@/components/immeubles/details/FloorPlanSheet";
 import StatusFilterSheet from "@/components/immeubles/details/StatusFilterSheet";
 import { useAddEtageToImmeuble } from "@/hooks/api/use-add-etage-to-immeuble";
 import { useRemoveEtageFromImmeuble } from "@/hooks/api/use-remove-etage-from-immeuble";
-import { useRemovePorteFromEtage } from "@/hooks/api/use-remove-porte-from-etage";
+import { useRemovePorte } from "@/hooks/api/use-remove-porte";
 import { useUpdatePorte } from "@/hooks/api/use-update-porte";
 import { useRecording } from "@/hooks/audio/use-recording";
 import { useConnectivity } from "@/hooks/network/use-connectivity";
@@ -62,19 +62,6 @@ const comparePortesDesc = (a: Porte, b: Porte) => {
     numeric: true,
     sensitivity: "base",
   });
-};
-
-const getLastDoorOnFloor = (portes: Porte[], etage: number) => {
-  const floorDoors = portes.filter((porte) => porte.etage === etage);
-  if (floorDoors.length === 0) return null;
-  return floorDoors.reduce((last, porte) => {
-    const cmp = String(porte.numero ?? "").localeCompare(
-      String(last.numero ?? ""),
-      "fr",
-      { numeric: true, sensitivity: "base" },
-    );
-    return cmp > 0 ? porte : last;
-  }, floorDoors[0]);
 };
 
 const getMaxEtage = (portes: Porte[], fallback: number) => {
@@ -231,7 +218,8 @@ function ImmeubleDetailsView({
   const { isOnline } = useConnectivity();
   const { remove: removeEtageFromImmeuble, loading: removingEtage } =
     useRemoveEtageFromImmeuble();
-  const { remove: removePorteFromEtage } = useRemovePorteFromEtage();
+  const { remove: removePorteById } = useRemovePorte();
+  const [isPortePickerOpen, setIsPortePickerOpen] = useState(false);
   const editSheetRef = useRef<BottomSheetModal>(null);
   const editSnapPoints = useMemo(
     () => (isTablet ? ["60%", "85%"] : ["55%", "75%"]),
@@ -797,29 +785,24 @@ function ImmeubleDetailsView({
   ]);
 
   const openDeletePorte = useCallback(() => {
-    if (!currentPorte) {
+    if (portesState.length === 0) {
       showToast("Aucune porte", "Impossible de supprimer");
       return;
-    }
-    const lastDoor = getLastDoorOnFloor(portesState, currentPorte.etage);
-    if (!lastDoor) {
-      showToast("Aucune porte", "Impossible de supprimer");
-      return;
-    }
-    if (lastDoor.id !== currentPorte.id) {
-      showToast(
-        "Information",
-        "Seule la derniere porte de l'etage est supprimee",
-      );
     }
     setDeleteFloor(null);
-    setDeleteTarget(lastDoor);
-  }, [currentPorte, portesState, showToast]);
+    setDeleteTarget(null);
+    setIsPortePickerOpen(true);
+  }, [portesState.length, showToast]);
+
+  const handlePortePickerSelect = useCallback((porte: Porte) => {
+    setIsPortePickerOpen(false);
+    setDeleteFloor(null);
+    setDeleteTarget(porte);
+  }, []);
 
   const confirmDeletePorte = useCallback(async () => {
     if (!deleteTarget) return;
     const targetId = deleteTarget.id;
-    const targetFloor = deleteTarget.etage;
     const previous = portesState;
     const removedIndex = sortedPortes.findIndex(
       (porte) => porte.id === targetId,
@@ -841,7 +824,10 @@ function ImmeubleDetailsView({
     );
     setDeleteTarget(null);
     if (targetId < 0) return;
-    const removed = await removePorteFromEtage(immeuble.id, targetFloor);
+    const removed = await removePorteById({
+      id: targetId,
+      immeubleId: immeuble.id,
+    });
     if (!removed) {
       setPortesState(previous);
       showToast("Erreur", "Suppression impossible");
@@ -851,7 +837,7 @@ function ImmeubleDetailsView({
     immeuble.id,
     onDirtyChange,
     portesState,
-    removePorteFromEtage,
+    removePorteById,
     showToast,
     sortedPortes,
   ]);
@@ -1052,10 +1038,6 @@ function ImmeubleDetailsView({
         nbEtages={displayNbEtages}
         nbPortesParEtage={immeuble.nbPortesParEtage}
         onBack={() => setShowExitConfirm(true)}
-        onOpenFloorPlan={triggerFloorPlan}
-        floorPlanScale={floorPlanScale}
-        floorPlanPulse={floorPlanPulse}
-        styles={styles}
       />
 
       {actionToast ? (
@@ -1197,18 +1179,26 @@ function ImmeubleDetailsView({
         open={!!deleteTarget || deleteFloor !== null}
         title={
           deleteFloor !== null
-            ? "Supprimer le dernier etage ?"
-            : "Supprimer la derniere porte ?"
+            ? "Supprimer le dernier étage ?"
+            : "Supprimer cette porte ?"
         }
-        description={
+        highlight={
           deleteFloor !== null
-            ? `Etage ${deleteFloor} (toutes les portes seront supprimees)`
+            ? `Étage ${deleteFloor}`
             : deleteTarget
-              ? `Etage ${deleteTarget.etage} - Porte ${
+              ? `Étage ${deleteTarget.etage} · Porte ${
                   deleteTarget.nomPersonnalise || deleteTarget.numero
                 }`
               : undefined
         }
+        description={
+          deleteFloor !== null
+            ? "Toutes les portes de cet étage seront supprimées. L'audio et l'historique seront définitivement perdus."
+            : deleteTarget
+              ? "L'audio et l'historique de cette porte seront définitivement perdus."
+              : undefined
+        }
+        icon="trash-2"
         confirmLabel="Supprimer"
         cancelLabel="Annuler"
         tone="danger"
@@ -1223,6 +1213,13 @@ function ImmeubleDetailsView({
           setDeleteTarget(null);
           setDeleteFloor(null);
         }}
+      />
+
+      <PortePickerOverlay
+        open={isPortePickerOpen}
+        portes={portesState}
+        onClose={() => setIsPortePickerOpen(false)}
+        onSelect={handlePortePickerSelect}
       />
 
       {hasNativePicker && showDatePicker && DateTimePicker ? (

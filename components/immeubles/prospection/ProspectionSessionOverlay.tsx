@@ -73,7 +73,7 @@ export default function ProspectionSessionOverlay({
       visible={visible}
       transparent
       statusBarTranslucent
-      animationType="none"
+      animationType="fade"
       onRequestClose={() => {
         // intercepted in ActiveView via BackHandler when applicable
       }}
@@ -184,7 +184,7 @@ function NamingView({
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
       <Animated.View
-        entering={SlideInDown.duration(280).springify().damping(18)}
+        entering={SlideInDown.duration(260)}
         exiting={FadeOut.duration(140)}
         style={[
           styles.viewRoot,
@@ -391,10 +391,10 @@ function ReadyView({
           <View style={styles.tipCard}>
             <View style={styles.tipDot} />
             <View style={{ flex: 1 }}>
-              <Text style={styles.tipTitle}>L'enregistrement démarre au tap</Text>
+              <Text style={styles.tipTitle}>Démarre quand tu sonnes</Text>
               <Text style={styles.tipBody}>
-                Sonne, attends, parle au prospect — l'audio est synchronisé sur
-                la conversation. Tu clôtures à la fin avec un statut.
+                Sonne, échange avec le prospect, puis clôture le passage avec
+                un statut.
               </Text>
             </View>
           </View>
@@ -413,7 +413,7 @@ function ReadyView({
             <View style={styles.startBtnIcon}>
               <Feather name="play" size={18} color="#FFFFFF" />
             </View>
-            <Text style={styles.startBtnText}>Commencer</Text>
+            <Text style={styles.startBtnText}>Prospection</Text>
           </Pressable>
           <Pressable
             style={styles.ghostBtn}
@@ -467,7 +467,7 @@ function ActiveView({
       if (isSaving) return true;
       Alert.alert(
         "Annuler ce passage ?",
-        "L'audio de cette porte sera ignoré et aucun statut ne sera enregistré.",
+        "Ce passage sera ignoré et aucun statut ne sera enregistré pour cette porte.",
         [
           { text: "Continuer la prospection", style: "cancel" },
           {
@@ -529,7 +529,7 @@ function ActiveView({
   const handleAbort = useCallback(() => {
     Alert.alert(
       "Annuler ce passage ?",
-      "L'audio de cette porte sera ignoré et aucun statut ne sera enregistré.",
+      "Ce passage sera ignoré et aucun statut ne sera enregistré pour cette porte.",
       [
         { text: "Continuer la prospection", style: "cancel" },
         {
@@ -563,8 +563,8 @@ function ActiveView({
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
       <Animated.View
-        entering={SlideInDown.duration(320).springify().damping(20)}
-        exiting={SlideOutDown.duration(220)}
+        entering={SlideInDown.duration(280)}
+        exiting={SlideOutDown.duration(200)}
         style={[
           styles.viewRoot,
           isTablet ? styles.viewRootTablet : { paddingTop: insetsTop + 8 },

@@ -10,6 +10,7 @@ import {
   View,
   useWindowDimensions,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 type ConfirmActionOverlayProps = {
   open: boolean;
@@ -18,6 +19,8 @@ type ConfirmActionOverlayProps = {
   confirmLabel?: string;
   cancelLabel?: string;
   tone?: "danger" | "default";
+  icon?: keyof typeof Feather.glyphMap;
+  highlight?: string;
   onConfirm: () => void;
   onClose: () => void;
 };
@@ -29,75 +32,154 @@ export default function ConfirmActionOverlay({
   confirmLabel = "Confirmer",
   cancelLabel = "Annuler",
   tone = "danger",
+  icon,
+  highlight,
   onConfirm,
   onClose,
 }: ConfirmActionOverlayProps) {
   const opacity = useRef(new Animated.Value(0)).current;
-  const translateY = useRef(new Animated.Value(24)).current;
+  const translateY = useRef(new Animated.Value(32)).current;
+  const scale = useRef(new Animated.Value(0.96)).current;
+  const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const isTablet = width >= 700;
   const isDanger = tone === "danger";
+  const heroIcon = icon ?? (isDanger ? "trash-2" : "check-circle");
+  const accentColor = isDanger ? "#DC2626" : "#16A34A";
+  const accentSoft = isDanger ? "#FEE2E2" : "#DCFCE7";
+  const accentRing = isDanger ? "#FCA5A5" : "#86EFAC";
 
   useEffect(() => {
     if (!open) return;
     opacity.setValue(0);
-    translateY.setValue(24);
+    translateY.setValue(32);
+    scale.setValue(0.96);
     Animated.parallel([
       Animated.timing(opacity, {
         toValue: 1,
-        duration: 160,
+        duration: 180,
         useNativeDriver: true,
       }),
       Animated.timing(translateY, {
         toValue: 0,
-        duration: 220,
+        duration: 280,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+      Animated.timing(scale, {
+        toValue: 1,
+        duration: 280,
         easing: Easing.out(Easing.cubic),
         useNativeDriver: true,
       }),
     ]).start();
-  }, [open, opacity, translateY]);
+  }, [open, opacity, scale, translateY]);
 
   return (
-    <Modal visible={open} transparent animationType="none">
-      <Pressable style={styles.backdrop} onPress={onClose}>
-        <Animated.View
+    <Modal
+      visible={open}
+      transparent
+      animationType="none"
+      statusBarTranslucent
+      onRequestClose={onClose}
+    >
+      <Pressable
+        style={[styles.backdrop, { paddingBottom: insets.bottom + 18 }]}
+        onPress={onClose}
+      >
+        <Pressable
+          onPress={(e) => e.stopPropagation?.()}
           style={[
-            styles.sheet,
-            isTablet && styles.sheetTablet,
-            { opacity, transform: [{ translateY }] },
+            isTablet ? styles.sheetTabletWrap : styles.sheetWrap,
           ]}
         >
-          <View style={styles.sheetHandle} />
-          <View style={[styles.heroIcon, isDanger && styles.heroIconDanger]}>
+          <Animated.View
+            style={[
+              styles.sheet,
+              isTablet && styles.sheetTablet,
+              {
+                opacity,
+                transform: [{ translateY }, { scale }],
+              },
+            ]}
+          >
+            <View style={styles.handle} />
+
             <View
-              style={[styles.heroIconInner, isDanger && styles.heroIconInnerDanger]}
-            >
-              <Feather
-                name={isDanger ? "trash-2" : "check-circle"}
-                size={22}
-                color={isDanger ? "#DC2626" : "#16A34A"}
-              />
-            </View>
-          </View>
-          <Text style={styles.title}>{title}</Text>
-          {description ? (
-            <Text style={styles.description}>{description}</Text>
-          ) : null}
-          <View style={styles.actions}>
-            <Pressable style={styles.ghostButton} onPress={onClose}>
-              <Text style={styles.ghostText}>{cancelLabel}</Text>
-            </Pressable>
-            <Pressable
               style={[
-                styles.primaryButton,
-                isDanger && styles.primaryDanger,
+                styles.heroOuter,
+                { backgroundColor: accentSoft },
               ]}
-              onPress={onConfirm}
             >
-              <Text style={styles.primaryText}>{confirmLabel}</Text>
-            </Pressable>
-          </View>
-        </Animated.View>
+              <View
+                style={[styles.heroRing, { borderColor: accentRing }]}
+              />
+              <View
+                style={[
+                  styles.heroInner,
+                  { borderColor: accentRing },
+                ]}
+              >
+                <Feather name={heroIcon} size={26} color={accentColor} />
+              </View>
+            </View>
+
+            <Text style={[styles.title, isTablet && styles.titleTablet]}>
+              {title}
+            </Text>
+
+            {highlight ? (
+              <View
+                style={[
+                  styles.highlightChip,
+                  { backgroundColor: accentSoft },
+                ]}
+              >
+                <Text
+                  style={[styles.highlightText, { color: accentColor }]}
+                  numberOfLines={1}
+                >
+                  {highlight}
+                </Text>
+              </View>
+            ) : null}
+
+            {description ? (
+              <Text style={styles.description}>{description}</Text>
+            ) : null}
+
+            <View style={styles.divider} />
+
+            <View style={styles.actions}>
+              <Pressable
+                style={({ pressed }) => [
+                  styles.ghostButton,
+                  pressed && styles.ghostButtonPressed,
+                ]}
+                onPress={onClose}
+                accessibilityRole="button"
+              >
+                <Text style={styles.ghostText}>{cancelLabel}</Text>
+              </Pressable>
+              <Pressable
+                style={({ pressed }) => [
+                  styles.primaryButton,
+                  { backgroundColor: accentColor },
+                  pressed && styles.primaryButtonPressed,
+                ]}
+                onPress={onConfirm}
+                accessibilityRole="button"
+              >
+                <Feather
+                  name={isDanger ? "trash-2" : "check"}
+                  size={15}
+                  color="#FFFFFF"
+                />
+                <Text style={styles.primaryText}>{confirmLabel}</Text>
+              </Pressable>
+            </View>
+          </Animated.View>
+        </Pressable>
       </Pressable>
     </Modal>
   );
@@ -106,106 +188,163 @@ export default function ConfirmActionOverlay({
 const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
-    backgroundColor: "rgba(15, 23, 42, 0.35)",
+    backgroundColor: "rgba(15, 23, 42, 0.42)",
     justifyContent: "flex-end",
-    padding: 18,
+    paddingHorizontal: 16,
+  },
+  sheetWrap: {
+    width: "100%",
+  },
+  sheetTabletWrap: {
+    alignSelf: "center",
+    width: 560,
+    marginBottom: 28,
   },
   sheet: {
     width: "100%",
-    borderRadius: 26,
-    padding: 20,
+    borderRadius: 28,
+    paddingHorizontal: 24,
+    paddingTop: 16,
+    paddingBottom: 24,
     backgroundColor: "#FFFFFF",
     alignItems: "center",
-    gap: 10,
+    gap: 14,
     shadowColor: "#0F172A",
-    shadowOpacity: 0.18,
-    shadowRadius: 24,
-    shadowOffset: { width: 0, height: 12 },
-    elevation: 10,
+    shadowOpacity: 0.22,
+    shadowRadius: 32,
+    shadowOffset: { width: 0, height: 16 },
+    elevation: 14,
   },
   sheetTablet: {
-    width: 520,
-    alignSelf: "center",
-    marginBottom: 24,
+    paddingHorizontal: 32,
+    paddingTop: 20,
+    paddingBottom: 28,
+    gap: 18,
+    borderRadius: 32,
   },
-  sheetHandle: {
-    width: 42,
-    height: 4,
+  handle: {
+    width: 44,
+    height: 5,
     borderRadius: 999,
     backgroundColor: "#E2E8F0",
-    marginBottom: 8,
+    marginBottom: 2,
   },
-  heroIcon: {
-    width: 78,
-    height: 78,
-    borderRadius: 39,
-    backgroundColor: "#EEF2FF",
+  heroOuter: {
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 4,
+    marginBottom: 2,
+  },
+  heroRing: {
+    position: "absolute",
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+    borderWidth: 1.5,
+    opacity: 0.4,
+  },
+  heroInner: {
+    width: 62,
+    height: 62,
+    borderRadius: 31,
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1.5,
     alignItems: "center",
     justifyContent: "center",
     shadowColor: "#0F172A",
-    shadowOpacity: 0.12,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 6 },
-    elevation: 6,
-  },
-  heroIconDanger: {
-    backgroundColor: "#FEE2E2",
-  },
-  heroIconInner: {
-    width: 54,
-    height: 54,
-    borderRadius: 27,
-    backgroundColor: "#FFFFFF",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  heroIconInnerDanger: {
-    backgroundColor: "#FFFFFF",
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 2,
   },
   title: {
-    fontSize: 16,
-    fontWeight: "700",
+    fontSize: 19,
+    fontWeight: "800",
     color: "#0F172A",
     textAlign: "center",
+    letterSpacing: -0.4,
+    lineHeight: 25,
+    paddingHorizontal: 8,
+  },
+  titleTablet: {
+    fontSize: 21,
+    lineHeight: 28,
+  },
+  highlightChip: {
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: 999,
+    maxWidth: "100%",
+  },
+  highlightText: {
+    fontSize: 12.5,
+    fontWeight: "800",
+    letterSpacing: 0.3,
+    textTransform: "uppercase",
   },
   description: {
-    fontSize: 12,
-    color: "#64748B",
+    fontSize: 13.5,
+    color: "#475569",
     textAlign: "center",
-    lineHeight: 18,
+    lineHeight: 20,
+    paddingHorizontal: 8,
+    maxWidth: 420,
+  },
+  divider: {
+    height: 1,
+    width: "100%",
+    backgroundColor: "#F1F5F9",
+    marginTop: 4,
+    marginBottom: 2,
   },
   actions: {
-    marginTop: 6,
     flexDirection: "row",
     gap: 12,
     width: "100%",
   },
   ghostButton: {
     flex: 1,
-    borderRadius: 14,
-    borderWidth: 1,
+    borderRadius: 16,
+    borderWidth: 1.5,
     borderColor: "#E2E8F0",
-    paddingVertical: 12,
+    paddingVertical: 14,
     alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#FFFFFF",
+  },
+  ghostButtonPressed: {
+    backgroundColor: "#F8FAFC",
   },
   ghostText: {
-    fontSize: 13,
-    fontWeight: "600",
+    fontSize: 14,
+    fontWeight: "700",
     color: "#475569",
+    letterSpacing: 0.1,
   },
   primaryButton: {
-    flex: 1,
-    borderRadius: 14,
-    backgroundColor: "#2563EB",
-    paddingVertical: 12,
+    flex: 1.2,
+    flexDirection: "row",
+    borderRadius: 16,
+    paddingVertical: 14,
     alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    shadowColor: "#0F172A",
+    shadowOpacity: 0.16,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 4,
   },
-  primaryDanger: {
-    backgroundColor: "#DC2626",
+  primaryButtonPressed: {
+    opacity: 0.92,
   },
   primaryText: {
-    fontSize: 13,
-    fontWeight: "700",
+    fontSize: 14,
+    fontWeight: "800",
     color: "#FFFFFF",
+    letterSpacing: 0.1,
   },
 });

@@ -1,7 +1,6 @@
 import { Feather } from "@expo/vector-icons";
 import { memo } from "react";
-import { Animated, Pressable, Text, View } from "react-native";
-import type { StyleProp, ViewStyle } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 
 type DetailsHeaderProps = {
   topInset: number;
@@ -9,19 +8,6 @@ type DetailsHeaderProps = {
   nbEtages: number;
   nbPortesParEtage: number;
   onBack: () => void;
-  onOpenFloorPlan: () => void;
-  floorPlanScale: Animated.Value;
-  floorPlanPulse: Animated.Value;
-  styles: {
-    header: StyleProp<ViewStyle>;
-    backButton: StyleProp<ViewStyle>;
-    backButtonPressed: StyleProp<ViewStyle>;
-    headerText: StyleProp<ViewStyle>;
-    headerTitle: any;
-    headerSubtitle: any;
-    floorPlanButton: StyleProp<ViewStyle>;
-    floorPlanPulse: StyleProp<ViewStyle>;
-  };
 };
 
 function DetailsHeader({
@@ -30,57 +16,98 @@ function DetailsHeader({
   nbEtages,
   nbPortesParEtage,
   onBack,
-  onOpenFloorPlan,
-  floorPlanScale,
-  floorPlanPulse,
-  styles,
 }: DetailsHeaderProps) {
+  const portesText =
+    nbPortesParEtage > 0
+      ? `${nbEtages} étage${nbEtages > 1 ? "s" : ""} · ${nbPortesParEtage} portes/étage`
+      : `${nbEtages} étage${nbEtages > 1 ? "s" : ""}`;
+
   return (
-    <View style={[styles.header, { paddingTop: topInset + 12 }]}>
+    <View style={[styles.header, { paddingTop: topInset + 10 }]}>
       <Pressable
         style={({ pressed }) => [
           styles.backButton,
           pressed && styles.backButtonPressed,
         ]}
-        android_ripple={{ color: "transparent", borderless: true }}
         onPress={onBack}
+        hitSlop={10}
+        accessibilityRole="button"
+        accessibilityLabel="Retour"
       >
-        <Feather name="arrow-left" size={18} color="#2563EB" />
+        <Feather name="chevron-left" size={20} color="#FFFFFF" />
       </Pressable>
-      <View style={styles.headerText}>
-        <Text style={styles.headerTitle} numberOfLines={1}>
+
+      <View style={styles.text}>
+        <Text style={styles.title} numberOfLines={1}>
           {adresse}
         </Text>
-        <Text style={styles.headerSubtitle}>
-          {nbEtages} etages - {nbPortesParEtage} portes/etage
-        </Text>
+        <View style={styles.subtitleRow}>
+          <View style={styles.subtitleDot} />
+          <Text style={styles.subtitle} numberOfLines={1}>
+            {portesText}
+          </Text>
+        </View>
       </View>
-      <Pressable style={styles.floorPlanButton} onPress={onOpenFloorPlan}>
-        <Animated.View
-          style={[
-            styles.floorPlanPulse,
-            {
-              opacity: floorPlanPulse.interpolate({
-                inputRange: [0, 1],
-                outputRange: [0, 0.35],
-              }),
-              transform: [
-                {
-                  scale: floorPlanPulse.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [0.6, 1.6],
-                  }),
-                },
-              ],
-            },
-          ]}
-        />
-        <Animated.View style={{ transform: [{ scale: floorPlanScale }] }}>
-          <Feather name="grid" size={18} color="#FFFFFF" />
-        </Animated.View>
-      </Pressable>
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 14,
+    paddingHorizontal: 18,
+    paddingBottom: 16,
+    backgroundColor: "#FAFAF7",
+    borderBottomWidth: 1,
+    borderBottomColor: "#EAECEF",
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 14,
+    backgroundColor: "#0F172A",
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#0F172A",
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 3,
+  },
+  backButtonPressed: {
+    backgroundColor: "#1E293B",
+    transform: [{ scale: 0.95 }],
+  },
+  text: {
+    flex: 1,
+    minWidth: 0,
+  },
+  title: {
+    fontSize: 19,
+    fontWeight: "800",
+    color: "#0F172A",
+    letterSpacing: -0.4,
+  },
+  subtitleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginTop: 3,
+  },
+  subtitleDot: {
+    width: 5,
+    height: 5,
+    borderRadius: 999,
+    backgroundColor: "#94A3B8",
+  },
+  subtitle: {
+    fontSize: 12.5,
+    color: "#64748B",
+    fontWeight: "600",
+    letterSpacing: 0.1,
+  },
+});
 
 export default memo(DetailsHeader);
