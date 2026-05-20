@@ -1,3 +1,18 @@
+import { useHamburgerMenu } from "@/hooks/use-hamburger-menu";
+import { authService } from "@/services/auth";
+import { Feather } from "@expo/vector-icons";
+import { BlurView } from "expo-blur";
+import Constants from "expo-constants";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Animated, Pressable, StyleSheet, Text, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+
+const MAX_MENU_ITEMS = 6;
+
+type MenuItemProps = {
+  icon: keyof typeof Feather.glyphMap;
+  label: string;
+  onPress: () => void;
   isActive: boolean;
   animValue: Animated.Value;
 };

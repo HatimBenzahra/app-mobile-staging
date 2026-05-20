@@ -1,0 +1,244 @@
+import { useCallback, useMemo, useRef, useState } from "react";
+
+import { useCreatePorte } from "@/hooks/api/use-create-porte";
+import { useUpdatePorte } from "@/hooks/api/use-update-porte";
+import type { Porte, StatutPorte } from "@/types/api";
+
+export type SessionPhase =
+  | "IDLE"
+  | "NAMING"
+  | "CREATING"
+  | "READY"
+  | "ACTIVE"
+  | "SAVING";
+
+export type SessionState =
+  | { phase: "IDLE" }
+  | { phase: "NAMING"; etage: number; numero: string; nomPersonnalise: string }
+  | { phase: "CREATING"; etage: number; numero: string; nomPersonnalise: string }
+  | { phase: "READY"; porte: Porte; createdNow: boolean }
+  | { phase: "ACTIVE"; porte: Porte; startedAt: number; createdNow: boolean }
+  | {
+      phase: "SAVING";
+      porte: Porte;
+      startedAt: number;
+      statut: StatutPorte | string;
+      createdNow: boolean;
+    };
+
+export type SaveStatusInput = {
+  statut: StatutPorte | string;
+  commentaire?: string;
+  nomPersonnalise?: string;
+  rdvDate?: string;
+  rdvTime?: string;
+  nbContrats?: number;
+};
+
+type RecordingBindings = {
+  markDoorStart: (porte: { id: number; numero: string; etage: number }) => void;
+  markDoorEnd: (porteId: number, statut?: string) => void;
+};
+
+type UseProspectionSessionOptions = {
+  immeubleId: number;
+  recording: RecordingBindings;
+  onPorteSaved?: (porte: Porte) => void;
+  onPorteCreated?: (porte: Porte) => void;
+};
+
+export function useProspectionSession({
+  immeubleId,
+  recording,
+  onPorteSaved,
+  onPorteCreated,
+}: UseProspectionSessionOptions) {
+  const [state, setState] = useState<SessionState>({ phase: "IDLE" });
+  const { create: createPorte } = useCreatePorte();
+  const { update: updatePorte } = useUpdatePorte();
+
+  const stateRef = useRef(state);
+  stateRef.current = state;
+
+  const open = useCallback((defaultEtage = 1) => {
+    setState({
+      phase: "NAMING",
+      etage: defaultEtage,
+      numero: "",
+      nomPersonnalise: "",
+    });
+  }, []);
+
+  const updateNaming = useCallback(
+    (patch: Partial<{ etage: number; numero: string; nomPersonnalise: string }>) => {
+      setState((prev) => {
+        if (prev.phase !== "NAMING") return prev;
+        return { ...prev, ...patch };
+      });
+    },
+    [],
+  );
+
+  const cancel = useCallback(() => {
+    const current = stateRef.current;
+    if (current.phase === "ACTIVE" || current.phase === "SAVING") {
+      recording.markDoorEnd(current.porte.id);
+    }
+    setState({ phase: "IDLE" });
+  }, [recording]);
+
+  const submitPorte = useCallback(
+    async (params: { etage: number; numero: string; nomPersonnalise?: string }) => {
+      const rawNumero = params.numero.trim();
+      const etage = Number(params.etage);
+      if (!rawNumero || !etage || Number.isNaN(etage) || etage < 1) {
+        return { ok: false as const, reason: "invalid" };
+      }
+
+      // Auto-format: enforce the {etage}{numero-padded} convention used by
+      // server pre-generation. If commercial types "5" at floor 3 -> "305".
+      // If they already type "305", keep it. Only applies to pure-numeric input.
+      const isPureNumeric = /^\d+$/.test(rawNumero);
+      const etagePrefix = String(etage);
+      const numero =
+        isPureNumeric && !rawNumero.startsWith(etagePrefix)
+          ? `${etagePrefix}${rawNumero.padStart(2, "0")}`
+          : rawNumero;
+
+      setState({
+        phase: "CREATING",
+        etage,
+        numero,
+        nomPersonnalise: (params.nomPersonnalise ?? "").trim(),
+      });
+
+      const porte = await createPorte({
+        immeubleId,
+        etage,
+        numero,
+        statut: "NON_VISITE",
+        nomPersonnalise: params.nomPersonnalise?.trim() || undefined,
+      });
+
+      if (!porte) {
+        setState({
+          phase: "NAMING",
+          etage,
+          numero,
+          nomPersonnalise: (params.nomPersonnalise ?? "").trim(),
+        });
+        return { ok: false as const, reason: "create_failed" };
+      }
+
+      onPorteCreated?.(porte);
+      setState({ phase: "READY", porte, createdNow: true });
+      return { ok: true as const, porte };
+    },
+    [createPorte, immeubleId, onPorteCreated],
+  );
+
+  const beginFromExisting = useCallback((porte: Porte) => {
+    setState({ phase: "READY", porte, createdNow: false });
+  }, []);
+
+  const startActive = useCallback(() => {
+    const current = stateRef.current;
+    if (current.phase !== "READY") return;
+    recording.markDoorStart({
+      id: current.porte.id,
+      numero: current.porte.numero,
+      etage: current.porte.etage,
+    });
+    setState({
+      phase: "ACTIVE",
+      porte: current.porte,
+      startedAt: Date.now(),
+      createdNow: current.createdNow,
+    });
+  }, [recording]);
+
+  const abortActive = useCallback(() => {
+    const current = stateRef.current;
+    if (current.phase !== "ACTIVE") return;
+    recording.markDoorEnd(current.porte.id);
+    setState({ phase: "IDLE" });
+  }, [recording]);
+
+  const saveStatus = useCallback(
+    async (input: SaveStatusInput) => {
+      const current = stateRef.current;
+      if (current.phase !== "ACTIVE") return { ok: false as const };
+
+      recording.markDoorEnd(current.porte.id, input.statut);
+
+      setState({
+        phase: "SAVING",
+        porte: current.porte,
+        startedAt: current.startedAt,
+        statut: input.statut,
+        createdNow: current.createdNow,
+      });
+
+      const updated = await updatePorte({
+        id: current.porte.id,
+        statut: input.statut,
+        commentaire: input.commentaire?.trim() || null,
+        nomPersonnalise: input.nomPersonnalise?.trim() || null,
+        derniereVisite: new Date().toISOString(),
+        rdvDate: input.rdvDate || undefined,
+        rdvTime: input.rdvTime || undefined,
+        nbContrats:
+          input.nbContrats !== undefined ? Math.max(1, input.nbContrats) : undefined,
+      });
+
+      if (!updated) {
+        setState({
+          phase: "ACTIVE",
+          porte: current.porte,
+          startedAt: current.startedAt,
+          createdNow: current.createdNow,
+        });
+        return { ok: false as const };
+      }
+
+      onPorteSaved?.(updated);
+      setState({ phase: "IDLE" });
+      return { ok: true as const, porte: updated };
+    },
+    [recording, updatePorte, onPorteSaved],
+  );
+
+  const isLocked = state.phase === "ACTIVE" || state.phase === "SAVING";
+  const isVisible = state.phase !== "IDLE";
+
+  return useMemo(
+    () => ({
+      state,
+      isVisible,
+      isLocked,
+      open,
+      cancel,
+      updateNaming,
+      submitPorte,
+      beginFromExisting,
+      startActive,
+      abortActive,
+      saveStatus,
+    }),
+    [
+      state,
+      isVisible,
+      isLocked,
+      open,
+      cancel,
+      updateNaming,
+      submitPorte,
+      beginFromExisting,
+      startActive,
+      abortActive,
+      saveStatus,
+    ],
+  );
+}
+
+export type ProspectionSessionApi = ReturnType<typeof useProspectionSession>;

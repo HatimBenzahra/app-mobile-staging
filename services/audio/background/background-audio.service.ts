@@ -25,9 +25,20 @@ async function backgroundKeepAlive(taskDataArguments?: { delay: number }) {
   }
 }
 
+// Android 14+ (API 34+) rejects FGS of type=microphone unless the app is in
+// an eligible state at start time. The crash is a native SecurityException
+// raised in onStartCommand and is NOT catchable from JS. Until we move to a
+// non-mic foregroundServiceType or implement a while-in-use trigger, skip
+// the background service on these OS versions. Local recording still works
+// while the app is in foreground.
+const SUPPORTS_BACKGROUND_AUDIO_FGS =
+  Platform.OS === "android" &&
+  typeof Platform.Version === "number" &&
+  Platform.Version < 34;
+
 export class BackgroundAudioService {
   static isSupported(): boolean {
-    return Platform.OS === "android";
+    return SUPPORTS_BACKGROUND_AUDIO_FGS;
   }
 
   static isRunning(): boolean {
@@ -41,7 +52,16 @@ export class BackgroundAudioService {
     if (!this.isSupported() || this.isRunning()) {
       return;
     }
-    await BackgroundService.start(backgroundKeepAlive, BACKGROUND_OPTIONS);
+    try {
+      await BackgroundService.start(backgroundKeepAlive, BACKGROUND_OPTIONS);
+    } catch (err) {
+      if (__DEV__) {
+        console.warn(
+          "[BackgroundAudioService] start failed (non-fatal):",
+          err,
+        );
+      }
+    }
   }
 
   static async stop(): Promise<void> {
