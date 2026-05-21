@@ -348,6 +348,12 @@ function NamingView({
   const effectiveNum =
     customNum !== null ? customNum : (suggestedNum ?? 0);
 
+  const duplicatePorte = useMemo(() => {
+    if (effectiveNum <= 0) return null;
+    const target = String(effectiveNum);
+    return portes.find((p) => String(p.numero) === target) ?? null;
+  }, [portes, effectiveNum]);
+
   const handleSelectFloor = useCallback(
     (etage: number) => {
       Haptics.select();
@@ -365,13 +371,18 @@ function NamingView({
 
   const handleCreateNew = useCallback(async () => {
     if (selectedEtage === null || effectiveNum <= 0) return;
+    if (duplicatePorte) {
+      Haptics.light();
+      session.beginFromExisting(duplicatePorte);
+      return;
+    }
     Haptics.light();
     const res = await session.submitPorte({
       etage: selectedEtage,
       numero: String(effectiveNum),
     });
     if (!res.ok) setError("Création impossible. Réessaie.");
-  }, [effectiveNum, selectedEtage, session]);
+  }, [duplicatePorte, effectiveNum, selectedEtage, session]);
 
   const handleExistingTap = useCallback(
     (porte: Porte) => {
@@ -572,6 +583,18 @@ function NamingView({
                     </Text>
                   </Pressable>
                 ) : null}
+                {duplicatePorte ? (
+                  <View style={styles.dupBox}>
+                    <Feather name="info" size={13} color="#B45309" />
+                    <Text style={styles.dupText}>
+                      Porte {duplicatePorte.numero} existe déjà
+                      {duplicatePorte.etage !== selectedEtage
+                        ? ` (étage ${duplicatePorte.etage})`
+                        : ""}
+                      . Tape sur le bouton pour la reprendre.
+                    </Text>
+                  </View>
+                ) : null}
               </View>
 
               {error ? (
@@ -593,7 +616,9 @@ function NamingView({
                 <Text style={styles.ctaText}>
                   {isCreating
                     ? "Création..."
-                    : `Démarrer la porte ${effectiveNum}`}
+                    : duplicatePorte
+                      ? `Reprendre la porte ${effectiveNum}`
+                      : `Démarrer la porte ${effectiveNum}`}
                 </Text>
                 {!isCreating ? (
                   <Feather name="arrow-right" size={18} color="#FFFFFF" />
@@ -1171,6 +1196,24 @@ const styles = StyleSheet.create({
   errorText: {
     fontSize: 12.5,
     color: "#B91C1C",
+    fontWeight: "600",
+  },
+  dupBox: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginTop: 12,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    backgroundColor: "#FFFBEB",
+    borderWidth: 1,
+    borderColor: "#FDE68A",
+  },
+  dupText: {
+    flex: 1,
+    fontSize: 12.5,
+    color: "#92400E",
     fontWeight: "600",
   },
   cta: {

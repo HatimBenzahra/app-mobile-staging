@@ -1,7 +1,7 @@
 {
   "tool_name": "Bash",
-  "tool_input_preview": "{\"command\":\"tail -3 /tmp/prowin-build.log && adb -s T30S000000000005260 shell am force-stop com.aksilsadi.prospection.staging && adb -s T30S000000000005260 shell am start -n com.aksilsadi.prospection....",
-  "error": "Exit code 1\nenv: export EXPO_PUBLIC_API_URL RNMAPBOX_MAPS_DOWNLOAD_TOKEN\n\nThis computer is not authorized for developing on Device T30S000000000005260. Learn more: https://expo.fyi/authorize-android-device\nadb: device unauthorized.\nThis adb server's $ADB_VENDOR_KEYS is not set\nTry 'adb kill-server' if that seems wrong.\nOtherwise check for a confirmation dialog on your device.",
-  "timestamp": "2026-05-20T19:07:03.963Z",
+  "tool_input_preview": "{\"command\":\"ls /Users/hatimbenzahra/Desktop/PRO_WIN/prowin/staging/app-mobile/contexts /Users/hatimbenzahra/Desktop/PRO_WIN/prowin/staging/app-mobile/services 2>&1\",\"description\":\"List contexts and se...",
+  "error": "Exit code 2\n\"/Users/hatimbenzahra/Desktop/PRO_WIN/prowin/staging/app-mobile/contexts\": No such file or directory (os error 2)\napi\naudio\nauth\ncore\nnetwork\noffline\nsync",
+  "timestamp": "2026-05-21T09:22:35.318Z",
   "retry_count": 1
 }

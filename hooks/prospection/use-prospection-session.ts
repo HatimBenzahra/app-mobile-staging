@@ -89,21 +89,11 @@ export function useProspectionSession({
 
   const submitPorte = useCallback(
     async (params: { etage: number; numero: string; nomPersonnalise?: string }) => {
-      const rawNumero = params.numero.trim();
+      const numero = params.numero.trim();
       const etage = Number(params.etage);
-      if (!rawNumero || !etage || Number.isNaN(etage) || etage < 1) {
+      if (!numero || !etage || Number.isNaN(etage) || etage < 1) {
         return { ok: false as const, reason: "invalid" };
       }
-
-      // Auto-format: enforce the {etage}{numero-padded} convention used by
-      // server pre-generation. If commercial types "5" at floor 3 -> "305".
-      // If they already type "305", keep it. Only applies to pure-numeric input.
-      const isPureNumeric = /^\d+$/.test(rawNumero);
-      const etagePrefix = String(etage);
-      const numero =
-        isPureNumeric && !rawNumero.startsWith(etagePrefix)
-          ? `${etagePrefix}${rawNumero.padStart(2, "0")}`
-          : rawNumero;
 
       setState({
         phase: "CREATING",
