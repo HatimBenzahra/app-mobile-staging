@@ -141,7 +141,7 @@ export default function NavigationRail({
       ]}
     >
       <View style={styles.logoSection}>
-        <ProwinLogo size={56} />
+        <ProwinLogo size={56} interactive />
       </View>
 
       <View style={styles.navSection}>

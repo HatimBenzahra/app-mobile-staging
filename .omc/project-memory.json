@@ -463,6 +463,18 @@
       "type": "file"
     },
     {
+      "path": "components/navigation/ProwinLogo.tsx",
+      "accessCount": 2,
+      "lastAccessed": 1779391095535,
+      "type": "file"
+    },
+    {
+      "path": "components/navigation/NavigationRail.tsx",
+      "accessCount": 2,
+      "lastAccessed": 1779391107768,
+      "type": "file"
+    },
+    {
       "path": "components/ui/ProgressBar.tsx",
       "accessCount": 1,
       "lastAccessed": 1779385687677,

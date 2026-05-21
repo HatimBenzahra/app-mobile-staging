@@ -1,11 +1,17 @@
-import { memo } from "react";
+import { memo, useRef } from "react";
+import { Animated, Easing, Pressable, type ViewStyle } from "react-native";
 import Svg, { Circle, Line, Path } from "react-native-svg";
 
 type Props = {
   size?: number;
+  /** If provided, the logo becomes pressable + plays a bounce animation. */
+  onPress?: () => void;
+  /** Play the press animation even without an onPress callback. Defaults to true when interactive. */
+  interactive?: boolean;
+  style?: ViewStyle;
 };
 
-function ProwinLogo({ size = 44 }: Props) {
+function ProwinLogoInner({ size }: { size: number }) {
   return (
     <Svg
       width={size}
@@ -112,6 +118,81 @@ function ProwinLogo({ size = 44 }: Props) {
         fill="#001B5E"
       />
     </Svg>
+  );
+}
+
+function ProwinLogo({ size = 44, onPress, interactive, style }: Props) {
+  const isInteractive = interactive ?? onPress != null;
+  const scale = useRef(new Animated.Value(1)).current;
+  const rotate = useRef(new Animated.Value(0)).current;
+
+  if (!isInteractive) {
+    return <ProwinLogoInner size={size} />;
+  }
+
+  const animate = () => {
+    scale.stopAnimation();
+    rotate.stopAnimation();
+    scale.setValue(1);
+    rotate.setValue(0);
+    Animated.parallel([
+      Animated.sequence([
+        Animated.timing(scale, {
+          toValue: 0.86,
+          duration: 90,
+          easing: Easing.out(Easing.quad),
+          useNativeDriver: true,
+        }),
+        Animated.spring(scale, {
+          toValue: 1,
+          friction: 3,
+          tension: 140,
+          useNativeDriver: true,
+        }),
+      ]),
+      Animated.sequence([
+        Animated.timing(rotate, {
+          toValue: 1,
+          duration: 220,
+          easing: Easing.out(Easing.quad),
+          useNativeDriver: true,
+        }),
+        Animated.timing(rotate, {
+          toValue: 0,
+          duration: 380,
+          easing: Easing.elastic(1.4),
+          useNativeDriver: true,
+        }),
+      ]),
+    ]).start();
+  };
+
+  const handlePress = () => {
+    animate();
+    onPress?.();
+  };
+
+  const rotateInterpolate = rotate.interpolate({
+    inputRange: [0, 1],
+    outputRange: ["0deg", "14deg"],
+  });
+
+  return (
+    <Pressable
+      onPress={handlePress}
+      hitSlop={8}
+      style={({ pressed }) => [{ opacity: pressed ? 0.92 : 1 }, style]}
+      accessibilityRole="button"
+      accessibilityLabel="Pro-Win logo"
+    >
+      <Animated.View
+        style={{
+          transform: [{ scale }, { rotate: rotateInterpolate }],
+        }}
+      >
+        <ProwinLogoInner size={size} />
+      </Animated.View>
+    </Pressable>
   );
 }
 
