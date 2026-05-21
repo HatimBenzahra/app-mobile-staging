@@ -36,13 +36,21 @@ import StatusGrid, {
   type StatusKey,
 } from "./StatusGrid";
 import LiveSegmentHeader from "./LiveSegmentHeader";
+import {
+  DEFAULT_STATUS_OPTION,
+  STATUS_DISPLAY,
+  getDisplayStatusKey,
+} from "@/components/immeubles/prospection/status-display";
 import type {
   ProspectionSessionApi,
   SaveStatusInput,
 } from "@/hooks/prospection/use-prospection-session";
+import type { Porte } from "@/types/api";
 
 type ProspectionSessionOverlayProps = {
   session: ProspectionSessionApi;
+  nbEtages?: number;
+  portes?: Porte[];
 };
 
 const SCREEN_PAD = 18;
@@ -60,6 +68,8 @@ function getNowTime() {
 
 export default function ProspectionSessionOverlay({
   session,
+  nbEtages = 1,
+  portes = [],
 }: ProspectionSessionOverlayProps) {
   const { state } = session;
   const insets = useSafeAreaInsets();
@@ -99,6 +109,8 @@ export default function ProspectionSessionOverlay({
               isTablet={isTablet}
               insetsTop={insets.top}
               insetsBottom={insets.bottom}
+              nbEtages={nbEtages}
+              portes={portes}
             />
           ) : null}
 
@@ -131,75 +143,263 @@ export default function ProspectionSessionOverlay({
 //  NAMING VIEW — étage + numéro de porte
 // ────────────────────────────────────────────────────────────────────────────
 
+function nextPorteNumero(etage: number, portes: Porte[]): number {
+  const onFloor = portes.filter((p) => p.etage === etage);
+  if (onFloor.length === 0) return 100;
+  const nums = onFloor
+    .map((p) => Number.parseInt(String(p.numero ?? ""), 10))
+    .filter((n) => !Number.isNaN(n));
+  if (nums.length === 0) return 100;
+  return Math.max(...nums) + 1;
+}
+
+function FloorCard({
+  etage,
+  done,
+  total,
+  selected,
+  onPress,
+  isTablet,
+}: {
+  etage: number;
+  done: number;
+  total: number;
+  selected: boolean;
+  onPress: () => void;
+  isTablet: boolean;
+}) {
+  const ratio = total === 0 ? 0 : done / total;
+  const isComplete = total > 0 && ratio === 1;
+  const subtitle = total > 0 ? `${done}/${total}` : "0";
+
+  return (
+    <Pressable
+      onPress={onPress}
+      style={[
+        styles.floorCard,
+        isTablet && styles.floorCardTablet,
+        selected && styles.floorCardSelected,
+      ]}
+      accessibilityRole="button"
+      accessibilityLabel={`Étage ${etage}`}
+    >
+      <View style={styles.floorCardTop}>
+        <Text
+          style={[
+            styles.floorCardNumber,
+            isTablet && styles.floorCardNumberTablet,
+            selected && styles.floorCardNumberSelected,
+          ]}
+        >
+          {etage}
+        </Text>
+        {isComplete ? (
+          <View style={styles.floorCardCheck}>
+            <Feather name="check" size={9} color="#FFFFFF" />
+          </View>
+        ) : null}
+      </View>
+      <Text
+        style={[
+          styles.floorCardRatio,
+          selected && styles.floorCardRatioSelected,
+        ]}
+      >
+        {subtitle}
+      </Text>
+      <View style={styles.floorCardBar}>
+        <View
+          style={[
+            styles.floorCardBarFill,
+            {
+              width: `${Math.round(ratio * 100)}%`,
+              backgroundColor: selected
+                ? "#FFFFFF"
+                : isComplete
+                  ? "#059669"
+                  : "#0F172A",
+            },
+          ]}
+        />
+      </View>
+    </Pressable>
+  );
+}
+
+function PorteChip({
+  porte,
+  onPress,
+}: {
+  porte: Porte;
+  onPress: () => void;
+}) {
+  const key = getDisplayStatusKey(porte);
+  const status = key
+    ? (STATUS_DISPLAY[key] ?? DEFAULT_STATUS_OPTION)
+    : DEFAULT_STATUS_OPTION;
+  return (
+    <Pressable
+      onPress={onPress}
+      style={styles.porteChip}
+      accessibilityRole="button"
+      accessibilityLabel={`Repasser porte ${porte.numero}`}
+    >
+      <View style={styles.porteChipTop}>
+        <Text style={styles.porteChipNum} numberOfLines={1}>
+          {porte.numero}
+        </Text>
+        <View
+          style={[
+            styles.porteChipIcon,
+            { backgroundColor: `${status.accent}1A` },
+          ]}
+        >
+          <Feather name={status.icon} size={12} color={status.accent} />
+        </View>
+      </View>
+      <Text
+        style={[styles.porteChipLabel, { color: status.accent }]}
+        numberOfLines={1}
+      >
+        {status.label}
+      </Text>
+      <View
+        style={[
+          styles.porteChipAccent,
+          { backgroundColor: status.accent },
+        ]}
+      />
+    </Pressable>
+  );
+}
+
 function NamingView({
   session,
   isTablet,
   insetsTop,
   insetsBottom,
+  nbEtages,
+  portes,
 }: {
   session: ProspectionSessionApi;
   isTablet: boolean;
   insetsTop: number;
   insetsBottom: number;
+  nbEtages: number;
+  portes: Porte[];
 }) {
   const state = session.state;
   const isCreating = state.phase === "CREATING";
 
   const initialEtage =
     state.phase === "NAMING" || state.phase === "CREATING"
-      ? String(state.etage || 1)
-      : "1";
-  const initialNumero =
-    state.phase === "NAMING" || state.phase === "CREATING"
-      ? state.numero
-      : "";
+      ? state.etage || null
+      : null;
 
-  const [etage, setEtage] = useState(initialEtage);
-  const [numero, setNumero] = useState(initialNumero);
+  const [step, setStep] = useState<"etage" | "porte">(
+    initialEtage ? "porte" : "etage",
+  );
+  const [selectedEtage, setSelectedEtage] = useState<number | null>(
+    initialEtage,
+  );
   const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = useCallback(async () => {
-    const etageNum = Number(etage);
-    if (!numero.trim()) {
-      setError("Numéro requis");
-      return;
+  const totalEtages = Math.max(1, nbEtages || 1);
+  const floors = useMemo(() => {
+    const arr: { etage: number; done: number; total: number }[] = [];
+    for (let i = totalEtages; i >= 1; i -= 1) {
+      const onFloor = portes.filter((p) => p.etage === i);
+      const done = onFloor.filter((p) => p.statut !== "NON_VISITE").length;
+      arr.push({ etage: i, done, total: onFloor.length });
     }
-    if (!etage || Number.isNaN(etageNum) || etageNum < 1) {
-      setError("Étage invalide");
-      return;
-    }
-    setError(null);
+    return arr;
+  }, [portes, totalEtages]);
+
+  const prospectedOnFloor = useMemo(() => {
+    if (selectedEtage === null) return [];
+    return portes
+      .filter(
+        (p) =>
+          p.etage === selectedEtage && p.statut !== "NON_VISITE",
+      )
+      .sort((a, b) =>
+        String(a.numero).localeCompare(String(b.numero), "fr", {
+          numeric: true,
+        }),
+      );
+  }, [portes, selectedEtage]);
+
+  const suggestedNum =
+    selectedEtage !== null ? nextPorteNumero(selectedEtage, portes) : null;
+  const [customNum, setCustomNum] = useState<number | null>(null);
+  const effectiveNum =
+    customNum !== null ? customNum : (suggestedNum ?? 0);
+
+  const handleSelectFloor = useCallback(
+    (etage: number) => {
+      Haptics.select();
+      setSelectedEtage(etage);
+      setCustomNum(null);
+      setStep("porte");
+    },
+    [],
+  );
+
+  const handleBackToFloor = useCallback(() => {
+    Haptics.select();
+    setStep("etage");
+  }, []);
+
+  const handleCreateNew = useCallback(async () => {
+    if (selectedEtage === null || effectiveNum <= 0) return;
     Haptics.light();
-    const res = await session.submitPorte({ etage: etageNum, numero });
-    if (!res.ok) {
-      setError("Création impossible. Réessaie.");
-    }
-  }, [etage, numero, session]);
+    const res = await session.submitPorte({
+      etage: selectedEtage,
+      numero: String(effectiveNum),
+    });
+    if (!res.ok) setError("Création impossible. Réessaie.");
+  }, [effectiveNum, selectedEtage, session]);
+
+  const handleExistingTap = useCallback(
+    (porte: Porte) => {
+      Haptics.select();
+      session.beginFromExisting(porte);
+    },
+    [session],
+  );
 
   const pad = isTablet ? TABLET_PAD : SCREEN_PAD;
+  const cols = isTablet ? 5 : 4;
 
   return (
-    <KeyboardAvoidingView
-      style={styles.flex}
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
+    <Animated.View
+      entering={SlideInDown.duration(260)}
+      exiting={FadeOut.duration(140)}
+      style={[
+        styles.viewRoot,
+        isTablet ? styles.viewRootTablet : { paddingTop: insetsTop + 8 },
+      ]}
     >
-      <Animated.View
-        entering={SlideInDown.duration(260)}
-        exiting={FadeOut.duration(140)}
-        style={[
-          styles.viewRoot,
-          isTablet ? styles.viewRootTablet : { paddingTop: insetsTop + 8 },
-        ]}
+      <ScrollView
+        keyboardShouldPersistTaps="handled"
+        contentContainerStyle={{
+          paddingHorizontal: pad,
+          paddingBottom: insetsBottom + 24,
+          gap: 20,
+        }}
       >
-        <ScrollView
-          keyboardShouldPersistTaps="handled"
-          contentContainerStyle={{
-            paddingHorizontal: pad,
-            paddingBottom: insetsBottom + 24,
-            gap: 22,
-          }}
-        >
-          <View style={styles.headerRow}>
+        <View style={styles.headerRow}>
+          {step === "porte" ? (
+            <Pressable
+              onPress={handleBackToFloor}
+              style={styles.iconBtn}
+              accessibilityRole="button"
+              accessibilityLabel="Retour aux étages"
+              hitSlop={10}
+            >
+              <Feather name="chevron-left" size={22} color="#0F172A" />
+            </Pressable>
+          ) : (
             <Pressable
               onPress={session.cancel}
               style={styles.iconBtn}
@@ -209,98 +409,188 @@ function NamingView({
             >
               <Feather name="x" size={20} color="#0F172A" />
             </Pressable>
-            <View style={styles.stepBadge}>
-              <View style={styles.dotActive} />
-              <View style={styles.dotInactive} />
-              <View style={styles.dotInactive} />
-            </View>
-            <View style={{ width: 36 }} />
+          )}
+          <View style={styles.stepBadge}>
+            <View
+              style={step === "porte" ? styles.dotDone : styles.dotActive}
+            />
+            <View
+              style={step === "porte" ? styles.dotActive : styles.dotInactive}
+            />
+            <View style={styles.dotInactive} />
           </View>
+          <View style={{ width: 36 }} />
+        </View>
 
-          <View style={styles.heroBlock}>
-            <Text style={styles.eyebrow}>Nouvelle prospection</Text>
-            <Text style={styles.heroTitle}>Quelle porte ?</Text>
-            <Text style={styles.heroLead}>
-              Indique l'étage et le numéro. La porte sera créée et tu pourras
-              démarrer dès que tu sonnes.
-            </Text>
-          </View>
-
-          <View style={styles.formCard}>
-            <View style={styles.fieldGroup}>
-              <Text style={styles.fieldLabel}>Étage</Text>
-              <View style={styles.inputWrap}>
-                <Feather name="layers" size={16} color="#64748B" />
-                <TextInput
-                  value={etage}
-                  onChangeText={(v) => {
-                    setEtage(v.replace(/[^0-9]/g, ""));
-                    if (error) setError(null);
-                  }}
-                  placeholder="Ex: 3"
-                  placeholderTextColor="#94A3B8"
-                  keyboardType="number-pad"
-                  style={styles.input}
-                  editable={!isCreating}
-                />
-              </View>
+        {step === "etage" ? (
+          <Animated.View entering={FadeIn.duration(140)} style={{ gap: 18 }}>
+            <View style={styles.heroBlock}>
+              <Text style={styles.eyebrow}>Étape 1</Text>
+              <Text style={styles.heroTitle}>Quel étage ?</Text>
+              <Text style={styles.heroLead}>
+                Tape l'étage où tu vas prospecter. Aucune saisie au clavier.
+              </Text>
             </View>
-
-            <View style={styles.fieldGroup}>
-              <Text style={styles.fieldLabel}>Numéro de porte</Text>
-              <View style={styles.inputWrap}>
-                <Feather name="hash" size={16} color="#64748B" />
-                {etage && /^\d+$/.test(numero) && !numero.startsWith(etage) ? (
-                  <View style={styles.numPrefix}>
-                    <Text style={styles.numPrefixText}>{etage}</Text>
-                  </View>
-                ) : null}
-                <TextInput
-                  value={numero}
-                  onChangeText={(v) => {
-                    setNumero(v);
-                    if (error) setError(null);
+            <View
+              style={[
+                styles.floorGrid,
+                { gap: isTablet ? 14 : 10 },
+              ]}
+            >
+              {floors.map((floor) => (
+                <View
+                  key={floor.etage}
+                  style={{
+                    flexBasis: `${Math.floor(100 / cols) - 2}%`,
+                    flexGrow: 1,
                   }}
-                  placeholder={etage ? `Ex: 2 → ${etage}02` : "Ex: 2"}
-                  placeholderTextColor="#94A3B8"
-                  style={styles.input}
-                  editable={!isCreating}
-                  returnKeyType="go"
-                  onSubmitEditing={handleSubmit}
-                />
-              </View>
-              <Text style={styles.fieldHint}>
-                Tape juste le numéro de porte (ex: « 2 »). L'étage est ajouté automatiquement.
+                >
+                  <FloorCard
+                    etage={floor.etage}
+                    done={floor.done}
+                    total={floor.total}
+                    selected={selectedEtage === floor.etage}
+                    onPress={() => handleSelectFloor(floor.etage)}
+                    isTablet={isTablet}
+                  />
+                </View>
+              ))}
+            </View>
+          </Animated.View>
+        ) : (
+          <Animated.View entering={FadeIn.duration(140)} style={{ gap: 18 }}>
+            <View style={styles.heroBlock}>
+              <Text style={styles.eyebrow}>Étape 2 · Étage {selectedEtage}</Text>
+              <Text style={styles.heroTitle}>Quelle porte ?</Text>
+              <Text style={styles.heroLead}>
+                Choisis une porte existante pour la repasser, ou démarre la
+                suivante.
               </Text>
             </View>
 
-            {error ? (
-              <View style={styles.errorBox}>
-                <Feather name="alert-circle" size={13} color="#B91C1C" />
-                <Text style={styles.errorText}>{error}</Text>
+            {prospectedOnFloor.length > 0 ? (
+              <View style={styles.sectionBlock}>
+                <Text style={styles.sectionLabel}>
+                  Déjà prospectées · {prospectedOnFloor.length}
+                </Text>
+                <View
+                  style={[
+                    styles.porteChipGrid,
+                    { gap: isTablet ? 12 : 10 },
+                  ]}
+                >
+                  {prospectedOnFloor.map((porte) => (
+                    <View
+                      key={porte.id}
+                      style={{
+                        flexBasis: isTablet ? "23%" : "31%",
+                        flexGrow: 1,
+                      }}
+                    >
+                      <PorteChip
+                        porte={porte}
+                        onPress={() => handleExistingTap(porte)}
+                      />
+                    </View>
+                  ))}
+                </View>
               </View>
             ) : null}
-          </View>
 
-          <Pressable
-            style={({ pressed }) => [
-              styles.cta,
-              pressed && styles.ctaPressed,
-              isCreating && styles.ctaDisabled,
-            ]}
-            onPress={handleSubmit}
-            disabled={isCreating}
-          >
-            <Text style={styles.ctaText}>
-              {isCreating ? "Création..." : "Continuer"}
-            </Text>
-            {!isCreating ? (
-              <Feather name="arrow-right" size={18} color="#FFFFFF" />
-            ) : null}
-          </Pressable>
-        </ScrollView>
-      </Animated.View>
-    </KeyboardAvoidingView>
+            <View style={styles.sectionBlock}>
+              <Text style={styles.sectionLabel}>Nouvelle porte</Text>
+              <View style={styles.newPorteCard}>
+                <View style={styles.newPorteRow}>
+                  <Pressable
+                    style={styles.stepperBtn}
+                    onPress={() =>
+                      setCustomNum((prev) => {
+                        const base = prev !== null ? prev : (suggestedNum ?? 0);
+                        return Math.max(1, base - 1);
+                      })
+                    }
+                    accessibilityLabel="Diminuer le numéro"
+                    hitSlop={6}
+                  >
+                    <Feather name="minus" size={18} color="#0F172A" />
+                  </Pressable>
+                  <View style={styles.newPorteNumWrap}>
+                    <Text style={styles.newPorteEyebrow}>Numéro de porte</Text>
+                    <TextInput
+                      value={String(effectiveNum)}
+                      onChangeText={(v) => {
+                        const cleaned = v.replace(/[^0-9]/g, "");
+                        if (cleaned === "") {
+                          setCustomNum(0);
+                          return;
+                        }
+                        const parsed = parseInt(cleaned, 10);
+                        setCustomNum(Number.isNaN(parsed) ? 0 : parsed);
+                      }}
+                      keyboardType="number-pad"
+                      maxLength={6}
+                      style={styles.newPorteNumInput}
+                      selectTextOnFocus
+                      accessibilityLabel="Numéro de porte"
+                    />
+                  </View>
+                  <Pressable
+                    style={[styles.stepperBtn, styles.stepperBtnPrimary]}
+                    onPress={() =>
+                      setCustomNum((prev) =>
+                        (prev !== null ? prev : (suggestedNum ?? 0)) + 1,
+                      )
+                    }
+                    accessibilityLabel="Augmenter le numéro"
+                    hitSlop={6}
+                  >
+                    <Feather name="plus" size={18} color="#FFFFFF" />
+                  </Pressable>
+                </View>
+                {customNum !== null && customNum !== suggestedNum ? (
+                  <Pressable
+                    onPress={() => setCustomNum(null)}
+                    style={styles.newPorteReset}
+                    hitSlop={6}
+                  >
+                    <Feather name="rotate-ccw" size={11} color="#94A3B8" />
+                    <Text style={styles.newPorteResetText}>
+                      Revenir à {suggestedNum}
+                    </Text>
+                  </Pressable>
+                ) : null}
+              </View>
+
+              {error ? (
+                <View style={styles.errorBox}>
+                  <Feather name="alert-circle" size={13} color="#B91C1C" />
+                  <Text style={styles.errorText}>{error}</Text>
+                </View>
+              ) : null}
+
+              <Pressable
+                style={({ pressed }) => [
+                  styles.cta,
+                  pressed && styles.ctaPressed,
+                  isCreating && styles.ctaDisabled,
+                ]}
+                onPress={handleCreateNew}
+                disabled={isCreating}
+              >
+                <Text style={styles.ctaText}>
+                  {isCreating
+                    ? "Création..."
+                    : `Démarrer la porte ${effectiveNum}`}
+                </Text>
+                {!isCreating ? (
+                  <Feather name="arrow-right" size={18} color="#FFFFFF" />
+                ) : null}
+              </Pressable>
+            </View>
+          </Animated.View>
+        )}
+      </ScrollView>
+    </Animated.View>
   );
 }
 
@@ -1157,6 +1447,220 @@ const styles = StyleSheet.create({
   },
   abortBtnText: {
     fontSize: 12,
+    color: "#94A3B8",
+    fontWeight: "600",
+  },
+  // ── Floor picker ────────────────────────────────────────────────
+  floorGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+  },
+  floorCard: {
+    paddingVertical: 14,
+    paddingHorizontal: 12,
+    borderRadius: 18,
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1.5,
+    borderColor: "#EAECEF",
+    alignItems: "center",
+    gap: 8,
+    minHeight: 96,
+  },
+  floorCardTablet: {
+    paddingVertical: 18,
+    paddingHorizontal: 14,
+    minHeight: 110,
+  },
+  floorCardSelected: {
+    backgroundColor: "#0F172A",
+    borderColor: "#0F172A",
+  },
+  floorCardTop: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+  },
+  floorCardNumber: {
+    fontSize: 28,
+    fontWeight: "800",
+    color: "#0F172A",
+    fontVariant: ["tabular-nums"],
+    letterSpacing: -1,
+    lineHeight: 32,
+  },
+  floorCardNumberTablet: {
+    fontSize: 32,
+    lineHeight: 36,
+  },
+  floorCardNumberSelected: {
+    color: "#FFFFFF",
+  },
+  floorCardCheck: {
+    width: 16,
+    height: 16,
+    borderRadius: 999,
+    backgroundColor: "#059669",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  floorCardRatio: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: "#64748B",
+    fontVariant: ["tabular-nums"],
+    letterSpacing: 0.2,
+  },
+  floorCardRatioSelected: {
+    color: "rgba(255,255,255,0.7)",
+  },
+  floorCardBar: {
+    width: "100%",
+    height: 4,
+    borderRadius: 999,
+    backgroundColor: "#F1F5F9",
+    overflow: "hidden",
+    marginTop: 2,
+  },
+  floorCardBarFill: {
+    height: "100%",
+    borderRadius: 999,
+  },
+  // ── Porte picker ────────────────────────────────────────────────
+  sectionBlock: {
+    gap: 10,
+  },
+  sectionLabel: {
+    fontSize: 11,
+    fontWeight: "800",
+    color: "#475569",
+    letterSpacing: 1.2,
+    textTransform: "uppercase",
+    paddingHorizontal: 2,
+  },
+  porteChipGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+  },
+  porteChip: {
+    position: "relative",
+    padding: 12,
+    borderRadius: 16,
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: "#EAECEF",
+    overflow: "hidden",
+    gap: 8,
+    minHeight: 80,
+  },
+  porteChipTop: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 6,
+  },
+  porteChipNum: {
+    flex: 1,
+    fontSize: 18,
+    fontWeight: "800",
+    color: "#0F172A",
+    fontVariant: ["tabular-nums"],
+    letterSpacing: -0.3,
+  },
+  porteChipIcon: {
+    width: 26,
+    height: 26,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  porteChipLabel: {
+    fontSize: 11,
+    fontWeight: "700",
+    letterSpacing: 0.1,
+  },
+  porteChipAccent: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: 3,
+  },
+  // ── New porte (stepper) ─────────────────────────────────────────
+  newPorteCard: {
+    padding: 16,
+    borderRadius: 20,
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: "#EAECEF",
+    gap: 10,
+  },
+  newPorteRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 12,
+  },
+  newPorteNumWrap: {
+    alignItems: "center",
+    flex: 1,
+  },
+  newPorteEyebrow: {
+    fontSize: 10,
+    fontWeight: "800",
+    color: "#94A3B8",
+    letterSpacing: 1.2,
+    textTransform: "uppercase",
+  },
+  newPorteNum: {
+    marginTop: 4,
+    fontSize: 36,
+    fontWeight: "800",
+    color: "#0F172A",
+    fontVariant: ["tabular-nums"],
+    letterSpacing: -1.2,
+    lineHeight: 40,
+  },
+  newPorteNumInput: {
+    marginTop: 4,
+    fontSize: 36,
+    fontWeight: "800",
+    color: "#0F172A",
+    fontVariant: ["tabular-nums"],
+    letterSpacing: -1.2,
+    textAlign: "center",
+    minWidth: 120,
+    paddingVertical: 4,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    backgroundColor: "#F8FAFC",
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+  },
+  stepperBtn: {
+    width: 48,
+    height: 48,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#F1F5F9",
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+  },
+  stepperBtnPrimary: {
+    backgroundColor: "#0F172A",
+    borderColor: "#0F172A",
+  },
+  newPorteReset: {
+    alignSelf: "center",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+  },
+  newPorteResetText: {
+    fontSize: 11,
     color: "#94A3B8",
     fontWeight: "600",
   },

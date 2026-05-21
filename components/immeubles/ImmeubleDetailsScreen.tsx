@@ -188,7 +188,12 @@ function ImmeubleDetailsView({
   const lastProgressTargetRef = useRef(0);
   const pendingFloorPlanDoorIdRef = useRef<number | null>(null);
   const { markDoorStart, markDoorEnd } = useRecording({
-    enabled: true,
+    // Per-porte capture mode: useRecording does not auto-start on mount;
+    // markDoorStart (called by useProspectionSession.startActive) opens a
+    // fresh local recording for the porte, markDoorEnd stops + uploads
+    // with the porte metadata so the admin can filter recordings by
+    // immeuble / status.
+    enabled: false,
     immeubleId: immeuble.id,
   });
   const sessionRecordingBindings = useMemo(
@@ -1168,7 +1173,11 @@ function ImmeubleDetailsView({
         />
       ) : null}
 
-      <ProspectionSessionOverlay session={prospectionSession} />
+      <ProspectionSessionOverlay
+        session={prospectionSession}
+        nbEtages={displayNbEtages}
+        portes={portesState}
+      />
 
       <ConfirmActionOverlay
         key={

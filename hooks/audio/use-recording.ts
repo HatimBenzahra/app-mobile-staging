@@ -42,6 +42,17 @@ export function useRecording({ enabled, immeubleId }: UseRecordingOptions) {
   const enabledRef = useRef(enabled);
   const recordingContextRef = useRef<RecordingContext | null>(null);
   const trackerRef = useRef(new DoorSegmentTracker());
+  // Per-porte capture mode: when set, markDoorStart starts a fresh local
+  // recording dedicated to that porte; markDoorEnd stops + uploads with the
+  // porte metadata. One audio file per porte → admin can filter by immeuble
+  // / status downstream.
+  const activePorteRef = useRef<PorteRef | null>(null);
+  const startRecordingRef = useRef<() => Promise<void>>(
+    () => Promise.resolve(),
+  );
+  const stopRecordingRef = useRef<() => Promise<void>>(
+    () => Promise.resolve(),
+  );
 
   useEffect(() => {
     return () => {
@@ -66,22 +77,30 @@ export function useRecording({ enabled, immeubleId }: UseRecordingOptions) {
   }, [enabled]);
 
   // ── Door segment markers ──────────────────────────────────────────
+  // Per-porte capture: each tap triggers a dedicated audio recording.
 
   const markDoorStart = useCallback((porte: PorteRef) => {
-    if (!isRecordingRef.current) return;
+    activePorteRef.current = porte;
+    trackerRef.current.start();
     trackerRef.current.markDoorStart(porte);
     if (__DEV__) {
-      const seg = trackerRef.current.openSegment;
-      console.log("[useRecording] DOOR_START porteId:", porte.id, "at:", seg?.startTime.toFixed(1), "s");
+      console.log("[useRecording] PORTE_REC_START porteId:", porte.id);
     }
+    void startRecordingRef.current();
   }, []);
 
   const markDoorEnd = useCallback((porteId: number, statut?: string) => {
-    if (!isRecordingRef.current) return;
+    const active = activePorteRef.current;
+    if (!active || active.id !== porteId) {
+      if (__DEV__) console.warn("[useRecording] markDoorEnd ignored — no active porte or mismatch");
+      return;
+    }
     trackerRef.current.markDoorEnd(porteId, statut);
     if (__DEV__) {
-      console.log("[useRecording] DOOR_END porteId:", porteId, "statut:", statut, "segments:", trackerRef.current.segmentCount);
+      console.log("[useRecording] PORTE_REC_END porteId:", porteId, "statut:", statut);
     }
+    void stopRecordingRef.current();
+    activePorteRef.current = null;
   }, []);
 
   // ── Auth context resolution ───────────────────────────────────────
@@ -165,8 +184,8 @@ export function useRecording({ enabled, immeubleId }: UseRecordingOptions) {
   // ── Start / Stop ─────────────────────────────────────────────────
 
   const startRecording = useCallback(async () => {
-    if (!enabled || isRecordingRef.current || isStartingRef.current) {
-      if (__DEV__) console.log("[useRecording] startRecording skipped. enabled:", enabled, "isRecording:", isRecordingRef.current, "isStarting:", isStartingRef.current);
+    if (isRecordingRef.current || isStartingRef.current) {
+      if (__DEV__) console.log("[useRecording] startRecording skipped. isRecording:", isRecordingRef.current, "isStarting:", isStartingRef.current);
       return;
     }
 
@@ -244,7 +263,6 @@ export function useRecording({ enabled, immeubleId }: UseRecordingOptions) {
       }
     }
   }, [
-    enabled,
     immeubleId,
     resolveRecordingContext,
     startBackgroundRecordingService,
@@ -335,22 +353,23 @@ export function useRecording({ enabled, immeubleId }: UseRecordingOptions) {
     }
   }, [immeubleId, resolveRecordingContext, stopBackgroundRecordingService]);
 
+  // Per-porte mode: recording is driven manually by markDoorStart / markDoorEnd.
+  // The `enabled` prop is kept on the hook surface for backward-compat but no
+  // longer triggers an auto-start. Stop is enforced on disable to handle the
+  // case where a session is still running while the screen tears down.
   useEffect(() => {
-    if (__DEV__) console.log("[useRecording] Enable effect. enabled:", enabled, "isRecording:", isRecordingRef.current);
-
-    if (!enabled) {
-      if (isRecordingRef.current || isStartingRef.current) {
-        if (__DEV__) console.log("[useRecording] Disabled → stopping local recording");
-        void stopRecording();
-      }
-      return;
+    if (!enabled && (isRecordingRef.current || isStartingRef.current)) {
+      if (__DEV__) console.log("[useRecording] Disabled → forcing stop");
+      void stopRecording();
     }
+  }, [enabled, stopRecording]);
 
-    if (!isRecordingRef.current && !isStartingRef.current) {
-      if (__DEV__) console.log("[useRecording] Enabled → starting local recording");
-      void startRecording();
-    }
-  }, [enabled, startRecording, stopRecording]);
+  // Keep refs synced so markDoorStart / markDoorEnd can invoke the latest
+  // useCallback closures without dragging them into their dependency arrays.
+  useEffect(() => {
+    startRecordingRef.current = startRecording;
+    stopRecordingRef.current = stopRecording;
+  }, [startRecording, stopRecording]);
 
   useEffect(() => {
     return () => {
