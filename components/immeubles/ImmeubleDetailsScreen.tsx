@@ -755,12 +755,18 @@ function ImmeubleDetailsView({
     filterSheetRef.current?.dismiss();
   }, []);
 
+  const selectStatusFilter = useCallback((value: string | null) => {
+    setStatusFilters(value ? [value] : []);
+    setPendingStatusFilter(value);
+    filterSheetRef.current?.dismiss();
+  }, []);
+
 
   const openAddPorte = useCallback(() => {
     if (prospectionSession.isLocked) return;
-    const etage = (currentPorte?.etage ?? displayNbEtages) || 1;
+    const etage = displayNbEtages || 1;
     prospectionSession.open(etage);
-  }, [currentPorte?.etage, displayNbEtages, prospectionSession]);
+  }, [displayNbEtages, prospectionSession]);
 
   const handleAddEtage = useCallback(async () => {
     if (addingEtage) return;
@@ -1193,6 +1199,8 @@ function ImmeubleDetailsView({
           togglePendingFilter={togglePendingFilter}
           clearStatusFilters={clearStatusFilters}
           applyStatusFilters={applyStatusFilters}
+          selectStatusFilter={selectStatusFilter}
+          activeStatusFilter={statusFilters[0] ?? null}
           styles={styles}
         />
       ) : null}

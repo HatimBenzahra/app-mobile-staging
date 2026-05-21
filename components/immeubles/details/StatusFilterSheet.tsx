@@ -2,7 +2,7 @@ import { Feather } from "@expo/vector-icons";
 import { BottomSheetModal, BottomSheetScrollView } from "@gorhom/bottom-sheet";
 import type { ReactElement, RefObject } from "react";
 import { memo } from "react";
-import { Pressable, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 
 type StatusOption = {
   value: string;
@@ -27,6 +27,8 @@ type StatusFilterSheetProps = {
   togglePendingFilter: (value: string | null) => void;
   clearStatusFilters: () => void;
   applyStatusFilters: () => void;
+  selectStatusFilter: (value: string | null) => void;
+  activeStatusFilter: string | null;
   styles: Record<string, any>;
 };
 
@@ -35,20 +37,18 @@ function StatusFilterSheet({
   filterSnapPoints,
   renderSheetBackdrop,
   statusCounts,
-  pendingStatusFilter,
   statusOptions,
   totalCount,
   isTablet,
   onSheetClose,
-  togglePendingFilter,
-  clearStatusFilters,
-  applyStatusFilters,
+  selectStatusFilter,
+  activeStatusFilter,
   styles,
 }: StatusFilterSheetProps) {
-  const applyCount =
-    pendingStatusFilter === null
-      ? totalCount
-      : (statusCounts[pendingStatusFilter] ?? 0);
+  const visibleOptions = statusOptions.filter(
+    (opt) => (statusCounts[opt.value] ?? 0) > 0,
+  );
+
   return (
     <BottomSheetModal
       ref={filterSheetRef}
@@ -66,156 +66,218 @@ function StatusFilterSheet({
         contentContainerStyle={[
           styles.sheetContent,
           isTablet && styles.sheetContentTablet,
+          s.contentContainer,
         ]}
       >
-        <View style={styles.filterSheetHeader}>
+        <View style={s.header}>
+          <View>
+            <Text style={s.title}>Filtrer par statut</Text>
+            <Text style={s.subtitle}>
+              {activeStatusFilter
+                ? "Tape un autre statut ou « Toutes les portes »"
+                : "Tape un statut pour filtrer la liste"}
+            </Text>
+          </View>
           <Pressable
-            style={styles.filterCloseBtn}
+            style={s.closeBtn}
             onPress={() => filterSheetRef.current?.dismiss()}
-            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+            hitSlop={10}
+            accessibilityRole="button"
+            accessibilityLabel="Fermer"
           >
-            <Feather name="x" size={20} color="#212121" />
-          </Pressable>
-          <Text style={styles.filterHeaderTitle}>Filtres</Text>
-          <Pressable
-            style={styles.filterResetBtn}
-            onPress={clearStatusFilters}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          >
-            <Text style={styles.filterResetLabel}>Reset</Text>
+            <Feather name="x" size={18} color="#0F172A" />
           </Pressable>
         </View>
 
-        <View style={styles.filterSection}>
-          <Text style={styles.filterSectionLabel}>Filtrer par statut</Text>
-          <View style={styles.filterRadioGroup}>
-            <Pressable
-              style={[
-                styles.filterRadioItem,
-                pendingStatusFilter === null && styles.filterRadioItemActive,
-              ]}
-              onPress={() => togglePendingFilter(null)}
-            >
-              <View style={styles.filterRadioContent}>
-                <View
-                  style={[
-                    styles.filterRadioCircle,
-                    pendingStatusFilter === null &&
-                      styles.filterRadioCircleActive,
-                  ]}
-                >
-                  {pendingStatusFilter === null && (
-                    <View style={styles.filterRadioDot} />
-                  )}
-                </View>
-                <View style={styles.filterRadioTextContainer}>
-                  <Text
-                    style={[
-                      styles.filterRadioLabel,
-                      pendingStatusFilter === null &&
-                        styles.filterRadioLabelActive,
-                    ]}
-                  >
-                    Toutes les portes
-                  </Text>
-                  <Text style={styles.filterRadioDescription}>
-                    Afficher tous les statuts
-                  </Text>
-                </View>
+        <View style={s.list}>
+          <Pressable
+            onPress={() => selectStatusFilter(null)}
+            style={[
+              s.row,
+              activeStatusFilter === null && s.rowActiveNeutral,
+            ]}
+            accessibilityRole="button"
+          >
+            <View style={s.rowLeft}>
+              <View style={s.rowIconNeutral}>
+                <Feather name="layers" size={15} color="#0F172A" />
               </View>
-              <View style={styles.filterRadioBadge}>
-                <Text style={styles.filterRadioBadgeText}>{totalCount}</Text>
-              </View>
-            </Pressable>
+              <Text
+                style={[
+                  s.rowLabel,
+                  activeStatusFilter === null && s.rowLabelActive,
+                ]}
+              >
+                Toutes les portes
+              </Text>
+            </View>
+            <View style={s.rowRight}>
+              <Text style={s.countText}>{totalCount}</Text>
+              {activeStatusFilter === null ? (
+                <Feather name="check" size={16} color="#0F172A" />
+              ) : null}
+            </View>
+          </Pressable>
 
-            {statusOptions.map((option) => {
-              const isSelected = pendingStatusFilter === option.value;
-              const count = statusCounts[option.value] ?? 0;
-              return (
-                <Pressable
-                  key={option.value}
-                  style={[
-                    styles.filterRadioItem,
-                    isSelected && styles.filterRadioItemActive,
-                    count === 0 && styles.filterRadioItemDisabled,
-                  ]}
-                  onPress={() => count > 0 && togglePendingFilter(option.value)}
-                  disabled={count === 0}
-                >
-                  <View style={styles.filterRadioContent}>
-                    <View
-                      style={[
-                        styles.filterRadioCircle,
-                        styles.filterRadioCircleWithColor,
-                        isSelected && styles.filterRadioCircleActive,
-                        { borderColor: option.accent },
-                      ]}
-                    >
-                      {isSelected && (
-                        <View
-                          style={[
-                            styles.filterRadioDot,
-                            { backgroundColor: option.accent },
-                          ]}
-                        />
-                      )}
-                    </View>
-                    <View style={styles.filterRadioTextContainer}>
-                      <Text
-                        style={[
-                          styles.filterRadioLabel,
-                          isSelected && styles.filterRadioLabelActive,
-                        ]}
-                      >
-                        {option.label}
-                      </Text>
-                      <Text
-                        style={[
-                          styles.filterRadioDescription,
-                          count === 0 && styles.filterRadioDescriptionDisabled,
-                        ]}
-                      >
-                        {option.description}
-                        {count === 0 && " (Aucune porte)"}
-                      </Text>
-                    </View>
-                  </View>
+          {visibleOptions.map((option) => {
+            const isSelected = activeStatusFilter === option.value;
+            const count = statusCounts[option.value] ?? 0;
+            return (
+              <Pressable
+                key={option.value}
+                onPress={() => selectStatusFilter(option.value)}
+                style={[
+                  s.row,
+                  isSelected && {
+                    backgroundColor: `${option.accent}0F`,
+                    borderColor: `${option.accent}55`,
+                  },
+                ]}
+                accessibilityRole="button"
+              >
+                <View style={s.rowLeft}>
                   <View
                     style={[
-                      styles.filterRadioBadge,
-                      styles.filterRadioBadgeWithColor,
-                      { backgroundColor: option.bg + "40" },
+                      s.rowIcon,
+                      { backgroundColor: `${option.accent}1A` },
                     ]}
                   >
-                    <Text
-                      style={[
-                        styles.filterRadioBadgeText,
-                        { color: option.fg },
-                        isSelected && { color: option.accent },
-                      ]}
-                    >
-                      {count}
-                    </Text>
+                    <Feather
+                      name={option.icon}
+                      size={14}
+                      color={option.accent}
+                    />
                   </View>
-                </Pressable>
-              );
-            })}
-          </View>
-        </View>
-
-        <View style={styles.filterSheetFooter}>
-          <Pressable
-            style={styles.filterApplyButton}
-            onPress={applyStatusFilters}
-          >
-            <Text style={styles.filterApplyButtonText}>
-              Appliquer ({applyCount})
-            </Text>
-          </Pressable>
+                  <Text
+                    style={[
+                      s.rowLabel,
+                      isSelected && { color: option.accent },
+                    ]}
+                    numberOfLines={1}
+                  >
+                    {option.label}
+                  </Text>
+                </View>
+                <View style={s.rowRight}>
+                  <Text
+                    style={[
+                      s.countText,
+                      isSelected && { color: option.accent },
+                    ]}
+                  >
+                    {count}
+                  </Text>
+                  {isSelected ? (
+                    <Feather name="check" size={16} color={option.accent} />
+                  ) : null}
+                </View>
+              </Pressable>
+            );
+          })}
         </View>
       </BottomSheetScrollView>
     </BottomSheetModal>
   );
 }
+
+const s = StyleSheet.create({
+  contentContainer: {
+    paddingTop: 8,
+    paddingBottom: 24,
+    gap: 18,
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    paddingHorizontal: 20,
+    gap: 12,
+  },
+  title: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#0F172A",
+    letterSpacing: -0.2,
+  },
+  subtitle: {
+    marginTop: 4,
+    fontSize: 12.5,
+    color: "#64748B",
+    fontWeight: "500",
+  },
+  closeBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#F1F5F9",
+  },
+  list: {
+    paddingHorizontal: 16,
+    gap: 8,
+  },
+  row: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+    backgroundColor: "#FFFFFF",
+    gap: 12,
+  },
+  rowActiveNeutral: {
+    backgroundColor: "#F1F5F9",
+    borderColor: "#CBD5E1",
+  },
+  rowLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    flex: 1,
+    minWidth: 0,
+  },
+  rowIcon: {
+    width: 28,
+    height: 28,
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  rowIconNeutral: {
+    width: 28,
+    height: 28,
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#F1F5F9",
+  },
+  rowLabel: {
+    fontSize: 14.5,
+    fontWeight: "600",
+    color: "#0F172A",
+    flex: 1,
+    minWidth: 0,
+  },
+  rowLabelActive: {
+    color: "#0F172A",
+  },
+  rowRight: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  countText: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: "#475569",
+    fontVariant: ["tabular-nums"],
+    minWidth: 18,
+    textAlign: "right",
+  },
+});
 
 export default memo(StatusFilterSheet);

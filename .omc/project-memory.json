@@ -253,8 +253,8 @@
   "hotPaths": [
     {
       "path": "components/immeubles/ImmeubleDetailsScreen.tsx",
-      "accessCount": 134,
-      "lastAccessed": 1779350997567,
+      "accessCount": 141,
+      "lastAccessed": 1779367051801,
       "type": "file"
     },
     {
@@ -381,6 +381,12 @@
       "path": "components/immeubles/PorteDetailSheet.tsx",
       "accessCount": 2,
       "lastAccessed": 1779351230070,
+      "type": "file"
+    },
+    {
+      "path": "components/immeubles/details/StatusFilterSheet.tsx",
+      "accessCount": 2,
+      "lastAccessed": 1779367085211,
       "type": "file"
     },
     {
