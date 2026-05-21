@@ -1,8 +1,8 @@
-import type BottomSheet from "@gorhom/bottom-sheet";
+import type { BottomSheetModal } from "@gorhom/bottom-sheet";
 import { createContext, useContext, useRef } from "react";
 
 type ProfileSheetContextValue = {
-  sheetRef: React.RefObject<BottomSheet>;
+  sheetRef: React.RefObject<BottomSheetModal | null>;
   open: () => void;
   close: () => void;
 };
@@ -10,14 +10,14 @@ type ProfileSheetContextValue = {
 const ProfileSheetContext = createContext<ProfileSheetContextValue | undefined>(undefined);
 
 export function ProfileSheetProvider({ children }: { children: React.ReactNode }) {
-  const sheetRef = useRef<BottomSheet>(null);
+  const sheetRef = useRef<BottomSheetModal>(null);
 
   const open = () => {
-    sheetRef.current?.snapToIndex(0);
+    sheetRef.current?.present();
   };
 
   const close = () => {
-    sheetRef.current?.close();
+    sheetRef.current?.dismiss();
   };
 
   return (

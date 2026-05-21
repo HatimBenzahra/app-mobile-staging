@@ -264,6 +264,12 @@
       "type": "file"
     },
     {
+      "path": "components/ProfileSheet.tsx",
+      "accessCount": 20,
+      "lastAccessed": 1779374817895,
+      "type": "file"
+    },
+    {
       "path": "app/(app)/(tabs)/immeubles.tsx",
       "accessCount": 16,
       "lastAccessed": 1779348418534,
@@ -271,8 +277,8 @@
     },
     {
       "path": "hooks/audio/use-recording.ts",
-      "accessCount": 12,
-      "lastAccessed": 1779350180165,
+      "accessCount": 13,
+      "lastAccessed": 1779375094342,
       "type": "file"
     },
     {
@@ -282,9 +288,9 @@
       "type": "file"
     },
     {
-      "path": "components/ProfileSheet.tsx",
+      "path": "app/(app)/(tabs)/dashboard.tsx",
       "accessCount": 10,
-      "lastAccessed": 1779373620738,
+      "lastAccessed": 1779374477566,
       "type": "file"
     },
     {
@@ -402,6 +408,18 @@
       "type": "file"
     },
     {
+      "path": "app/(auth)/login.tsx",
+      "accessCount": 2,
+      "lastAccessed": 1779373848678,
+      "type": "file"
+    },
+    {
+      "path": "hooks/use-profile-sheet.tsx",
+      "accessCount": 2,
+      "lastAccessed": 1779374576144,
+      "type": "file"
+    },
+    {
       "path": "USER_FLOW.md",
       "accessCount": 1,
       "lastAccessed": 1779288223286,
@@ -507,6 +525,12 @@
       "path": "components/navigation/ProwinLogo.tsx",
       "accessCount": 1,
       "lastAccessed": 1779372753241,
+      "type": "file"
+    },
+    {
+      "path": "services/audio/recordings/recording-upload.service.ts",
+      "accessCount": 1,
+      "lastAccessed": 1779375028291,
       "type": "file"
     }
   ],

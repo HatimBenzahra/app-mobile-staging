@@ -3,7 +3,7 @@ import { authService } from "@/services/auth";
 import type { Commercial, Manager } from "@/types/api";
 import { calculateRank, RANKS } from "@/utils/business/ranks";
 import { Feather } from "@expo/vector-icons";
-import BottomSheet, { BottomSheetView } from "@gorhom/bottom-sheet";
+import { BottomSheetModal, BottomSheetView } from "@gorhom/bottom-sheet";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Animated,
@@ -67,8 +67,8 @@ export default function DashboardScreen() {
   const [activeChartIndex, setActiveChartIndex] = useState(0);
   const [chartSlideWidth, setChartSlideWidth] = useState(0);
   const chartScrollRef = useRef<GestureScrollView>(null);
-  const bottomSheetRef = useRef<BottomSheet>(null);
-  const conversionSheetRef = useRef<BottomSheet>(null);
+  const bottomSheetRef = useRef<BottomSheetModal>(null);
+  const conversionSheetRef = useRef<BottomSheetModal>(null);
   const contentOpacity = useRef(new Animated.Value(0)).current;
 
   const handleChartCardLayout = useCallback((e: LayoutChangeEvent) => {
@@ -242,11 +242,11 @@ export default function DashboardScreen() {
   }, [profile, isManager]);
 
   const handleOpenInfo = useCallback(() => {
-    bottomSheetRef.current?.snapToIndex(0);
+    bottomSheetRef.current?.present();
   }, []);
 
   const handleOpenConversionInfo = useCallback(() => {
-    conversionSheetRef.current?.snapToIndex(0);
+    conversionSheetRef.current?.present();
   }, []);
 
   if (loading || !profile) {
@@ -407,11 +407,10 @@ export default function DashboardScreen() {
       </ScrollView>
 
       {/* Info Bottom Sheet */}
-      <BottomSheet
+      <BottomSheetModal
         ref={bottomSheetRef}
         snapPoints={["40%"]}
         enablePanDownToClose
-        index={-1}
       >
         <BottomSheetView style={styles.sheetContainer}>
           <View style={styles.sheetHeader}>
@@ -452,14 +451,13 @@ export default function DashboardScreen() {
             actif, plus vous gagnez de points !
           </Text>
         </BottomSheetView>
-      </BottomSheet>
+      </BottomSheetModal>
 
       {/* Conversion Rate Explanation Bottom Sheet */}
-      <BottomSheet
+      <BottomSheetModal
         ref={conversionSheetRef}
         snapPoints={["35%"]}
         enablePanDownToClose
-        index={-1}
       >
         <BottomSheetView style={styles.sheetContainer}>
           <View style={styles.sheetHeader}>
@@ -518,7 +516,7 @@ export default function DashboardScreen() {
             </View>
           </View>
         </BottomSheetView>
-      </BottomSheet>
+      </BottomSheetModal>
     </>
   );
 }

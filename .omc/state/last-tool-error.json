@@ -1,7 +1,7 @@
 {
   "tool_name": "Bash",
-  "tool_input_preview": "{\"command\":\"sleep 4 && adb -s T30S000000000005260 shell input tap 1133 100 && sleep 1 && adb -s T30S000000000005260 shell screencap -p /sdcard/screenshot.png && adb -s T30S000000000005260 pull /sdcard...",
+  "tool_input_preview": "{\"command\":\"sleep 5 && adb -s T30S000000000005260 shell screencap -p /sdcard/screenshot.png && adb -s T30S000000000005260 pull /sdcard/screenshot.png /tmp/prowin-screen.png 2>&1 | tail -1\",\"descriptio...",
   "error": "Exit code 1\nadb: device 'T30S000000000005260' not found",
-  "timestamp": "2026-05-21T14:22:16.307Z",
+  "timestamp": "2026-05-21T14:32:51.384Z",
   "retry_count": 1
 }

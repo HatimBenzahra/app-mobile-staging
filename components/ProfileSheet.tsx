@@ -2,7 +2,7 @@ import { useWorkspaceProfile } from "@/hooks/api/use-workspace-profile";
 import { authService } from "@/services/auth";
 import type { Commercial, Manager } from "@/types/api";
 import { Feather } from "@expo/vector-icons";
-import BottomSheet, { BottomSheetView } from "@gorhom/bottom-sheet";
+import { BottomSheetModal, BottomSheetView } from "@gorhom/bottom-sheet";
 import { useRouter } from "expo-router";
 import { forwardRef, useEffect, useMemo, useState } from "react";
 import { StyleSheet, Text, View, Pressable, useWindowDimensions } from "react-native";
@@ -13,7 +13,7 @@ type ProfileSheetProps = {
   role: string | null;
 };
 
-const ProfileSheet = forwardRef<BottomSheet, ProfileSheetProps>(
+const ProfileSheet = forwardRef<BottomSheetModal, ProfileSheetProps>(
   ({ userId, role }, ref) => {
     const router = useRouter();
     const insets = useSafeAreaInsets();
@@ -45,22 +45,17 @@ const ProfileSheet = forwardRef<BottomSheet, ProfileSheetProps>(
       router.replace("/(auth)/login");
     };
 
-    if (loading || !profile) {
-      return (
-        <BottomSheet ref={ref} snapPoints={snapPoints} enablePanDownToClose index={-1}>
-          <View style={styles.loadingContainer}>
-            <Text style={styles.loadingText}>Chargement...</Text>
-          </View>
-        </BottomSheet>
-      );
-    }
-
-    const email = (profile as Commercial).email || (profile as Manager).email || "Non renseigné";
-    const phone = (profile as Commercial).numTel || (profile as Manager).numTelephone || "Non renseigné";
+    const isReady = !loading && !!profile;
+    const email = isReady
+      ? ((profile as Commercial).email || (profile as Manager).email || "Non renseigné")
+      : "";
+    const phone = isReady
+      ? ((profile as Commercial).numTel || (profile as Manager).numTelephone || "Non renseigné")
+      : "";
     const roleLabel = role === "manager" ? "Manager" : "Commercial";
 
     return (
-      <BottomSheet ref={ref} snapPoints={snapPoints} enablePanDownToClose index={-1}>
+      <BottomSheetModal ref={ref} snapPoints={snapPoints} enablePanDownToClose>
         <BottomSheetView
           style={[
             styles.container,
@@ -70,13 +65,19 @@ const ProfileSheet = forwardRef<BottomSheet, ProfileSheetProps>(
             },
           ]}
         >
+          {!isReady ? (
+            <View style={styles.loadingContainer}>
+              <Text style={styles.loadingText}>Chargement...</Text>
+            </View>
+          ) : (
+            <>
           {/* Header */}
           <View style={styles.header}>
             <View style={styles.avatarLarge}>
               <Text style={styles.avatarText}>{initials}</Text>
             </View>
             <Text style={styles.fullName}>
-              {profile.prenom} {profile.nom}
+              {profile?.prenom} {profile?.nom}
             </Text>
             <View style={styles.roleBadge}>
               <Feather name={role === "manager" ? "briefcase" : "user"} size={12} color="#2563EB" />
@@ -166,8 +167,10 @@ const ProfileSheet = forwardRef<BottomSheet, ProfileSheetProps>(
               <Feather name="chevron-right" size={18} color="#FCA5A5" />
             </Pressable>
           )}
+            </>
+          )}
         </BottomSheetView>
-      </BottomSheet>
+      </BottomSheetModal>
     );
   }
 );
