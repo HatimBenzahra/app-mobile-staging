@@ -4,6 +4,7 @@ import Constants from "expo-constants";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Animated, Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import ProwinLogo from "./ProwinLogo";
 
 type NavItemProps = {
   icon: keyof typeof Feather.glyphMap;
@@ -140,9 +141,7 @@ export default function NavigationRail({
       ]}
     >
       <View style={styles.logoSection}>
-        <View style={styles.logo}>
-          <Feather name="shield" size={22} color="#FFFFFF" />
-        </View>
+        <ProwinLogo size={56} />
       </View>
 
       <View style={styles.navSection}>
