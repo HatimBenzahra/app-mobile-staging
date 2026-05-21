@@ -5,7 +5,8 @@ import { Feather } from "@expo/vector-icons";
 import BottomSheet, { BottomSheetView } from "@gorhom/bottom-sheet";
 import { useRouter } from "expo-router";
 import { forwardRef, useEffect, useMemo, useState } from "react";
-import { StyleSheet, Text, View, Pressable } from "react-native";
+import { StyleSheet, Text, View, Pressable, useWindowDimensions } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 type ProfileSheetProps = {
   userId: number | null;
@@ -15,10 +16,19 @@ type ProfileSheetProps = {
 const ProfileSheet = forwardRef<BottomSheet, ProfileSheetProps>(
   ({ userId, role }, ref) => {
     const router = useRouter();
+    const insets = useSafeAreaInsets();
+    const { width } = useWindowDimensions();
+    const isTablet = width >= 700;
     const { data: profile, loading } = useWorkspaceProfile(userId, role);
     const [initials, setInitials] = useState("");
 
-    const snapPoints = useMemo(() => ["50%"], []);
+    const snapPoints = useMemo(() => {
+      if (isTablet) return ["62%"];
+      return ["68%"];
+    }, [isTablet]);
+
+    const horizontalPad = isTablet ? 28 : 20;
+    const bottomPad = Math.max(insets.bottom, 16) + 16;
 
     useEffect(() => {
       if (profile) {
@@ -27,6 +37,8 @@ const ProfileSheet = forwardRef<BottomSheet, ProfileSheetProps>(
         setInitials(`${prenom.charAt(0)}${nom.charAt(0)}`.toUpperCase());
       }
     }, [profile]);
+
+    const [confirmingLogout, setConfirmingLogout] = useState(false);
 
     const handleLogout = async () => {
       await authService.userLogout();
@@ -49,7 +61,15 @@ const ProfileSheet = forwardRef<BottomSheet, ProfileSheetProps>(
 
     return (
       <BottomSheet ref={ref} snapPoints={snapPoints} enablePanDownToClose index={-1}>
-        <BottomSheetView style={styles.container}>
+        <BottomSheetView
+          style={[
+            styles.container,
+            {
+              paddingHorizontal: horizontalPad,
+              paddingBottom: bottomPad,
+            },
+          ]}
+        >
           {/* Header */}
           <View style={styles.header}>
             <View style={styles.avatarLarge}>
@@ -86,11 +106,66 @@ const ProfileSheet = forwardRef<BottomSheet, ProfileSheetProps>(
             </View>
           </View>
 
-          {/* Logout Button */}
-          <Pressable style={styles.logoutButton} onPress={handleLogout}>
-            <Feather name="log-out" size={20} color="#EF4444" />
-            <Text style={styles.logoutText}>Déconnexion</Text>
-          </Pressable>
+          {/* Logout */}
+          {confirmingLogout ? (
+            <View style={styles.confirmCard}>
+              <View style={styles.confirmHeader}>
+                <View style={styles.confirmIcon}>
+                  <Feather name="log-out" size={14} color="#DC2626" />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.confirmTitle}>Se déconnecter ?</Text>
+                  <Text style={styles.confirmSubtitle}>
+                    Tu devras te reconnecter pour reprendre la prospection.
+                  </Text>
+                </View>
+              </View>
+              <View style={styles.confirmActions}>
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.confirmBtn,
+                    styles.confirmBtnSecondary,
+                    pressed && { opacity: 0.85 },
+                  ]}
+                  onPress={() => setConfirmingLogout(false)}
+                >
+                  <Text style={styles.confirmBtnSecondaryText}>Annuler</Text>
+                </Pressable>
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.confirmBtn,
+                    styles.confirmBtnPrimary,
+                    pressed && { opacity: 0.9 },
+                  ]}
+                  onPress={handleLogout}
+                >
+                  <Feather name="log-out" size={15} color="#FFFFFF" />
+                  <Text style={styles.confirmBtnPrimaryText}>Confirmer</Text>
+                </Pressable>
+              </View>
+            </View>
+          ) : (
+            <Pressable
+              style={({ pressed }) => [
+                styles.logoutRow,
+                pressed && { backgroundColor: "#FEF2F2" },
+              ]}
+              onPress={() => setConfirmingLogout(true)}
+              accessibilityRole="button"
+              accessibilityLabel="Se déconnecter"
+            >
+              <View style={styles.logoutRowIcon}>
+                <Feather name="log-out" size={16} color="#DC2626" />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.logoutRowLabel}>Se déconnecter</Text>
+                <Text style={styles.logoutRowHint}>
+                  Quitter la session sur cet appareil
+                </Text>
+              </View>
+              <Feather name="chevron-right" size={18} color="#FCA5A5" />
+            </Pressable>
+          )}
         </BottomSheetView>
       </BottomSheet>
     );
@@ -104,8 +179,6 @@ export default ProfileSheet;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingHorizontal: 20,
-    paddingBottom: 32,
   },
   loadingContainer: {
     flex: 1,
@@ -119,7 +192,8 @@ const styles = StyleSheet.create({
   },
   header: {
     alignItems: "center",
-    paddingVertical: 24,
+    paddingTop: 16,
+    paddingBottom: 24,
   },
   avatarLarge: {
     width: 88,
@@ -198,21 +272,97 @@ const styles = StyleSheet.create({
     backgroundColor: "#E2E8F0",
     marginVertical: 14,
   },
-  logoutButton: {
+  logoutRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 14,
+    paddingVertical: 14,
+    paddingHorizontal: 14,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "#FECACA",
+    backgroundColor: "#FFFFFF",
+    marginTop: 4,
+  },
+  logoutRowIcon: {
+    width: 34,
+    height: 34,
+    borderRadius: 10,
+    backgroundColor: "#FEF2F2",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  logoutRowLabel: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: "#DC2626",
+  },
+  logoutRowHint: {
+    marginTop: 2,
+    fontSize: 12,
+    color: "#94A3B8",
+  },
+  confirmCard: {
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "#FECACA",
+    backgroundColor: "#FFFBFB",
+    padding: 14,
+    gap: 14,
+    marginTop: 4,
+  },
+  confirmHeader: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 12,
+  },
+  confirmIcon: {
+    width: 30,
+    height: 30,
+    borderRadius: 9,
+    backgroundColor: "#FEE2E2",
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 2,
+  },
+  confirmTitle: {
+    fontSize: 15,
+    fontWeight: "800",
+    color: "#0F172A",
+  },
+  confirmSubtitle: {
+    marginTop: 4,
+    fontSize: 12.5,
+    color: "#64748B",
+    lineHeight: 17,
+  },
+  confirmActions: {
+    flexDirection: "row",
+    gap: 10,
+  },
+  confirmBtn: {
+    flex: 1,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: 12,
-    backgroundColor: "#FEF2F2",
-    borderRadius: 16,
-    paddingVertical: 16,
-    borderWidth: 1,
-    borderColor: "#FEE2E2",
-    marginTop: 8,
+    gap: 6,
+    paddingVertical: 12,
+    borderRadius: 12,
   },
-  logoutText: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#EF4444",
+  confirmBtnSecondary: {
+    backgroundColor: "#F1F5F9",
+  },
+  confirmBtnSecondaryText: {
+    fontSize: 13.5,
+    fontWeight: "700",
+    color: "#475569",
+  },
+  confirmBtnPrimary: {
+    backgroundColor: "#DC2626",
+  },
+  confirmBtnPrimaryText: {
+    fontSize: 13.5,
+    fontWeight: "700",
+    color: "#FFFFFF",
   },
 });

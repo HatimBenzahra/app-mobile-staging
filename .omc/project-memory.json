@@ -282,6 +282,12 @@
       "type": "file"
     },
     {
+      "path": "components/ProfileSheet.tsx",
+      "accessCount": 10,
+      "lastAccessed": 1779373620738,
+      "type": "file"
+    },
+    {
       "path": "hooks/prospection/use-prospection-session.ts",
       "accessCount": 7,
       "lastAccessed": 1779355130179,
@@ -387,6 +393,12 @@
       "path": "components/immeubles/details/StatusFilterSheet.tsx",
       "accessCount": 2,
       "lastAccessed": 1779367085211,
+      "type": "file"
+    },
+    {
+      "path": "components/ProfileMenuOverlay.tsx",
+      "accessCount": 2,
+      "lastAccessed": 1779373235511,
       "type": "file"
     },
     {
