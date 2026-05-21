@@ -93,15 +93,22 @@ export class AuthService {
       console.warn('Refresh token failed, attempting auto-re-login...');
       const reLoginResult = await this.autoReLogin();
       if (reLoginResult) return reLoginResult;
-      console.error('Auto-re-login also failed, logging out');
-      await this.logout();
+      console.warn('Auto-re-login also failed, will retry later');
+      await this.clearSession();
       return null;
     }
   }
 
-  async logout(): Promise<void> {
+  // User-initiated logout: clears everything including saved credentials
+  async userLogout(): Promise<void> {
     await this.clearAuthData();
     await this.clearSavedCredentials();
+    graphqlClient.clearAuthToken();
+  }
+
+  // System-initiated: preserves saved credentials for auto-re-login
+  async clearSession(): Promise<void> {
+    await this.clearAuthData();
     graphqlClient.clearAuthToken();
   }
 
@@ -122,14 +129,15 @@ export class AuthService {
     await SecureStore.deleteItemAsync(STORAGE_KEYS.savedPassword);
   }
 
-  private async autoReLogin(): Promise<AuthResponse | null> {
+  async autoReLogin(): Promise<AuthResponse | null> {
     const credentials = await this.getSavedCredentials();
     if (!credentials) return null;
 
     try {
-      const data = await graphqlClient.request<{ login: AuthResponse }>(LOGIN_MUTATION, {
-        loginInput: credentials,
-      });
+      const data = await graphqlClient.requestWithoutAuthRefresh<{ login: AuthResponse }>(
+        LOGIN_MUTATION,
+        { loginInput: credentials }
+      );
 
       const authResponse = data.login;
       const hasAuthorizedGroup = authResponse.groups.some(group => ALLOWED_GROUPS.includes(group));
@@ -217,42 +225,44 @@ export class AuthService {
   async initializeAuth(): Promise<boolean> {
     const hasSession = await this.ensureValidSession(30);
     if (!hasSession) {
-      await this.clearAuthData();
-      graphqlClient.clearAuthToken();
+      await this.clearSession();
     }
     return hasSession;
   }
 
   async ensureValidSession(minValiditySeconds = 120): Promise<boolean> {
     const token = await this.getAccessToken();
-    const refreshToken = await this.getRefreshToken();
+    const refreshTokenValue = await this.getRefreshToken();
     const now = Math.floor(Date.now() / 1000);
 
-    if (!token) {
-      if (!refreshToken) return false;
-      return !!(await this.refreshToken());
+    // Case 1: Valid access token
+    if (token) {
+      try {
+        const payload = decodeToken(token);
+        if (payload.exp > now + minValiditySeconds) {
+          graphqlClient.setAuthToken(token);
+          return true;
+        }
+      } catch {
+        // Token corrupt, fall through to refresh
+      }
     }
 
-    try {
-      const payload = decodeToken(token);
-      if (payload.exp > now + minValiditySeconds) {
-        graphqlClient.setAuthToken(token);
-        return true;
-      }
-
-      if (!refreshToken) {
-        await this.logout();
-        return false;
-      }
-
-      return !!(await this.refreshToken());
-    } catch {
-      if (!refreshToken) {
-        await this.logout();
-        return false;
-      }
-      return !!(await this.refreshToken());
+    // Case 2: Try refresh token
+    if (refreshTokenValue) {
+      const refreshed = await this.refreshToken();
+      if (refreshed) return true;
+      // refreshToken() already tried autoReLogin internally
+      return false;
     }
+
+    // Case 3: No refresh token -- try auto-re-login directly
+    const reLoginResult = await this.autoReLogin();
+    if (reLoginResult) return true;
+
+    // Case 4: Nothing worked -- clear session (NOT credentials)
+    await this.clearSession();
+    return false;
   }
 
   private async storeAuthData(authResponse: AuthResponse): Promise<void> {
@@ -268,8 +278,8 @@ export class AuthService {
     await SecureStore.deleteItemAsync(STORAGE_KEYS.refreshToken);
     await SecureStore.deleteItemAsync(STORAGE_KEYS.expiresAt);
     await SecureStore.deleteItemAsync(STORAGE_KEYS.userId);
-    // Note: savedUsername/savedPassword are NOT cleared on logout
-    // so the user doesn't have to re-enter credentials next time
+    // Note: savedUsername/savedPassword are preserved here.
+    // Only userLogout() clears them explicitly.
   }
 
   async getUserEmail(): Promise<string | null> {

@@ -1,4 +1,5 @@
 import ConfirmActionOverlay from "@/components/immeubles/ConfirmActionOverlay";
+import PorteDetailSheet from "@/components/immeubles/PorteDetailSheet";
 import PortePickerOverlay from "@/components/immeubles/PortePickerOverlay";
 import ProspectedDoorsList from "@/components/immeubles/prospection/ProspectedDoorsList";
 import ProspectionSessionOverlay from "@/components/immeubles/prospection/ProspectionSessionOverlay";
@@ -205,11 +206,21 @@ function ImmeubleDetailsView({
       prev.some((p) => p.id === porte.id) ? prev : [...prev, porte],
     );
   }, []);
-  const handleSessionPorteSaved = useCallback((porte: Porte) => {
-    setPortesState((prev) =>
-      prev.map((p) => (p.id === porte.id ? { ...p, ...porte } : p)),
-    );
-  }, []);
+  const [porteDurations, setPorteDurations] = useState<Record<number, number>>(
+    {},
+  );
+  const [detailPorte, setDetailPorte] = useState<Porte | null>(null);
+  const handleSessionPorteSaved = useCallback(
+    (porte: Porte, durationMs: number) => {
+      setPortesState((prev) =>
+        prev.map((p) => (p.id === porte.id ? { ...p, ...porte } : p)),
+      );
+      if (durationMs > 0) {
+        setPorteDurations((prev) => ({ ...prev, [porte.id]: durationMs }));
+      }
+    },
+    [],
+  );
   const prospectionSession = useProspectionSession({
     immeubleId: immeuble.id,
     recording: sessionRecordingBindings,
@@ -455,8 +466,21 @@ function ImmeubleDetailsView({
     [],
   );
 
-  const handlePorteTap = useCallback(
+  const handlePorteTap = useCallback((porte: Porte) => {
+    setDetailPorte(porte);
+  }, []);
+
+  const handleDetailResume = useCallback(
     (porte: Porte) => {
+      setDetailPorte(null);
+      prospectionSession.beginFromExisting(porte);
+    },
+    [prospectionSession],
+  );
+
+  const handleDetailEdit = useCallback(
+    (porte: Porte) => {
+      setDetailPorte(null);
       const statut = porte.statut;
       const mode: EditMode =
         statut === "RENDEZ_VOUS_PRIS" || statut === "RDV_PRIS"
@@ -1229,6 +1253,15 @@ function ImmeubleDetailsView({
         portes={portesState}
         onClose={() => setIsPortePickerOpen(false)}
         onSelect={handlePortePickerSelect}
+      />
+
+      <PorteDetailSheet
+        porte={detailPorte}
+        open={!!detailPorte}
+        durationMs={detailPorte ? porteDurations[detailPorte.id] : null}
+        onClose={() => setDetailPorte(null)}
+        onResume={handleDetailResume}
+        onEdit={handleDetailEdit}
       />
 
       {hasNativePicker && showDatePicker && DateTimePicker ? (

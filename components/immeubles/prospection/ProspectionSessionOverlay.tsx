@@ -36,6 +36,7 @@ import StatusGrid, {
   type StatusKey,
 } from "./StatusGrid";
 import LiveSegmentHeader from "./LiveSegmentHeader";
+import RdvQuickPicker from "./RdvQuickPicker";
 import {
   DEFAULT_STATUS_OPTION,
   STATUS_DISPLAY,
@@ -315,12 +316,24 @@ function NamingView({
     return arr;
   }, [portes, totalEtages]);
 
+  // Only "non-final" portes can be re-prospected. Refus / Contrat signé /
+  // Argumenté are considered closed and won't show in the picker — the
+  // commercial would have to delete & re-create if they really need to redo.
   const prospectedOnFloor = useMemo(() => {
     if (selectedEtage === null) return [];
+    const resumable = new Set([
+      "ABSENT",
+      "ABSENT_MATIN",
+      "ABSENT_SOIR",
+      "RENDEZ_VOUS_PRIS",
+      "RDV_PRIS",
+    ]);
     return portes
       .filter(
         (p) =>
-          p.etage === selectedEtage && p.statut !== "NON_VISITE",
+          p.etage === selectedEtage &&
+          p.statut !== "NON_VISITE" &&
+          resumable.has(p.statut),
       )
       .sort((a, b) =>
         String(a.numero).localeCompare(String(b.numero), "fr", {
@@ -888,41 +901,12 @@ function ActiveView({
               entering={FadeIn.duration(180)}
               style={styles.conditionalCard}
             >
-              <View style={styles.conditionalHeader}>
-                <View
-                  style={[
-                    styles.conditionalIcon,
-                    { backgroundColor: "#E0F2FE" },
-                  ]}
-                >
-                  <Feather name="calendar" size={14} color="#0284C7" />
-                </View>
-                <Text style={styles.conditionalTitle}>Date du rendez-vous</Text>
-              </View>
-              <View style={styles.dualInputRow}>
-                <View style={[styles.dualInput, { flex: 1.4 }]}>
-                  <Feather name="calendar" size={14} color="#64748B" />
-                  <TextInput
-                    value={rdvDate}
-                    onChangeText={setRdvDate}
-                    placeholder="YYYY-MM-DD"
-                    placeholderTextColor="#94A3B8"
-                    style={styles.input}
-                    keyboardType="numbers-and-punctuation"
-                  />
-                </View>
-                <View style={[styles.dualInput, { flex: 1 }]}>
-                  <Feather name="clock" size={14} color="#64748B" />
-                  <TextInput
-                    value={rdvTime}
-                    onChangeText={setRdvTime}
-                    placeholder="HH:mm"
-                    placeholderTextColor="#94A3B8"
-                    style={styles.input}
-                    keyboardType="numbers-and-punctuation"
-                  />
-                </View>
-              </View>
+              <RdvQuickPicker
+                rdvDate={rdvDate}
+                rdvTime={rdvTime}
+                onChangeDate={setRdvDate}
+                onChangeTime={setRdvTime}
+              />
             </Animated.View>
           ) : null}
 

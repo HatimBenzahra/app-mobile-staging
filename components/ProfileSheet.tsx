@@ -29,7 +29,7 @@ const ProfileSheet = forwardRef<BottomSheet, ProfileSheetProps>(
     }, [profile]);
 
     const handleLogout = async () => {
-      await authService.logout();
+      await authService.userLogout();
       router.replace("/(auth)/login");
     };
 

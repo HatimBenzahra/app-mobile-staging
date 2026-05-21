@@ -43,7 +43,7 @@ type RecordingBindings = {
 type UseProspectionSessionOptions = {
   immeubleId: number;
   recording: RecordingBindings;
-  onPorteSaved?: (porte: Porte) => void;
+  onPorteSaved?: (porte: Porte, durationMs: number) => void;
   onPorteCreated?: (porte: Porte) => void;
 };
 
@@ -201,9 +201,10 @@ export function useProspectionSession({
         return { ok: false as const };
       }
 
-      onPorteSaved?.(updated);
+      const durationMs = Math.max(0, Date.now() - current.startedAt);
+      onPorteSaved?.(updated, durationMs);
       setState({ phase: "IDLE" });
-      return { ok: true as const, porte: updated };
+      return { ok: true as const, porte: updated, durationMs };
     },
     [recording, updatePorte, onPorteSaved],
   );

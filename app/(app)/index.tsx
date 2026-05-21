@@ -33,11 +33,31 @@ function AppContent() {
 
   useEffect(() => {
     let cancelled = false;
+    let consecutiveFailures = 0;
+    const MAX_FAILURES_BEFORE_REDIRECT = 3;
 
     const keepSessionAlive = async () => {
-      const valid = await authService.ensureValidSession(120);
-      if (!valid && !cancelled) {
-        router.replace("/(auth)/login");
+      try {
+        const valid = await authService.ensureValidSession(120);
+        if (valid) {
+          consecutiveFailures = 0;
+          return;
+        }
+
+        consecutiveFailures++;
+
+        // Only redirect after multiple consecutive failures
+        // AND only if we have no saved credentials (true logout needed)
+        if (!cancelled && consecutiveFailures >= MAX_FAILURES_BEFORE_REDIRECT) {
+          const hasCreds = await authService.getSavedCredentials();
+          if (!hasCreds) {
+            router.replace("/(auth)/login");
+          }
+          // If we have creds, keep trying -- next interval will retry
+        }
+      } catch {
+        // Network error or similar -- do NOT redirect, just wait
+        consecutiveFailures++;
       }
     };
 

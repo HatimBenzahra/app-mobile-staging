@@ -1,0 +1,490 @@
+{
+  "version": "1.0.0",
+  "lastScanned": 1779287904825,
+  "projectRoot": "/Users/hatimbenzahra/Desktop/PRO_WIN/prowin/staging/app-mobile",
+  "techStack": {
+    "languages": [
+      {
+        "name": "JavaScript/TypeScript",
+        "version": null,
+        "confidence": "high",
+        "markers": [
+          "package.json"
+        ]
+      },
+      {
+        "name": "TypeScript",
+        "version": null,
+        "confidence": "high",
+        "markers": [
+          "tsconfig.json"
+        ]
+      }
+    ],
+    "frameworks": [
+      {
+        "name": "react",
+        "version": "19.1.0",
+        "category": "frontend"
+      },
+      {
+        "name": "react-dom",
+        "version": "19.1.0",
+        "category": "frontend"
+      }
+    ],
+    "packageManager": "npm",
+    "runtime": null
+  },
+  "build": {
+    "buildCommand": null,
+    "testCommand": "npm test",
+    "lintCommand": "npm run lint",
+    "devCommand": "npm run start",
+    "scripts": {
+      "start": "expo start",
+      "android": "expo run:android",
+      "ios": "expo run:ios",
+      "web": "expo start --web",
+      "lint": "expo lint",
+      "test": "jest",
+      "test:watch": "jest --watch",
+      "codegen": "graphql-codegen --config codegen.yml"
+    }
+  },
+  "conventions": {
+    "namingStyle": null,
+    "importStyle": null,
+    "testPattern": null,
+    "fileOrganization": null
+  },
+  "structure": {
+    "isMonorepo": false,
+    "workspaces": [],
+    "mainDirectories": [
+      "__tests__",
+      "app",
+      "assets",
+      "components"
+    ],
+    "gitBranches": null
+  },
+  "customNotes": [],
+  "directoryMap": {
+    "__tests__": {
+      "path": "__tests__",
+      "purpose": "Test files",
+      "fileCount": 0,
+      "lastAccessed": 1779287904793,
+      "keyFiles": []
+    },
+    "android": {
+      "path": "android",
+      "purpose": null,
+      "fileCount": 6,
+      "lastAccessed": 1779287904800,
+      "keyFiles": [
+        "build.gradle",
+        "gradle.properties",
+        "gradlew",
+        "gradlew.bat",
+        "settings.gradle"
+      ]
+    },
+    "app": {
+      "path": "app",
+      "purpose": "Application code",
+      "fileCount": 2,
+      "lastAccessed": 1779287904800,
+      "keyFiles": [
+        "_layout.tsx",
+        "index.tsx"
+      ]
+    },
+    "assets": {
+      "path": "assets",
+      "purpose": "Static assets",
+      "fileCount": 0,
+      "lastAccessed": 1779287904801,
+      "keyFiles": []
+    },
+    "components": {
+      "path": "components",
+      "purpose": "UI components",
+      "fileCount": 2,
+      "lastAccessed": 1779287904801,
+      "keyFiles": [
+        "ProfileMenuOverlay.tsx",
+        "ProfileSheet.tsx"
+      ]
+    },
+    "constants": {
+      "path": "constants",
+      "purpose": null,
+      "fileCount": 1,
+      "lastAccessed": 1779287904801,
+      "keyFiles": [
+        "env.ts"
+      ]
+    },
+    "dist": {
+      "path": "dist",
+      "purpose": "Distribution/build output",
+      "fileCount": 2,
+      "lastAccessed": 1779287904801,
+      "keyFiles": [
+        "assetmap.json",
+        "metadata.json"
+      ]
+    },
+    "hooks": {
+      "path": "hooks",
+      "purpose": null,
+      "fileCount": 4,
+      "lastAccessed": 1779287904801,
+      "keyFiles": [
+        "use-auth.ts",
+        "use-hamburger-menu.tsx",
+        "use-profile-menu.tsx",
+        "use-profile-sheet.tsx"
+      ]
+    },
+    "ios": {
+      "path": "ios",
+      "purpose": null,
+      "fileCount": 6,
+      "lastAccessed": 1779287904801,
+      "keyFiles": [
+        "Podfile",
+        "Podfile.lock",
+        "Podfile.properties.json"
+      ]
+    },
+    "plugins": {
+      "path": "plugins",
+      "purpose": null,
+      "fileCount": 1,
+      "lastAccessed": 1779287904801,
+      "keyFiles": [
+        "with-foreground-service-type.js"
+      ]
+    },
+    "services": {
+      "path": "services",
+      "purpose": "Business logic services",
+      "fileCount": 0,
+      "lastAccessed": 1779287904801,
+      "keyFiles": []
+    },
+    "types": {
+      "path": "types",
+      "purpose": "Type definitions",
+      "fileCount": 2,
+      "lastAccessed": 1779287904802,
+      "keyFiles": [
+        "api.ts",
+        "graphql-schema.ts"
+      ]
+    },
+    "utils": {
+      "path": "utils",
+      "purpose": "Utility functions",
+      "fileCount": 0,
+      "lastAccessed": 1779287904802,
+      "keyFiles": []
+    },
+    "android/app": {
+      "path": "android/app",
+      "purpose": "Application code",
+      "fileCount": 3,
+      "lastAccessed": 1779287904803,
+      "keyFiles": [
+        "build.gradle",
+        "debug.keystore",
+        "proguard-rules.pro"
+      ]
+    },
+    "android/build": {
+      "path": "android/build",
+      "purpose": "Build output",
+      "fileCount": 0,
+      "lastAccessed": 1779287904803,
+      "keyFiles": []
+    },
+    "dist/assets": {
+      "path": "dist/assets",
+      "purpose": "Static assets",
+      "fileCount": 43,
+      "lastAccessed": 1779287904804,
+      "keyFiles": [
+        "017bc6ba3fc25503e5eb5e53826d48a8",
+        "02bc1fa7c0313217bde2d65ccbff40c9",
+        "069d99eb1fa6712c0b9034a58c6b57dd"
+      ]
+    },
+    "hooks/api": {
+      "path": "hooks/api",
+      "purpose": "API routes",
+      "fileCount": 16,
+      "lastAccessed": 1779287904805,
+      "keyFiles": [
+        "data-sync.ts",
+        "use-add-etage-to-immeuble.ts",
+        "use-add-porte-to-etage.ts"
+      ]
+    },
+    "hooks/utils": {
+      "path": "hooks/utils",
+      "purpose": "Utility functions",
+      "fileCount": 0,
+      "lastAccessed": 1779287904805,
+      "keyFiles": []
+    },
+    "services/api": {
+      "path": "services/api",
+      "purpose": "API routes",
+      "fileCount": 1,
+      "lastAccessed": 1779287904805,
+      "keyFiles": [
+        "index.ts"
+      ]
+    }
+  },
+  "hotPaths": [
+    {
+      "path": "components/immeubles/ImmeubleDetailsScreen.tsx",
+      "accessCount": 134,
+      "lastAccessed": 1779350997567,
+      "type": "file"
+    },
+    {
+      "path": "components/immeubles/prospection/ProspectionSessionOverlay.tsx",
+      "accessCount": 37,
+      "lastAccessed": 1779354807021,
+      "type": "file"
+    },
+    {
+      "path": "app/(app)/(tabs)/immeubles.tsx",
+      "accessCount": 16,
+      "lastAccessed": 1779348418534,
+      "type": "file"
+    },
+    {
+      "path": "hooks/audio/use-recording.ts",
+      "accessCount": 12,
+      "lastAccessed": 1779350180165,
+      "type": "file"
+    },
+    {
+      "path": "app/(app)/index.tsx",
+      "accessCount": 11,
+      "lastAccessed": 1779311030552,
+      "type": "file"
+    },
+    {
+      "path": "components/immeubles/prospection/ProspectedDoorsList.tsx",
+      "accessCount": 6,
+      "lastAccessed": 1779348696285,
+      "type": "file"
+    },
+    {
+      "path": "components/navigation/NavigationRail.tsx",
+      "accessCount": 5,
+      "lastAccessed": 1779299080655,
+      "type": "file"
+    },
+    {
+      "path": "hooks/prospection/use-prospection-session.ts",
+      "accessCount": 5,
+      "lastAccessed": 1779350950954,
+      "type": "file"
+    },
+    {
+      "path": "components/immeubles/prospection/RdvQuickPicker.tsx",
+      "accessCount": 4,
+      "lastAccessed": 1779351790648,
+      "type": "file"
+    },
+    {
+      "path": "services/audio/recordings/door-segment-tracker.ts",
+      "accessCount": 3,
+      "lastAccessed": 1779301184159,
+      "type": "file"
+    },
+    {
+      "path": "components/immeubles/prospection/LiveSegmentHeader.tsx",
+      "accessCount": 3,
+      "lastAccessed": 1779308286446,
+      "type": "file"
+    },
+    {
+      "path": "components/immeubles/details/EditPorteSheet.tsx",
+      "accessCount": 2,
+      "lastAccessed": 1779288707603,
+      "type": "file"
+    },
+    {
+      "path": "types/api.ts",
+      "accessCount": 2,
+      "lastAccessed": 1779289411135,
+      "type": "file"
+    },
+    {
+      "path": "hooks/api/use-create-porte.ts",
+      "accessCount": 2,
+      "lastAccessed": 1779289419087,
+      "type": "file"
+    },
+    {
+      "path": "hooks/api/use-update-porte.ts",
+      "accessCount": 2,
+      "lastAccessed": 1779289419447,
+      "type": "file"
+    },
+    {
+      "path": "components/immeubles/prospection/StatusGrid.tsx",
+      "accessCount": 2,
+      "lastAccessed": 1779289603707,
+      "type": "file"
+    },
+    {
+      "path": "components/navigation/HamburgerMenuOverlay.tsx",
+      "accessCount": 2,
+      "lastAccessed": 1779299100629,
+      "type": "file"
+    },
+    {
+      "path": "services/audio/background/background-audio.service.ts",
+      "accessCount": 2,
+      "lastAccessed": 1779302162147,
+      "type": "file"
+    },
+    {
+      "path": "components/immeubles/prospection/FloorSection.tsx",
+      "accessCount": 2,
+      "lastAccessed": 1779303965618,
+      "type": "file"
+    },
+    {
+      "path": "components/immeubles/ConfirmActionOverlay.tsx",
+      "accessCount": 2,
+      "lastAccessed": 1779307777050,
+      "type": "file"
+    },
+    {
+      "path": "components/immeubles/details/DetailsHeader.tsx",
+      "accessCount": 2,
+      "lastAccessed": 1779308246808,
+      "type": "file"
+    },
+    {
+      "path": "components/immeubles/PorteDetailSheet.tsx",
+      "accessCount": 2,
+      "lastAccessed": 1779351230070,
+      "type": "file"
+    },
+    {
+      "path": "USER_FLOW.md",
+      "accessCount": 1,
+      "lastAccessed": 1779288223286,
+      "type": "file"
+    },
+    {
+      "path": "services/audio/recordings/recording.service.ts",
+      "accessCount": 1,
+      "lastAccessed": 1779288232179,
+      "type": "file"
+    },
+    {
+      "path": "components/immeubles/AddPorteSheet.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1779288233229,
+      "type": "file"
+    },
+    {
+      "path": "components/immeubles/AddImmeubleSheet.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1779288681179,
+      "type": "file"
+    },
+    {
+      "path": "services/api/portes/porte.mutations.ts",
+      "accessCount": 1,
+      "lastAccessed": 1779288687271,
+      "type": "file"
+    },
+    {
+      "path": "services/api/immeubles/immeuble.mutations.ts",
+      "accessCount": 1,
+      "lastAccessed": 1779288687577,
+      "type": "file"
+    },
+    {
+      "path": "hooks/api/use-create-immeuble.ts",
+      "accessCount": 1,
+      "lastAccessed": 1779288716302,
+      "type": "file"
+    },
+    {
+      "path": "services/audio/recordings/local-recording.service.ts",
+      "accessCount": 1,
+      "lastAccessed": 1779301184421,
+      "type": "file"
+    },
+    {
+      "path": "components/immeubles/prospection/status-display.ts",
+      "accessCount": 1,
+      "lastAccessed": 1779301447351,
+      "type": "file"
+    },
+    {
+      "path": "components/immeubles/prospection/StatusBadge.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1779301513754,
+      "type": "file"
+    },
+    {
+      "path": "components/immeubles/prospection/PorteTile.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1779301533532,
+      "type": "file"
+    },
+    {
+      "path": "components/immeubles/prospection/BuildingFloorStrip.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1779303934281,
+      "type": "file"
+    },
+    {
+      "path": "components/immeubles/prospection/ProspectionJourney.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1779306188583,
+      "type": "file"
+    },
+    {
+      "path": "services/api/portes/porte.service.ts",
+      "accessCount": 1,
+      "lastAccessed": 1779307727209,
+      "type": "file"
+    },
+    {
+      "path": "components/immeubles/PortePickerOverlay.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1779307836156,
+      "type": "file"
+    },
+    {
+      "path": "hooks/api/use-remove-porte-from-etage.ts",
+      "accessCount": 1,
+      "lastAccessed": 1779307851445,
+      "type": "file"
+    },
+    {
+      "path": "hooks/api/use-remove-porte.ts",
+      "accessCount": 1,
+      "lastAccessed": 1779307859725,
+      "type": "file"
+    }
+  ],
+  "userDirectives": []
+}

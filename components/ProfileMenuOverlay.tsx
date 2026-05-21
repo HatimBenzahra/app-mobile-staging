@@ -13,7 +13,7 @@ export default function ProfileMenuOverlay() {
   const insets = useSafeAreaInsets();
 
   const handleLogout = useCallback(async () => {
-    await authService.logout();
+    await authService.userLogout();
     close();
     router.replace("/(auth)/login");
   }, [close, router]);
