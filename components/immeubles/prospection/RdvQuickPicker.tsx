@@ -8,6 +8,7 @@ import {
   Text,
   View,
 } from "react-native";
+import { colors } from "@/constants/theme";
 
 type RdvQuickPickerProps = {
   rdvDate: string; // YYYY-MM-DD

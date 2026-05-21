@@ -28,6 +28,8 @@ import {
 } from "react-native";
 import { LineChart } from "react-native-gifted-charts";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { Card, IconBadge, Chip } from "@/components/ui";
+import { colors, podium, progressColors } from "@/constants/theme";
 
 type PeriodKey = "7d" | "30d" | "all";
 
@@ -124,32 +126,32 @@ const getPositionAccent = (
   if (position === 1) {
     return {
       icon: "award",
-      bgColor: "#FCD34D",
-      iconColor: "#92400E",
-      textColor: "#78350F",
+      bgColor: podium.gold.bg,
+      iconColor: podium.gold.text,
+      textColor: podium.gold.text,
     };
   }
   if (position === 2) {
     return {
       icon: "star",
-      bgColor: "#E2E8F0",
-      iconColor: "#475569",
-      textColor: "#334155",
+      bgColor: podium.silver.bg,
+      iconColor: podium.silver.text,
+      textColor: podium.silver.text,
     };
   }
   if (position === 3) {
     return {
       icon: "shield",
-      bgColor: "#F5D0AE",
-      iconColor: "#9A3412",
-      textColor: "#7C2D12",
+      bgColor: podium.bronze.bg,
+      iconColor: podium.bronze.text,
+      textColor: podium.bronze.text,
     };
   }
   return {
     icon: "hash",
-    bgColor: "#E2E8F0",
-    iconColor: "#64748B",
-    textColor: "#475569",
+    bgColor: colors.border,
+    iconColor: colors.textMuted,
+    textColor: colors.textStrong,
   };
 };
 
@@ -173,7 +175,7 @@ const PeriodFilterChip = memo(function PeriodFilterChip({
         <Feather
           name={option.icon}
           size={12}
-          color={selected ? "#001B5E" : "#005BFF"}
+          color={selected ? colors.primaryDark : colors.primary}
         />
       </View>
       <Text
@@ -229,19 +231,18 @@ const TeamListItem = memo(function TeamListItem({
           </Text>
         </View>
         <View style={styles.listHeaderRight}>
-          <View style={styles.rankPill}>
-            <Text style={styles.rankPillText}>{commercial.rank.name}</Text>
-          </View>
-          <View style={styles.pointsPill}>
-            <Feather name="zap" size={10} color="#B45309" />
-            <Text style={styles.pointsPillText}>{commercial.points} pts</Text>
-          </View>
+          <Chip tone="primary" label={commercial.rank.name} />
+          <Chip
+            tone="warning"
+            icon="zap"
+            label={`${commercial.points} pts`}
+          />
         </View>
       </View>
       <View style={styles.listStats}>
         <View style={styles.statItem}>
           <View style={styles.statIconWrap}>
-            <Feather name="award" size={10} color="#16A34A" />
+            <Feather name="award" size={10} color={progressColors.complete} />
           </View>
           <Text style={styles.statValue}>
             {commercial.stats.contratsSignes}
@@ -250,7 +251,7 @@ const TeamListItem = memo(function TeamListItem({
         </View>
         <View style={styles.statItem}>
           <View style={styles.statIconWrap}>
-            <Feather name="calendar" size={10} color="#005BFF" />
+            <Feather name="calendar" size={10} color={colors.primary} />
           </View>
           <Text style={styles.statValue}>
             {commercial.stats.rendezVousPris}
@@ -259,7 +260,7 @@ const TeamListItem = memo(function TeamListItem({
         </View>
         <View style={styles.statItem}>
           <View style={styles.statIconWrap}>
-            <Feather name="grid" size={10} color="#0EA5E9" />
+            <Feather name="grid" size={10} color={colors.info} />
           </View>
           <Text style={styles.statValue}>
             {commercial.stats.nbPortesProspectes}
@@ -268,7 +269,7 @@ const TeamListItem = memo(function TeamListItem({
         </View>
         <View style={styles.statItem}>
           <View style={styles.statIconWrap}>
-            <Feather name="trending-up" size={10} color="#F59E0B" />
+            <Feather name="trending-up" size={10} color={colors.warning} />
           </View>
           <Text style={styles.statValue}>{commercial.points}</Text>
           <Text style={styles.statLabel}>Points</Text>
@@ -670,13 +671,13 @@ export default function EquipeScreen() {
   if (role === null) {
     return (
       <View style={[styles.container, { paddingTop: insets.top + 24 }]}>
-        <View style={styles.emptyCard}>
-          <Feather name="loader" size={28} color="#94A3B8" />
+        <Card variant="outlined" padding="lg" style={styles.emptyCard}>
+          <Feather name="loader" size={28} color={colors.textSubtle} />
           <Text style={styles.emptyTitle}>Chargement</Text>
           <Text style={styles.emptyText}>
             Récupération du profil manager...
           </Text>
-        </View>
+        </Card>
       </View>
     );
   }
@@ -684,13 +685,13 @@ export default function EquipeScreen() {
   if (role !== "manager") {
     return (
       <View style={[styles.container, { paddingTop: insets.top + 24 }]}>
-        <View style={styles.emptyCard}>
-          <Feather name="lock" size={28} color="#94A3B8" />
+        <Card variant="outlined" padding="lg" style={styles.emptyCard}>
+          <Feather name="lock" size={28} color={colors.textSubtle} />
           <Text style={styles.emptyTitle}>Accès manager</Text>
           <Text style={styles.emptyText}>
             Cette page est réservée aux managers.
           </Text>
-        </View>
+        </Card>
       </View>
     );
   }
@@ -753,7 +754,7 @@ export default function EquipeScreen() {
         </View>
 
         <Animated.View
-          style={[styles.performanceCard, { opacity: skeletonOpacity }]}
+          style={[styles.performanceCardSkeleton, { opacity: skeletonOpacity }]}
         >
           <View style={styles.skeletonTitle} />
           <View style={styles.skeletonSubtitle} />
@@ -761,7 +762,7 @@ export default function EquipeScreen() {
         </Animated.View>
 
         <Animated.View
-          style={[styles.sectionCard, { opacity: skeletonOpacity }]}
+          style={[styles.sectionCardSkeleton, { opacity: skeletonOpacity }]}
         >
           <View style={styles.skeletonTitle} />
           <View style={styles.skeletonSubtitle} />
@@ -793,52 +794,60 @@ export default function EquipeScreen() {
         </View>
 
         <View style={[styles.kpiRow, styles.compactStackSpacing]}>
-          <View
-            style={[styles.kpiCardPrimary, isTablet && styles.kpiCardTablet]}
+          <Card
+            variant="primary"
+            padding="md"
+            style={[styles.kpiCardFlex, isTablet && styles.kpiCardTablet]}
           >
-            <View style={styles.kpiIconPrimary}>
-              <Feather name="users" size={18} color="#FFFFFF" />
-            </View>
+            <IconBadge icon="users" tone="inverse" size="md" />
             <Text style={styles.kpiValuePrimary}>
               {isScreenLoading ? "—" : teamSnapshots.length}
             </Text>
             <Text style={styles.kpiLabelPrimary}>Effectif</Text>
-          </View>
-          <View
-            style={[styles.kpiCardSecondary, isTablet && styles.kpiCardTablet]}
+          </Card>
+          <Card
+            variant="outlined"
+            padding="md"
+            style={[styles.kpiCardFlex, isTablet && styles.kpiCardTablet]}
           >
-            <View style={styles.kpiIconSecondary}>
-              <Feather name="award" size={18} color="#005BFF" />
-            </View>
+            <IconBadge icon="award" tone="primary" size="md" />
             <Text style={styles.kpiValueSecondary}>
               {isScreenLoading ? "—" : teamTotals.contratsSignes}
             </Text>
             <Text style={styles.kpiLabelSecondary}>Contrats signés</Text>
-          </View>
+          </Card>
         </View>
 
         <View style={[styles.kpiRow, styles.compactStackSpacing]}>
-          <View style={[styles.kpiCardLight, isTablet && styles.kpiCardTablet]}>
-            <View style={styles.kpiIconLight}>
-              <Feather name="calendar" size={18} color="#005BFF" />
-            </View>
+          <Card
+            variant="outlined"
+            padding="md"
+            style={[styles.kpiCardFlex, isTablet && styles.kpiCardTablet]}
+          >
+            <IconBadge icon="calendar" tone="primary" size="md" />
             <Text style={styles.kpiValueLight}>
               {isScreenLoading ? "—" : teamTotals.rendezVousPris}
             </Text>
             <Text style={styles.kpiLabelLight}>RDV pris</Text>
-          </View>
-          <View style={[styles.kpiCardLight, isTablet && styles.kpiCardTablet]}>
-            <View style={styles.kpiIconLight}>
-              <Feather name="grid" size={18} color="#0EA5E9" />
-            </View>
+          </Card>
+          <Card
+            variant="outlined"
+            padding="md"
+            style={[styles.kpiCardFlex, isTablet && styles.kpiCardTablet]}
+          >
+            <IconBadge icon="grid" tone="info" size="md" />
             <Text style={styles.kpiValueLight}>
               {isScreenLoading ? "—" : teamTotals.nbPortesProspectes}
             </Text>
             <Text style={styles.kpiLabelLight}>Portes prospectées</Text>
-          </View>
+          </Card>
         </View>
 
-        <View style={[styles.performanceCard, styles.sectionSpacing]}>
+        <Card
+          variant="outlined"
+          padding="md"
+          style={styles.sectionSpacing}
+        >
           <View style={styles.performanceHeader}>
             <View>
               <Text style={styles.performanceTitle}>
@@ -851,7 +860,7 @@ export default function EquipeScreen() {
                 <View
                   style={[
                     styles.performanceLegendDot,
-                    { backgroundColor: "#005BFF" },
+                    { backgroundColor: colors.primary },
                   ]}
                 />
                 <Text style={styles.performanceLegendText}>RDV pris</Text>
@@ -860,7 +869,7 @@ export default function EquipeScreen() {
                 <View
                   style={[
                     styles.performanceLegendDot,
-                    { backgroundColor: "#F59E0B" },
+                    { backgroundColor: colors.warning },
                   ]}
                 />
                 <Text style={styles.performanceLegendText}>
@@ -872,7 +881,7 @@ export default function EquipeScreen() {
 
           {teamChartData.rdvData.length === 0 ? (
             <View style={styles.performanceEmptyState}>
-              <Feather name="activity" size={18} color="#94A3B8" />
+              <Feather name="activity" size={18} color={colors.textSubtle} />
               <Text style={styles.performanceEmptyText}>
                 Aucune donnée de timeline pour cette période.
               </Text>
@@ -888,11 +897,11 @@ export default function EquipeScreen() {
                   width={performanceChartWidth}
                   curved
                   thickness={2.5}
-                  color="#005BFF"
-                  color2="#F59E0B"
+                  color={colors.primary}
+                  color2={colors.warning}
                   areaChart
-                  startFillColor="rgba(0, 91, 255, 0.12)"
-                  endFillColor="rgba(0, 91, 255, 0)"
+                  startFillColor={colors.primaryAlpha12}
+                  endFillColor={colors.primaryAlpha0}
                   startOpacity={0.15}
                   endOpacity={0}
                   startFillColor2="rgba(245, 158, 11, 0.12)"
@@ -906,7 +915,7 @@ export default function EquipeScreen() {
                   yAxisTextStyle={styles.performanceYAxisLabel}
                   yAxisColor="transparent"
                   yAxisThickness={0}
-                  xAxisColor="#E2E8F0"
+                  xAxisColor={colors.border}
                   xAxisThickness={1}
                   hideRules
                   rulesColor="transparent"
@@ -919,8 +928,8 @@ export default function EquipeScreen() {
                   isAnimated
                   animateOnDataChange
                   animationDuration={350}
-                  dataPointsColor1="#005BFF"
-                  dataPointsColor2="#F59E0B"
+                  dataPointsColor1={colors.primary}
+                  dataPointsColor2={colors.warning}
                   dataPointsRadius1={3}
                   dataPointsRadius2={3}
                   adjustToWidth
@@ -928,13 +937,15 @@ export default function EquipeScreen() {
               </View>
             </View>
           )}
-        </View>
+        </Card>
 
-        <View style={[styles.sectionCard, styles.sectionSpacing]}>
+        <Card
+          variant="outlined"
+          padding="md"
+          style={[styles.sectionSpacing, styles.sectionCardGap]}
+        >
           <View style={styles.sectionHeader}>
-            <View style={styles.sectionIcon}>
-              <Feather name="briefcase" size={18} color="#005BFF" />
-            </View>
+            <IconBadge icon="briefcase" tone="primary" size="lg" />
             <View>
               <Text style={styles.sectionTitle}>Équipe commerciale</Text>
               <Text style={styles.sectionSubtitle}>
@@ -960,7 +971,7 @@ export default function EquipeScreen() {
               ))}
             </View>
           )}
-        </View>
+        </Card>
       </Animated.View>
     </ScrollView>
   );
@@ -969,7 +980,7 @@ export default function EquipeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F8FAFC",
+    backgroundColor: colors.background,
   },
   content: {
     padding: 20,
@@ -990,11 +1001,11 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: "700",
-    color: "#0F172A",
+    color: colors.text,
   },
   subtitle: {
     fontSize: 14,
-    color: "#64748B",
+    color: colors.textMuted,
   },
   periodRow: {
     flexDirection: "row",
@@ -1009,8 +1020,8 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 999,
     borderWidth: 1,
-    borderColor: "#E2E8F0",
-    backgroundColor: "#FFFFFF",
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
   },
   periodChipIconWrap: {
     width: 20,
@@ -1018,151 +1029,117 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#E5EEFF",
+    backgroundColor: colors.primarySoft,
   },
   periodChipIconWrapActive: {
-    backgroundColor: "#CCDEFF",
+    backgroundColor: colors.primaryMuted,
   },
   periodChipActive: {
-    borderColor: "#005BFF",
-    backgroundColor: "#005BFF",
+    borderColor: colors.primary,
+    backgroundColor: colors.primary,
   },
   periodChipText: {
     fontSize: 12,
     fontWeight: "600",
-    color: "#475569",
+    color: colors.textStrong,
   },
   periodChipTextActive: {
-    color: "#FFFFFF",
+    color: colors.surface,
   },
   skeletonChip: {
     height: 30,
     width: 82,
     borderRadius: 999,
-    backgroundColor: "#E2E8F0",
+    backgroundColor: colors.border,
   },
   skeletonKpiCard: {
     flex: 1,
     minHeight: 120,
     borderRadius: 18,
-    backgroundColor: "#E2E8F0",
+    backgroundColor: colors.border,
   },
   skeletonTitle: {
     width: "42%",
     height: 16,
     borderRadius: 8,
-    backgroundColor: "#E2E8F0",
+    backgroundColor: colors.border,
   },
   skeletonSubtitle: {
     width: "62%",
     height: 12,
     borderRadius: 6,
-    backgroundColor: "#E2E8F0",
+    backgroundColor: colors.border,
   },
   skeletonChart: {
     marginTop: 8,
     height: 180,
     borderRadius: 14,
-    backgroundColor: "#E2E8F0",
+    backgroundColor: colors.border,
   },
   skeletonListCard: {
     height: 94,
     borderRadius: 14,
-    backgroundColor: "#E2E8F0",
+    backgroundColor: colors.border,
+  },
+  // Skeleton stand-in shapes for Card (used with Animated.View)
+  performanceCardSkeleton: {
+    borderRadius: 20,
+    backgroundColor: colors.surface,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: colors.border,
+    gap: 14,
+  },
+  sectionCardSkeleton: {
+    borderRadius: 20,
+    backgroundColor: colors.surface,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: colors.border,
+    gap: 16,
   },
   kpiRow: {
     flexDirection: "row",
     gap: 12,
   },
-  kpiCardPrimary: {
+  kpiCardFlex: {
     flex: 1,
-    borderRadius: 18,
-    padding: 16,
-    backgroundColor: "#005BFF",
-  },
-  kpiCardSecondary: {
-    flex: 1,
-    borderRadius: 18,
-    padding: 16,
-    backgroundColor: "#FFFFFF",
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-  },
-  kpiCardLight: {
-    flex: 1,
-    borderRadius: 18,
-    padding: 16,
-    backgroundColor: "#FFFFFF",
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
   },
   kpiCardTablet: {
     minHeight: 120,
-  },
-  kpiIconPrimary: {
-    width: 34,
-    height: 34,
-    borderRadius: 12,
-    backgroundColor: "rgba(255,255,255,0.2)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  kpiIconSecondary: {
-    width: 34,
-    height: 34,
-    borderRadius: 12,
-    backgroundColor: "#E5EEFF",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  kpiIconLight: {
-    width: 34,
-    height: 34,
-    borderRadius: 12,
-    backgroundColor: "#F8FAFC",
-    alignItems: "center",
-    justifyContent: "center",
   },
   kpiValuePrimary: {
     marginTop: 10,
     fontSize: 22,
     fontWeight: "700",
-    color: "#FFFFFF",
+    color: colors.surface,
   },
   kpiLabelPrimary: {
     marginTop: 4,
     fontSize: 13,
-    color: "#CCDEFF",
+    color: colors.primaryMuted,
   },
   kpiValueSecondary: {
     marginTop: 10,
     fontSize: 22,
     fontWeight: "700",
-    color: "#0F172A",
+    color: colors.text,
   },
   kpiLabelSecondary: {
     marginTop: 4,
     fontSize: 13,
-    color: "#64748B",
+    color: colors.textMuted,
   },
   kpiValueLight: {
     marginTop: 10,
     fontSize: 20,
     fontWeight: "700",
-    color: "#0F172A",
+    color: colors.text,
   },
   kpiLabelLight: {
     marginTop: 4,
     fontSize: 12,
-    color: "#64748B",
-  },
-  performanceCard: {
-    borderRadius: 20,
-    backgroundColor: "#FFFFFF",
-    padding: 16,
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-    gap: 14,
+    color: colors.textMuted,
   },
   performanceHeader: {
     flexDirection: "row",
@@ -1173,12 +1150,12 @@ const styles = StyleSheet.create({
   performanceTitle: {
     fontSize: 16,
     fontWeight: "700",
-    color: "#0F172A",
+    color: colors.text,
   },
   performanceSubtitle: {
     marginTop: 2,
     fontSize: 12,
-    color: "#94A3B8",
+    color: colors.textSubtle,
   },
   performanceLegendRow: {
     flexDirection: "row",
@@ -1199,7 +1176,7 @@ const styles = StyleSheet.create({
   performanceLegendText: {
     fontSize: 11,
     fontWeight: "600",
-    color: "#64748B",
+    color: colors.textMuted,
   },
   performanceChartWrap: {
     paddingTop: 4,
@@ -1210,11 +1187,11 @@ const styles = StyleSheet.create({
   },
   performanceYAxisLabel: {
     fontSize: 11,
-    color: "#94A3B8",
+    color: colors.textSubtle,
   },
   performanceAxisLabel: {
     fontSize: 10,
-    color: "#94A3B8",
+    color: colors.textSubtle,
   },
   performanceEmptyState: {
     paddingVertical: 18,
@@ -1224,38 +1201,25 @@ const styles = StyleSheet.create({
   },
   performanceEmptyText: {
     fontSize: 12,
-    color: "#94A3B8",
+    color: colors.textSubtle,
     textAlign: "center",
-  },
-  sectionCard: {
-    borderRadius: 20,
-    backgroundColor: "#FFFFFF",
-    padding: 16,
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-    gap: 16,
   },
   sectionHeader: {
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
   },
-  sectionIcon: {
-    width: 38,
-    height: 38,
-    borderRadius: 14,
-    backgroundColor: "#E5EEFF",
-    alignItems: "center",
-    justifyContent: "center",
+  sectionCardGap: {
+    gap: 16,
   },
   sectionTitle: {
     fontSize: 16,
     fontWeight: "700",
-    color: "#0F172A",
+    color: colors.text,
   },
   sectionSubtitle: {
     fontSize: 12,
-    color: "#94A3B8",
+    color: colors.textSubtle,
     marginTop: 2,
   },
   list: {
@@ -1264,8 +1228,8 @@ const styles = StyleSheet.create({
   listCard: {
     borderRadius: 18,
     borderWidth: 1,
-    borderColor: "#E2E8F0",
-    backgroundColor: "#F8FAFC",
+    borderColor: colors.border,
+    backgroundColor: colors.background,
     padding: 14,
     gap: 12,
   },
@@ -1278,16 +1242,16 @@ const styles = StyleSheet.create({
     width: 38,
     height: 38,
     borderRadius: 14,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: colors.border,
     alignItems: "center",
     justifyContent: "center",
   },
   listInitials: {
     fontSize: 12,
     fontWeight: "700",
-    color: "#005BFF",
+    color: colors.primary,
   },
   listInfo: {
     flex: 1,
@@ -1301,37 +1265,12 @@ const styles = StyleSheet.create({
   listName: {
     fontSize: 14,
     fontWeight: "700",
-    color: "#0F172A",
+    color: colors.text,
   },
   listMeta: {
     fontSize: 11,
-    color: "#64748B",
+    color: colors.textMuted,
     marginTop: 2,
-  },
-  rankPill: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 999,
-    backgroundColor: "#E5EEFF",
-  },
-  rankPillText: {
-    fontSize: 11,
-    fontWeight: "600",
-    color: "#005BFF",
-  },
-  pointsPill: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 999,
-    backgroundColor: "#FFF7ED",
-  },
-  pointsPillText: {
-    fontSize: 10,
-    fontWeight: "700",
-    color: "#9A3412",
   },
   positionBadge: {
     minWidth: 44,
@@ -1350,12 +1289,12 @@ const styles = StyleSheet.create({
   listStats: {
     flexDirection: "row",
     justifyContent: "space-between",
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface,
     borderRadius: 14,
     paddingVertical: 10,
     paddingHorizontal: 8,
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: colors.border,
   },
   statItem: {
     flex: 1,
@@ -1366,38 +1305,33 @@ const styles = StyleSheet.create({
     width: 18,
     height: 18,
     borderRadius: 9,
-    backgroundColor: "#F8FAFC",
+    backgroundColor: colors.background,
     alignItems: "center",
     justifyContent: "center",
   },
   statValue: {
     fontSize: 13,
     fontWeight: "700",
-    color: "#0F172A",
+    color: colors.text,
   },
   statLabel: {
     fontSize: 10,
-    color: "#64748B",
+    color: colors.textMuted,
     marginTop: 2,
   },
   emptyCard: {
     margin: 24,
-    backgroundColor: "#FFFFFF",
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
     alignItems: "center",
     gap: 6,
-    padding: 24,
   },
   emptyTitle: {
     fontSize: 16,
     fontWeight: "700",
-    color: "#0F172A",
+    color: colors.text,
   },
   emptyText: {
     fontSize: 12,
-    color: "#64748B",
+    color: colors.textMuted,
     textAlign: "center",
   },
   emptyInline: {
@@ -1406,6 +1340,6 @@ const styles = StyleSheet.create({
   },
   emptyInlineText: {
     fontSize: 12,
-    color: "#64748B",
+    color: colors.textMuted,
   },
 });

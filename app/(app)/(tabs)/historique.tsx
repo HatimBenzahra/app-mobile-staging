@@ -3,7 +3,6 @@ import { Feather } from "@expo/vector-icons";
 import { useIsFocused } from "@react-navigation/native";
 import {
   FlatList,
-  Pressable,
   StyleSheet,
   Text,
   View,
@@ -14,6 +13,8 @@ import { useWorkspaceProfile } from "@/hooks/api/use-workspace-profile";
 import type { Immeuble, StatusHistorique } from "@/types/api";
 import { api } from "@/services/api";
 import { dataSyncService } from "@/services/sync/data-sync.service";
+import { Card, PressableCard, Chip, type ChipTone } from "@/components/ui";
+import { colors } from "@/constants/theme";
 
 const FILTERS = [
   { key: "all", label: "Tous", icon: "layers" },
@@ -24,27 +25,25 @@ const FILTERS = [
 
 const STATUS_STYLE: Record<
   string,
-  { label: string; bg: string; fg: string; dot: string }
+  { label: string; tone: ChipTone; dot: string }
 > = {
-  NON_VISITE: { label: "Non visite", bg: "#E2E8F0", fg: "#475569", dot: "#94A3B8" },
-  ABSENT: { label: "Absent", bg: "#FFF7ED", fg: "#9A3412", dot: "#F97316" },
-  RENDEZ_VOUS_PRIS: { label: "RDV pris", bg: "#E5EEFF", fg: "#0049CC", dot: "#005BFF" },
-  CONTRAT_SIGNE: { label: "Contrat signe", bg: "#ECFDF3", fg: "#047857", dot: "#22C55E" },
-  REFUS: { label: "Refus", bg: "#FEF2F2", fg: "#B91C1C", dot: "#EF4444" },
-  ARGUMENTE: { label: "Argumente", bg: "#EEF2FF", fg: "#4338CA", dot: "#6366F1" },
+  NON_VISITE: { label: "Non visite", tone: "neutral", dot: colors.textSubtle },
+  ABSENT: { label: "Absent", tone: "warning", dot: colors.warning },
+  RENDEZ_VOUS_PRIS: { label: "RDV pris", tone: "primary", dot: colors.primary },
+  CONTRAT_SIGNE: { label: "Contrat signe", tone: "success", dot: colors.success },
+  REFUS: { label: "Refus", tone: "danger", dot: colors.danger },
+  ARGUMENTE: { label: "Argumente", tone: "info", dot: colors.info },
   NECESSITE_REPASSAGE: {
     label: "Repassage",
-    bg: "#FFFBEB",
-    fg: "#92400E",
-    dot: "#F59E0B",
+    tone: "warning",
+    dot: colors.warning,
   },
 };
 
-const STATUS_FALLBACK = {
+const STATUS_FALLBACK: { label: string; tone: ChipTone; dot: string } = {
   label: "Inconnu",
-  bg: "#E2E8F0",
-  fg: "#475569",
-  dot: "#94A3B8",
+  tone: "neutral",
+  dot: colors.textSubtle,
 };
 
 const FILTER_TO_MS: Record<string, number> = {
@@ -131,9 +130,10 @@ const HistoriqueImmeubleCard = memo(
 
     return (
       <View>
-        <Pressable
-          style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
-          android_ripple={{ color: "#E2E8F0" }}
+        <PressableCard
+          variant="elevated"
+          padding="md"
+          android_ripple={{ color: colors.border }}
           onPress={() => onToggle(immeuble.id)}
         >
           <Animated.View
@@ -153,14 +153,14 @@ const HistoriqueImmeubleCard = memo(
             ]}
           >
             <View style={styles.cardIcon}>
-              <Feather name="home" size={18} color="#FFFFFF" />
+              <Feather name="home" size={18} color={colors.surface} />
             </View>
             <View style={styles.cardBody}>
               <Text style={styles.cardTitle} numberOfLines={1}>
                 {immeuble.adresse}
               </Text>
               <View style={styles.cardMeta}>
-                <Feather name="clock" size={12} color="#94A3B8" />
+                <Feather name="clock" size={12} color={colors.textSubtle} />
                 <Text style={styles.cardDate}>
                   {immeuble.updatedAt
                     ? new Date(immeuble.updatedAt).toLocaleDateString("fr-FR")
@@ -168,14 +168,18 @@ const HistoriqueImmeubleCard = memo(
                 </Text>
               </View>
               <View style={styles.cardStats}>
-                <View style={styles.statChip}>
-                  <Feather name="grid" size={12} color="#005BFF" />
-                  <Text style={styles.statText}>{historyMeta.porteCount} portes</Text>
-                </View>
-                <View style={styles.statChip}>
-                  <Feather name="activity" size={12} color="#0EA5E9" />
-                  <Text style={styles.statText}>{historyMeta.historyCount} actions</Text>
-                </View>
+                <Chip
+                  tone="neutral"
+                  label={`${historyMeta.porteCount} portes`}
+                  icon="grid"
+                  accent={colors.primary}
+                />
+                <Chip
+                  tone="neutral"
+                  label={`${historyMeta.historyCount} actions`}
+                  icon="activity"
+                  accent={colors.info}
+                />
               </View>
             </View>
             <View style={styles.cardChevron}>
@@ -191,11 +195,11 @@ const HistoriqueImmeubleCard = memo(
                   ],
                 }}
               >
-                <Feather name="chevron-down" size={18} color="#94A3B8" />
+                <Feather name="chevron-down" size={18} color={colors.textSubtle} />
               </Animated.View>
             </View>
           </Animated.View>
-        </Pressable>
+        </PressableCard>
 
         {isExpanded ? (
           <Animated.View
@@ -220,17 +224,17 @@ const HistoriqueImmeubleCard = memo(
             ]}
           >
             {portePipelines.length === 0 ? (
-              <View style={styles.historyEmptyPanel}>
-                <Feather name="inbox" size={20} color="#94A3B8" />
+              <Card variant="outlined" padding="md" style={styles.historyEmptyPanel}>
+                <Feather name="inbox" size={20} color={colors.textSubtle} />
                 <Text style={styles.historyEmptyTitle}>
                   Aucun historique pour cet immeuble
                 </Text>
-              </View>
+              </Card>
             ) : (
               <View style={styles.historyPanel}>
                 <Text style={styles.historyPanelTitle}>Historique des portes</Text>
                 {portePipelines.map((porte) => (
-                  <View key={porte.porteId} style={styles.historyDoorCard}>
+                  <Card key={porte.porteId} variant="outlined" padding="md">
                     <View style={styles.historyDoorHeader}>
                       <Text style={styles.historyDoorTitle}>{porte.porteLabel}</Text>
                       <Text style={styles.historyDoorDate}>
@@ -239,7 +243,7 @@ const HistoriqueImmeubleCard = memo(
                     </View>
                     <View style={styles.historyTimeline}>
                       {porte.events.map((event, index) => {
-                        const style = STATUS_STYLE[event.statut] || {
+                        const statusStyle = STATUS_STYLE[event.statut] || {
                           ...STATUS_FALLBACK,
                           label: event.statut,
                         };
@@ -250,22 +254,16 @@ const HistoriqueImmeubleCard = memo(
                               <View
                                 style={[
                                   styles.timelineDot,
-                                  { backgroundColor: style.dot },
+                                  { backgroundColor: statusStyle.dot },
                                 ]}
                               />
                               {!isLast && <View style={styles.timelineLine} />}
                             </View>
                             <View style={styles.timelineContent}>
-                              <View
-                                style={[
-                                  styles.timelineChip,
-                                  { backgroundColor: style.bg },
-                                ]}
-                              >
-                                <Text style={[styles.timelineText, { color: style.fg }]}> 
-                                  {style.label}
-                                </Text>
-                              </View>
+                              <Chip
+                                tone={statusStyle.tone}
+                                label={statusStyle.label}
+                              />
                               <Text style={styles.timelineDate}>
                                 {new Date(event.createdAt).toLocaleString("fr-FR")}
                               </Text>
@@ -274,7 +272,7 @@ const HistoriqueImmeubleCard = memo(
                         );
                       })}
                     </View>
-                  </View>
+                  </Card>
                 ))}
               </View>
             )}
@@ -572,20 +570,14 @@ export default function HistoriqueScreen() {
           {FILTERS.map((item) => {
             const selected = item.key === filter;
             return (
-              <Pressable
+              <Chip
                 key={item.key}
+                label={item.label}
+                icon={item.icon as keyof typeof Feather.glyphMap}
+                selected={selected}
+                tone="neutral"
                 onPress={() => handleFilterPress(item.key)}
-                style={[styles.filterChip, selected && styles.filterChipActive]}
-              >
-                <Feather
-                  name={item.icon as keyof typeof Feather.glyphMap}
-                  size={12}
-                  color={selected ? "#FFFFFF" : "#64748B"}
-                />
-                <Text style={[styles.filterText, selected && styles.filterTextActive]}>
-                  {item.label}
-                </Text>
-              </Pressable>
+              />
             );
           })}
         </View>
@@ -603,10 +595,10 @@ export default function HistoriqueScreen() {
   const listEmpty = useMemo(
     () =>
       !loading && !error ? (
-        <View style={styles.emptyCard}>
-          <Feather name="home" size={32} color="#94A3B8" />
+        <Card variant="filled" padding="lg" style={styles.emptyCardInner}>
+          <Feather name="home" size={32} color={colors.textSubtle} />
           <Text style={styles.emptyText}>Aucun immeuble pour cette periode</Text>
-        </View>
+        </Card>
       ) : null,
     [error, loading],
   );
@@ -668,7 +660,7 @@ export default function HistoriqueScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F8FAFC",
+    backgroundColor: colors.background,
   },
   content: {
     padding: 16,
@@ -683,47 +675,21 @@ const styles = StyleSheet.create({
     gap: 8,
     flexWrap: "wrap",
   },
-  filterChip: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-    backgroundColor: "#FFFFFF",
-  },
-  filterChipActive: {
-    backgroundColor: "#005BFF",
-    borderColor: "#005BFF",
-  },
-  filterText: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: "#475569",
-  },
-  filterTextActive: {
-    color: "#FFFFFF",
-  },
   helper: {
     fontSize: 13,
-    color: "#64748B",
+    color: colors.textMuted,
   },
   error: {
     fontSize: 13,
-    color: "#DC2626",
+    color: colors.danger,
   },
-  emptyCard: {
-    padding: 20,
-    borderRadius: 16,
-    backgroundColor: "#FFFFFF",
+  emptyCardInner: {
     alignItems: "center",
     gap: 8,
   },
   emptyText: {
     fontSize: 12,
-    color: "#94A3B8",
+    color: colors.textSubtle,
   },
   skeletonHeader: {
     paddingHorizontal: 16,
@@ -734,13 +700,13 @@ const styles = StyleSheet.create({
     width: "35%",
     height: 20,
     borderRadius: 10,
-    backgroundColor: "#E5E7EB",
+    backgroundColor: colors.border,
   },
   skeletonSubtitle: {
     width: "50%",
     height: 14,
     borderRadius: 8,
-    backgroundColor: "#E5E7EB",
+    backgroundColor: colors.border,
   },
   skeletonFiltersRow: {
     flexDirection: "row",
@@ -751,7 +717,7 @@ const styles = StyleSheet.create({
     width: 54,
     height: 28,
     borderRadius: 14,
-    backgroundColor: "#E5E7EB",
+    backgroundColor: colors.border,
   },
   skeletonList: {
     paddingHorizontal: 16,
@@ -761,22 +727,7 @@ const styles = StyleSheet.create({
   skeletonCard: {
     height: 96,
     borderRadius: 18,
-    backgroundColor: "#E5E7EB",
-  },
-  card: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 18,
-    padding: 12,
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-    shadowColor: "#0F172A",
-    shadowOpacity: 0.06,
-    shadowRadius: 14,
-    shadowOffset: { width: 0, height: 8 },
-    elevation: 4,
-  },
-  cardPressed: {
-    opacity: 0.92,
+    backgroundColor: colors.border,
   },
   cardInner: {
     flexDirection: "row",
@@ -787,7 +738,7 @@ const styles = StyleSheet.create({
     width: 38,
     height: 38,
     borderRadius: 12,
-    backgroundColor: "#005BFF",
+    backgroundColor: colors.primary,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -797,7 +748,7 @@ const styles = StyleSheet.create({
   cardTitle: {
     fontSize: 15,
     fontWeight: "700",
-    color: "#0F172A",
+    color: colors.text,
   },
   cardMeta: {
     marginTop: 4,
@@ -807,7 +758,7 @@ const styles = StyleSheet.create({
   },
   cardDate: {
     fontSize: 12,
-    color: "#94A3B8",
+    color: colors.textSubtle,
   },
   cardStats: {
     marginTop: 10,
@@ -815,25 +766,11 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
     gap: 8,
   },
-  statChip: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 999,
-    backgroundColor: "#F1F5F9",
-  },
-  statText: {
-    fontSize: 11,
-    fontWeight: "600",
-    color: "#475569",
-  },
   cardChevron: {
     width: 32,
     height: 32,
     borderRadius: 12,
-    backgroundColor: "#F1F5F9",
+    backgroundColor: colors.surfaceMuted,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -845,32 +782,17 @@ const styles = StyleSheet.create({
   historyPanelTitle: {
     fontSize: 14,
     fontWeight: "700",
-    color: "#0F172A",
+    color: colors.text,
     marginTop: 8,
   },
   historyEmptyPanel: {
-    padding: 20,
     marginHorizontal: 16,
-    borderRadius: 16,
-    backgroundColor: "#FFFFFF",
     alignItems: "center",
     gap: 8,
   },
   historyEmptyTitle: {
     fontSize: 12,
-    color: "#94A3B8",
-  },
-  historyDoorCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 18,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-    shadowColor: "#0F172A",
-    shadowOpacity: 0.05,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 6 },
-    elevation: 3,
+    color: colors.textSubtle,
   },
   historyDoorHeader: {
     flexDirection: "row",
@@ -881,11 +803,11 @@ const styles = StyleSheet.create({
   historyDoorTitle: {
     fontSize: 13,
     fontWeight: "700",
-    color: "#0F172A",
+    color: colors.text,
   },
   historyDoorDate: {
     fontSize: 11,
-    color: "#94A3B8",
+    color: colors.textSubtle,
   },
   historyTimeline: {
     gap: 12,
@@ -907,31 +829,17 @@ const styles = StyleSheet.create({
     width: 2,
     flex: 1,
     marginTop: 4,
-    backgroundColor: "#E2E8F0",
+    backgroundColor: colors.border,
   },
   timelineContent: {
     flex: 1,
     gap: 6,
   },
-  timelineChip: {
-    alignSelf: "flex-start",
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 999,
-  },
-  timelineText: {
-    fontSize: 12,
-    fontWeight: "600",
-  },
   timelineDate: {
     fontSize: 11,
-    color: "#94A3B8",
+    color: colors.textSubtle,
   },
   itemSeparator: {
     height: 10,
   },
 });
-
-
-
-

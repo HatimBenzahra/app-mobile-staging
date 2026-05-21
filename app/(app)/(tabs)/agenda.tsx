@@ -3,6 +3,8 @@ import { useWorkspaceProfile } from "@/hooks/api/use-workspace-profile";
 import { authService } from "@/services/auth";
 import { dataSyncService } from "@/services/sync/data-sync.service";
 import type { Immeuble } from "@/types/api";
+import { Card, Chip, PressableCard, StatTile } from "@/components/ui";
+import { colors } from "@/constants/theme";
 import { Feather } from "@expo/vector-icons";
 import { useIsFocused } from "@react-navigation/native";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -270,42 +272,40 @@ export default function AgendaScreen({
       ]}
     >
       <Animated.View style={{ opacity: contentOpacity, gap: 24 }}>
-        <View style={styles.heroCard}>
+        {/* Hero card */}
+        <Card variant="elevated" padding="md">
           <View style={styles.heroRow}>
             <View style={styles.heroIconWrap}>
-              <Feather name="calendar" size={22} color="#005BFF" />
+              <Feather name="calendar" size={22} color={colors.primary} />
             </View>
             <View style={styles.heroTextWrap}>
               <Text style={styles.heroTitle}>Aujourd'hui</Text>
               <Text style={styles.heroDate}>{todayLabel}</Text>
             </View>
           </View>
-        </View>
+        </Card>
 
+        {/* KPI row */}
         <View style={styles.kpiRow}>
-          <View style={styles.kpiCard}>
-            <View style={styles.kpiHeader}>
-              <Text style={styles.kpiLabel}>RDV</Text>
-              <View style={[styles.kpiIcon, { backgroundColor: "#E5EEFF" }]}>
-                <Feather name="clock" size={16} color="#005BFF" />
-              </View>
-            </View>
-            <Text style={styles.kpiValue}>{todayRdvs.length}</Text>
-            <Text style={styles.kpiHint}>Rendez-vous du jour</Text>
-          </View>
-          <View style={styles.kpiCard}>
-            <View style={styles.kpiHeader}>
-              <Text style={styles.kpiLabel}>À revoir</Text>
-              <View style={[styles.kpiIcon, { backgroundColor: "#FEF2F2" }]}>
-                <Feather name="user-x" size={16} color="#EF4444" />
-              </View>
-            </View>
-            <Text style={styles.kpiValue}>{repassageItems.length}</Text>
-            <Text style={styles.kpiHint}>Absents aujourd'hui</Text>
-          </View>
+          <StatTile
+            icon="clock"
+            label="RDV"
+            value={todayRdvs.length}
+            hint="Rendez-vous du jour"
+            emphasis="default"
+          />
+          <StatTile
+            icon="user-x"
+            label="À revoir"
+            value={repassageItems.length}
+            hint="Absents aujourd'hui"
+            emphasis="default"
+            iconTone="danger"
+          />
         </View>
 
-        <View style={styles.sectionCard}>
+        {/* Section card */}
+        <Card variant="elevated" padding="md" style={styles.sectionCardGap}>
           <View style={styles.sectionHeaderRow}>
             <View>
               <Text style={styles.sectionTitle}>Programme du jour</Text>
@@ -321,7 +321,7 @@ export default function AgendaScreen({
               <Feather
                 name="clock"
                 size={14}
-                color={activeSection === "rdv" ? "#FFFFFF" : "#64748B"}
+                color={activeSection === "rdv" ? colors.surface : colors.textMuted}
               />
               <Text style={[styles.toggleText, activeSection === "rdv" && styles.toggleTextActive]}>
                 RDV du jour
@@ -339,7 +339,7 @@ export default function AgendaScreen({
               <Feather
                 name="user-x"
                 size={14}
-                color={activeSection === "repassage" ? "#FFFFFF" : "#64748B"}
+                color={activeSection === "repassage" ? colors.surface : colors.textMuted}
               />
               <Text style={[styles.toggleText, activeSection === "repassage" && styles.toggleTextActive]}>
                 À revoir
@@ -358,7 +358,7 @@ export default function AgendaScreen({
                 <Feather
                   name={activeSection === "rdv" ? "calendar" : "user-x"}
                   size={32}
-                  color="#CBD5E1"
+                  color={colors.borderStrong}
                 />
               </View>
               <Text style={styles.emptyTitle}>
@@ -374,61 +374,20 @@ export default function AgendaScreen({
             <View style={styles.cardList}>
               {activeSection === "rdv"
                 ? todayRdvs.map((item) => (
-                    <Pressable
+                    <PressableCard
                       key={`rdv-${item.porteId}`}
-                      style={[styles.card, styles.cardRdv]}
+                      variant="outlined"
+                      padding="sm"
+                      style={styles.cardRdvBorder}
                       onPress={() => handleCardPress(item.immeubleId)}
                     >
-                      <View style={styles.cardLeft}>
-                        <View style={styles.timeBadge}>
-                          <Feather name="clock" size={12} color="#005BFF" />
-                          <Text style={styles.timeText}>{formatTime(item.rdvTime)}</Text>
-                        </View>
-                      </View>
-                      <View style={styles.cardCenter}>
-                        <Text style={styles.cardTitle} numberOfLines={1}>
-                          Porte {item.numero}
-                          {item.nomPersonnalise ? ` · ${item.nomPersonnalise}` : ""}
-                        </Text>
-                        <Text style={styles.cardEtage}>{formatEtage(item.etage)}</Text>
-                        <View style={styles.cardAddressRow}>
-                          <Feather name="map-pin" size={11} color="#94A3B8" />
-                          <Text style={styles.cardAddress} numberOfLines={1}>
-                            {item.adresse}
-                          </Text>
-                        </View>
-                        {item.commentaire ? (
-                          <Text style={styles.cardComment} numberOfLines={2}>
-                            {item.commentaire}
-                          </Text>
-                        ) : null}
-                      </View>
-                      <View style={styles.cardChevron}>
-                        <Feather name="chevron-right" size={16} color="#CBD5E1" />
-                      </View>
-                    </Pressable>
-                  ))
-                : repassageItems.map((item) => {
-                    const isAbsent = item.statut === "ABSENT";
-                    const chipColor = isAbsent ? "#EF4444" : "#F59E0B";
-                    const chipBg = isAbsent ? "#FEF2F2" : "#FFFBEB";
-                    return (
-                      <Pressable
-                        key={`rep-${item.porteId}`}
-                        style={[
-                          styles.card,
-                          { borderLeftWidth: 3, borderLeftColor: chipColor },
-                        ]}
-                        onPress={() => handleCardPress(item.immeubleId)}
-                      >
+                      <View style={styles.cardInner}>
                         <View style={styles.cardLeft}>
-                          <View style={[styles.repassageBadge, { backgroundColor: chipBg }]}>
-                            <Feather
-                              name={isAbsent ? "user-x" : "refresh-cw"}
-                              size={13}
-                              color={chipColor}
-                            />
-                          </View>
+                          <Chip
+                            label={formatTime(item.rdvTime)}
+                            icon="clock"
+                            tone="primary"
+                          />
                         </View>
                         <View style={styles.cardCenter}>
                           <Text style={styles.cardTitle} numberOfLines={1}>
@@ -437,25 +396,10 @@ export default function AgendaScreen({
                           </Text>
                           <Text style={styles.cardEtage}>{formatEtage(item.etage)}</Text>
                           <View style={styles.cardAddressRow}>
-                            <Feather name="map-pin" size={11} color="#94A3B8" />
+                            <Feather name="map-pin" size={11} color={colors.textSubtle} />
                             <Text style={styles.cardAddress} numberOfLines={1}>
                               {item.adresse}
                             </Text>
-                          </View>
-                          <View style={styles.cardStatusRow}>
-                            <View style={[styles.repassageChip, { backgroundColor: chipBg }]}>
-                              <Text style={[styles.repassageChipText, { color: chipColor }]}>
-                                {STATUS_LABELS[item.statut] ?? item.statut}
-                              </Text>
-                            </View>
-                            {item.derniereVisite ? (
-                              <Text style={styles.cardLastVisit}>
-                                {new Date(item.derniereVisite).toLocaleDateString("fr-FR", {
-                                  day: "2-digit",
-                                  month: "short",
-                                })}
-                              </Text>
-                            ) : null}
                           </View>
                           {item.commentaire ? (
                             <Text style={styles.cardComment} numberOfLines={2}>
@@ -464,14 +408,74 @@ export default function AgendaScreen({
                           ) : null}
                         </View>
                         <View style={styles.cardChevron}>
-                          <Feather name="chevron-right" size={16} color="#CBD5E1" />
+                          <Feather name="chevron-right" size={16} color={colors.borderStrong} />
                         </View>
-                      </Pressable>
+                      </View>
+                    </PressableCard>
+                  ))
+                : repassageItems.map((item) => {
+                    const isAbsent = item.statut === "ABSENT";
+                    const accentColor = isAbsent ? colors.danger : colors.warning;
+                    return (
+                      <PressableCard
+                        key={`rep-${item.porteId}`}
+                        variant="outlined"
+                        padding="sm"
+                        style={{ borderLeftWidth: 3, borderLeftColor: accentColor }}
+                        onPress={() => handleCardPress(item.immeubleId)}
+                      >
+                        <View style={styles.cardInner}>
+                          <View style={styles.cardLeft}>
+                            <View style={[styles.repassageBadge, { backgroundColor: isAbsent ? colors.dangerSoft : colors.warningSoft }]}>
+                              <Feather
+                                name={isAbsent ? "user-x" : "refresh-cw"}
+                                size={13}
+                                color={accentColor}
+                              />
+                            </View>
+                          </View>
+                          <View style={styles.cardCenter}>
+                            <Text style={styles.cardTitle} numberOfLines={1}>
+                              Porte {item.numero}
+                              {item.nomPersonnalise ? ` · ${item.nomPersonnalise}` : ""}
+                            </Text>
+                            <Text style={styles.cardEtage}>{formatEtage(item.etage)}</Text>
+                            <View style={styles.cardAddressRow}>
+                              <Feather name="map-pin" size={11} color={colors.textSubtle} />
+                              <Text style={styles.cardAddress} numberOfLines={1}>
+                                {item.adresse}
+                              </Text>
+                            </View>
+                            <View style={styles.cardStatusRow}>
+                              <Chip
+                                label={STATUS_LABELS[item.statut] ?? item.statut}
+                                tone={isAbsent ? "danger" : "warning"}
+                              />
+                              {item.derniereVisite ? (
+                                <Text style={styles.cardLastVisit}>
+                                  {new Date(item.derniereVisite).toLocaleDateString("fr-FR", {
+                                    day: "2-digit",
+                                    month: "short",
+                                  })}
+                                </Text>
+                              ) : null}
+                            </View>
+                            {item.commentaire ? (
+                              <Text style={styles.cardComment} numberOfLines={2}>
+                                {item.commentaire}
+                              </Text>
+                            ) : null}
+                          </View>
+                          <View style={styles.cardChevron}>
+                            <Feather name="chevron-right" size={16} color={colors.borderStrong} />
+                          </View>
+                        </View>
+                      </PressableCard>
                     );
                   })}
             </View>
           )}
-        </View>
+        </Card>
       </Animated.View>
     </ScrollView>
   );
@@ -480,21 +484,11 @@ export default function AgendaScreen({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F8FAFC",
+    backgroundColor: colors.background,
   },
   content: {
     padding: 20,
     gap: 28,
-  },
-  heroCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 20,
-    padding: 20,
-    shadowColor: "#0F172A",
-    shadowOpacity: 0.08,
-    shadowRadius: 16,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 4,
   },
   heroRow: {
     flexDirection: "row",
@@ -505,7 +499,7 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 16,
-    backgroundColor: "#E5EEFF",
+    backgroundColor: colors.primarySoft,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -515,68 +509,18 @@ const styles = StyleSheet.create({
   heroTitle: {
     fontSize: 20,
     fontWeight: "700",
-    color: "#0F172A",
+    color: colors.text,
   },
   heroDate: {
     fontSize: 14,
-    color: "#64748B",
+    color: colors.textMuted,
     marginTop: 2,
   },
   kpiRow: {
     flexDirection: "row",
     gap: 14,
   },
-  kpiCard: {
-    flexGrow: 1,
-    flexShrink: 0,
-    flexBasis: 140,
-    borderRadius: 18,
-    padding: 16,
-    minHeight: 110,
-    backgroundColor: "#FFFFFF",
-    shadowColor: "#0F172A",
-    shadowOpacity: 0.06,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 6 },
-    elevation: 3,
-  },
-  kpiHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  kpiLabel: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: "#0F172A",
-  },
-  kpiIcon: {
-    width: 34,
-    height: 34,
-    borderRadius: 12,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  kpiValue: {
-    marginTop: 14,
-    fontSize: 28,
-    fontWeight: "700",
-    color: "#0F172A",
-  },
-  kpiHint: {
-    marginTop: 6,
-    fontSize: 12,
-    color: "#64748B",
-  },
-  sectionCard: {
-    borderRadius: 20,
-    backgroundColor: "#FFFFFF",
-    padding: 20,
-    shadowColor: "#0F172A",
-    shadowOpacity: 0.08,
-    shadowRadius: 16,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 4,
+  sectionCardGap: {
     gap: 20,
   },
   sectionHeaderRow: {
@@ -588,11 +532,11 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 16,
     fontWeight: "700",
-    color: "#0F172A",
+    color: colors.text,
   },
   sectionSubtitle: {
     fontSize: 12,
-    color: "#94A3B8",
+    color: colors.textSubtle,
     marginTop: 2,
   },
   toggleRow: {
@@ -607,41 +551,41 @@ const styles = StyleSheet.create({
     gap: 6,
     paddingVertical: 10,
     borderRadius: 14,
-    backgroundColor: "#F8FAFC",
+    backgroundColor: colors.background,
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: colors.border,
   },
   toggleBtnActive: {
-    backgroundColor: "#005BFF",
-    borderColor: "#005BFF",
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
   },
   toggleText: {
     fontSize: 13,
     fontWeight: "600",
-    color: "#64748B",
+    color: colors.textMuted,
   },
   toggleTextActive: {
-    color: "#FFFFFF",
+    color: colors.surface,
   },
   toggleBadge: {
     minWidth: 20,
     height: 20,
     borderRadius: 10,
-    backgroundColor: "#E2E8F0",
+    backgroundColor: colors.border,
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: 6,
   },
   toggleBadgeActive: {
-    backgroundColor: "rgba(255,255,255,0.25)",
+    backgroundColor: colors.whiteAlpha25,
   },
   toggleBadgeText: {
     fontSize: 11,
     fontWeight: "700",
-    color: "#64748B",
+    color: colors.textMuted,
   },
   toggleBadgeTextActive: {
-    color: "#FFFFFF",
+    color: colors.surface,
   },
   emptyState: {
     alignItems: "center",
@@ -653,7 +597,7 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: 22,
-    backgroundColor: "#F1F5F9",
+    backgroundColor: colors.surfaceMuted,
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 4,
@@ -661,49 +605,29 @@ const styles = StyleSheet.create({
   emptyTitle: {
     fontSize: 15,
     fontWeight: "700",
-    color: "#0F172A",
+    color: colors.text,
   },
   emptySubtitle: {
     fontSize: 12,
-    color: "#94A3B8",
+    color: colors.textSubtle,
     textAlign: "center",
     maxWidth: 260,
   },
   cardList: {
     gap: 12,
   },
-  card: {
+  cardRdvBorder: {
+    borderLeftWidth: 3,
+    borderLeftColor: colors.primary,
+  },
+  cardInner: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#F8FAFC",
-    borderRadius: 14,
-    padding: 14,
     gap: 14,
-    borderWidth: 1,
-    borderColor: "#F1F5F9",
   },
-  cardRdv: {
-    borderLeftWidth: 3,
-    borderLeftColor: "#005BFF",
-  },
-
   cardLeft: {
     alignItems: "center",
     justifyContent: "center",
-  },
-  timeBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    backgroundColor: "#E5EEFF",
-    paddingHorizontal: 8,
-    paddingVertical: 5,
-    borderRadius: 8,
-  },
-  timeText: {
-    fontSize: 12,
-    fontWeight: "700",
-    color: "#005BFF",
   },
   repassageBadge: {
     width: 36,
@@ -719,11 +643,11 @@ const styles = StyleSheet.create({
   cardTitle: {
     fontSize: 14,
     fontWeight: "700",
-    color: "#0F172A",
+    color: colors.text,
   },
   cardEtage: {
     fontSize: 12,
-    color: "#64748B",
+    color: colors.textMuted,
   },
   cardAddressRow: {
     flexDirection: "row",
@@ -733,7 +657,7 @@ const styles = StyleSheet.create({
   },
   cardAddress: {
     fontSize: 11,
-    color: "#94A3B8",
+    color: colors.textSubtle,
     flex: 1,
   },
   cardStatusRow: {
@@ -742,22 +666,13 @@ const styles = StyleSheet.create({
     gap: 8,
     marginTop: 4,
   },
-  repassageChip: {
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 6,
-  },
-  repassageChipText: {
-    fontSize: 10,
-    fontWeight: "700",
-  },
   cardLastVisit: {
     fontSize: 10,
-    color: "#94A3B8",
+    color: colors.textSubtle,
   },
   cardComment: {
     fontSize: 11,
-    color: "#64748B",
+    color: colors.textMuted,
     fontStyle: "italic",
     marginTop: 4,
   },
@@ -770,7 +685,7 @@ const styles = StyleSheet.create({
     width: "100%",
     height: 88,
     borderRadius: 20,
-    backgroundColor: "#E2E8F0",
+    backgroundColor: colors.border,
   },
   skeletonToggleRow: {
     flexDirection: "row",
@@ -780,7 +695,7 @@ const styles = StyleSheet.create({
   skeletonCard: {
     height: 80,
     borderRadius: 18,
-    backgroundColor: "#E2E8F0",
+    backgroundColor: colors.border,
     marginTop: 8,
   },
 });

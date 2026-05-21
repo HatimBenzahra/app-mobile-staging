@@ -11,6 +11,8 @@ import {
   useWindowDimensions,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { Chip, IconBadge } from "@/components/ui";
+import { colors } from "@/constants/theme";
 
 type ConfirmActionOverlayProps = {
   open: boolean;
@@ -45,9 +47,7 @@ export default function ConfirmActionOverlay({
   const isTablet = width >= 700;
   const isDanger = tone === "danger";
   const heroIcon = icon ?? (isDanger ? "trash-2" : "check-circle");
-  const accentColor = isDanger ? "#DC2626" : "#16A34A";
-  const accentSoft = isDanger ? "#FEE2E2" : "#DCFCE7";
-  const accentRing = isDanger ? "#FCA5A5" : "#86EFAC";
+  const accentColor = isDanger ? colors.danger : colors.success;
 
   useEffect(() => {
     if (!open) return;
@@ -105,43 +105,21 @@ export default function ConfirmActionOverlay({
           >
             <View style={styles.handle} />
 
-            <View
-              style={[
-                styles.heroOuter,
-                { backgroundColor: accentSoft },
-              ]}
-            >
-              <View
-                style={[styles.heroRing, { borderColor: accentRing }]}
-              />
-              <View
-                style={[
-                  styles.heroInner,
-                  { borderColor: accentRing },
-                ]}
-              >
-                <Feather name={heroIcon} size={26} color={accentColor} />
-              </View>
-            </View>
+            <IconBadge
+              tone={isDanger ? "danger" : "success"}
+              size="lg"
+              icon={heroIcon}
+            />
 
             <Text style={[styles.title, isTablet && styles.titleTablet]}>
               {title}
             </Text>
 
             {highlight ? (
-              <View
-                style={[
-                  styles.highlightChip,
-                  { backgroundColor: accentSoft },
-                ]}
-              >
-                <Text
-                  style={[styles.highlightText, { color: accentColor }]}
-                  numberOfLines={1}
-                >
-                  {highlight}
-                </Text>
-              </View>
+              <Chip
+                tone={isDanger ? "danger" : "success"}
+                label={highlight}
+              />
             ) : null}
 
             {description ? (
@@ -173,7 +151,7 @@ export default function ConfirmActionOverlay({
                 <Feather
                   name={isDanger ? "trash-2" : "check"}
                   size={15}
-                  color="#FFFFFF"
+                  color={colors.textOnPrimary}
                 />
                 <Text style={styles.primaryText}>{confirmLabel}</Text>
               </Pressable>
@@ -206,10 +184,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingTop: 16,
     paddingBottom: 24,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface,
     alignItems: "center",
     gap: 14,
-    shadowColor: "#0F172A",
+    shadowColor: colors.text,
     shadowOpacity: 0.22,
     shadowRadius: 32,
     shadowOffset: { width: 0, height: 16 },
@@ -226,44 +204,13 @@ const styles = StyleSheet.create({
     width: 44,
     height: 5,
     borderRadius: 999,
-    backgroundColor: "#E2E8F0",
+    backgroundColor: colors.border,
     marginBottom: 2,
-  },
-  heroOuter: {
-    width: 88,
-    height: 88,
-    borderRadius: 44,
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: 4,
-    marginBottom: 2,
-  },
-  heroRing: {
-    position: "absolute",
-    width: 88,
-    height: 88,
-    borderRadius: 44,
-    borderWidth: 1.5,
-    opacity: 0.4,
-  },
-  heroInner: {
-    width: 62,
-    height: 62,
-    borderRadius: 31,
-    backgroundColor: "#FFFFFF",
-    borderWidth: 1.5,
-    alignItems: "center",
-    justifyContent: "center",
-    shadowColor: "#0F172A",
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 2,
   },
   title: {
     fontSize: 19,
     fontWeight: "800",
-    color: "#0F172A",
+    color: colors.text,
     textAlign: "center",
     letterSpacing: -0.4,
     lineHeight: 25,
@@ -273,21 +220,9 @@ const styles = StyleSheet.create({
     fontSize: 21,
     lineHeight: 28,
   },
-  highlightChip: {
-    paddingHorizontal: 14,
-    paddingVertical: 7,
-    borderRadius: 999,
-    maxWidth: "100%",
-  },
-  highlightText: {
-    fontSize: 12.5,
-    fontWeight: "800",
-    letterSpacing: 0.3,
-    textTransform: "uppercase",
-  },
   description: {
     fontSize: 13.5,
-    color: "#475569",
+    color: colors.textStrong,
     textAlign: "center",
     lineHeight: 20,
     paddingHorizontal: 8,
@@ -296,7 +231,7 @@ const styles = StyleSheet.create({
   divider: {
     height: 1,
     width: "100%",
-    backgroundColor: "#F1F5F9",
+    backgroundColor: colors.surfaceMuted,
     marginTop: 4,
     marginBottom: 2,
   },
@@ -309,19 +244,19 @@ const styles = StyleSheet.create({
     flex: 1,
     borderRadius: 16,
     borderWidth: 1.5,
-    borderColor: "#E2E8F0",
+    borderColor: colors.border,
     paddingVertical: 14,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface,
   },
   ghostButtonPressed: {
-    backgroundColor: "#F8FAFC",
+    backgroundColor: colors.background,
   },
   ghostText: {
     fontSize: 14,
     fontWeight: "700",
-    color: "#475569",
+    color: colors.textStrong,
     letterSpacing: 0.1,
   },
   primaryButton: {
@@ -332,7 +267,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
-    shadowColor: "#0F172A",
+    shadowColor: colors.text,
     shadowOpacity: 0.16,
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 4 },
@@ -344,7 +279,7 @@ const styles = StyleSheet.create({
   primaryText: {
     fontSize: 14,
     fontWeight: "800",
-    color: "#FFFFFF",
+    color: colors.textOnPrimary,
     letterSpacing: 0.1,
   },
 });

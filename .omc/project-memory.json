@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "lastScanned": 1779287904825,
+  "lastScanned": 1779385267153,
   "projectRoot": "/Users/hatimbenzahra/Desktop/PRO_WIN/prowin/staging/app-mobile",
   "techStack": {
     "languages": [
@@ -75,14 +75,14 @@
       "path": "__tests__",
       "purpose": "Test files",
       "fileCount": 0,
-      "lastAccessed": 1779287904793,
+      "lastAccessed": 1779385267130,
       "keyFiles": []
     },
     "android": {
       "path": "android",
       "purpose": null,
       "fileCount": 6,
-      "lastAccessed": 1779287904800,
+      "lastAccessed": 1779385267131,
       "keyFiles": [
         "build.gradle",
         "gradle.properties",
@@ -95,7 +95,7 @@
       "path": "app",
       "purpose": "Application code",
       "fileCount": 2,
-      "lastAccessed": 1779287904800,
+      "lastAccessed": 1779385267137,
       "keyFiles": [
         "_layout.tsx",
         "index.tsx"
@@ -105,14 +105,14 @@
       "path": "assets",
       "purpose": "Static assets",
       "fileCount": 0,
-      "lastAccessed": 1779287904801,
+      "lastAccessed": 1779385267137,
       "keyFiles": []
     },
     "components": {
       "path": "components",
       "purpose": "UI components",
       "fileCount": 2,
-      "lastAccessed": 1779287904801,
+      "lastAccessed": 1779385267137,
       "keyFiles": [
         "ProfileMenuOverlay.tsx",
         "ProfileSheet.tsx"
@@ -121,17 +121,18 @@
     "constants": {
       "path": "constants",
       "purpose": null,
-      "fileCount": 1,
-      "lastAccessed": 1779287904801,
+      "fileCount": 2,
+      "lastAccessed": 1779385267138,
       "keyFiles": [
-        "env.ts"
+        "env.ts",
+        "theme.ts"
       ]
     },
     "dist": {
       "path": "dist",
       "purpose": "Distribution/build output",
       "fileCount": 2,
-      "lastAccessed": 1779287904801,
+      "lastAccessed": 1779385267138,
       "keyFiles": [
         "assetmap.json",
         "metadata.json"
@@ -141,7 +142,7 @@
       "path": "hooks",
       "purpose": null,
       "fileCount": 4,
-      "lastAccessed": 1779287904801,
+      "lastAccessed": 1779385267138,
       "keyFiles": [
         "use-auth.ts",
         "use-hamburger-menu.tsx",
@@ -153,7 +154,7 @@
       "path": "ios",
       "purpose": null,
       "fileCount": 6,
-      "lastAccessed": 1779287904801,
+      "lastAccessed": 1779385267138,
       "keyFiles": [
         "Podfile",
         "Podfile.lock",
@@ -164,7 +165,7 @@
       "path": "plugins",
       "purpose": null,
       "fileCount": 1,
-      "lastAccessed": 1779287904801,
+      "lastAccessed": 1779385267139,
       "keyFiles": [
         "with-foreground-service-type.js"
       ]
@@ -173,14 +174,14 @@
       "path": "services",
       "purpose": "Business logic services",
       "fileCount": 0,
-      "lastAccessed": 1779287904801,
+      "lastAccessed": 1779385267139,
       "keyFiles": []
     },
     "types": {
       "path": "types",
       "purpose": "Type definitions",
       "fileCount": 2,
-      "lastAccessed": 1779287904802,
+      "lastAccessed": 1779385267139,
       "keyFiles": [
         "api.ts",
         "graphql-schema.ts"
@@ -190,14 +191,14 @@
       "path": "utils",
       "purpose": "Utility functions",
       "fileCount": 0,
-      "lastAccessed": 1779287904802,
+      "lastAccessed": 1779385267139,
       "keyFiles": []
     },
     "android/app": {
       "path": "android/app",
       "purpose": "Application code",
       "fileCount": 3,
-      "lastAccessed": 1779287904803,
+      "lastAccessed": 1779385267140,
       "keyFiles": [
         "build.gradle",
         "debug.keystore",
@@ -208,14 +209,14 @@
       "path": "android/build",
       "purpose": "Build output",
       "fileCount": 0,
-      "lastAccessed": 1779287904803,
+      "lastAccessed": 1779385267140,
       "keyFiles": []
     },
     "dist/assets": {
       "path": "dist/assets",
       "purpose": "Static assets",
       "fileCount": 43,
-      "lastAccessed": 1779287904804,
+      "lastAccessed": 1779385267140,
       "keyFiles": [
         "017bc6ba3fc25503e5eb5e53826d48a8",
         "02bc1fa7c0313217bde2d65ccbff40c9",
@@ -225,8 +226,8 @@
     "hooks/api": {
       "path": "hooks/api",
       "purpose": "API routes",
-      "fileCount": 16,
-      "lastAccessed": 1779287904805,
+      "fileCount": 17,
+      "lastAccessed": 1779385267141,
       "keyFiles": [
         "data-sync.ts",
         "use-add-etage-to-immeuble.ts",
@@ -237,14 +238,14 @@
       "path": "hooks/utils",
       "purpose": "Utility functions",
       "fileCount": 0,
-      "lastAccessed": 1779287904805,
+      "lastAccessed": 1779385267141,
       "keyFiles": []
     },
     "services/api": {
       "path": "services/api",
       "purpose": "API routes",
       "fileCount": 1,
-      "lastAccessed": 1779287904805,
+      "lastAccessed": 1779385267141,
       "keyFiles": [
         "index.ts"
       ]
@@ -253,296 +254,224 @@
   "hotPaths": [
     {
       "path": "components/immeubles/ImmeubleDetailsScreen.tsx",
-      "accessCount": 141,
-      "lastAccessed": 1779367051801,
+      "accessCount": 140,
+      "lastAccessed": 1779389023284,
       "type": "file"
     },
     {
-      "path": "components/immeubles/prospection/ProspectionSessionOverlay.tsx",
-      "accessCount": 44,
-      "lastAccessed": 1779355175601,
-      "type": "file"
-    },
-    {
-      "path": "components/immeubles/AddImmeubleSheet.tsx",
-      "accessCount": 32,
-      "lastAccessed": 1779376210931,
+      "path": "components/immeubles/PortePickerOverlay.tsx",
+      "accessCount": 37,
+      "lastAccessed": 1779389007211,
       "type": "file"
     },
     {
       "path": "components/ProfileSheet.tsx",
-      "accessCount": 20,
-      "lastAccessed": 1779374817895,
+      "accessCount": 35,
+      "lastAccessed": 1779388957102,
       "type": "file"
     },
     {
       "path": "app/(app)/(tabs)/immeubles.tsx",
-      "accessCount": 16,
-      "lastAccessed": 1779348418534,
+      "accessCount": 34,
+      "lastAccessed": 1779386448677,
       "type": "file"
     },
     {
-      "path": "hooks/audio/use-recording.ts",
-      "accessCount": 13,
-      "lastAccessed": 1779375094342,
+      "path": "components/immeubles/ConfirmActionOverlay.tsx",
+      "accessCount": 23,
+      "lastAccessed": 1779389006040,
       "type": "file"
     },
     {
-      "path": "app/(app)/index.tsx",
-      "accessCount": 11,
-      "lastAccessed": 1779311030552,
+      "path": "components/immeubles/prospection/ProspectionSessionOverlay.tsx",
+      "accessCount": 23,
+      "lastAccessed": 1779389326508,
+      "type": "file"
+    },
+    {
+      "path": "components/ProfileMenuOverlay.tsx",
+      "accessCount": 21,
+      "lastAccessed": 1779388957413,
       "type": "file"
     },
     {
       "path": "app/(app)/(tabs)/dashboard.tsx",
+      "accessCount": 17,
+      "lastAccessed": 1779385869245,
+      "type": "file"
+    },
+    {
+      "path": "components/immeubles/AddImmeubleSheet.tsx",
+      "accessCount": 17,
+      "lastAccessed": 1779387312879,
+      "type": "file"
+    },
+    {
+      "path": "components/immeubles/PorteDetailSheet.tsx",
+      "accessCount": 16,
+      "lastAccessed": 1779387324606,
+      "type": "file"
+    },
+    {
+      "path": "components/immeubles/details/EditPorteSheet.tsx",
+      "accessCount": 16,
+      "lastAccessed": 1779389175214,
+      "type": "file"
+    },
+    {
+      "path": "constants/theme.ts",
+      "accessCount": 15,
+      "lastAccessed": 1779387412791,
+      "type": "file"
+    },
+    {
+      "path": "components/ui/Card.tsx",
+      "accessCount": 14,
+      "lastAccessed": 1779387423177,
+      "type": "file"
+    },
+    {
+      "path": "components/ui/index.ts",
       "accessCount": 10,
-      "lastAccessed": 1779374477566,
+      "lastAccessed": 1779387423005,
       "type": "file"
     },
     {
-      "path": "hooks/prospection/use-prospection-session.ts",
-      "accessCount": 7,
-      "lastAccessed": 1779355130179,
+      "path": "components/ui/Chip.tsx",
+      "accessCount": 10,
+      "lastAccessed": 1779387423081,
       "type": "file"
     },
     {
-      "path": "components/navigation/NavigationRail.tsx",
+      "path": "components/immeubles/prospection/BuildingFloorStrip.tsx",
+      "accessCount": 10,
+      "lastAccessed": 1779388726943,
+      "type": "file"
+    },
+    {
+      "path": "components/immeubles/AddPorteSheet.tsx",
+      "accessCount": 9,
+      "lastAccessed": 1779387182627,
+      "type": "file"
+    },
+    {
+      "path": "components/immeubles/prospection/PorteTile.tsx",
+      "accessCount": 8,
+      "lastAccessed": 1779388390321,
+      "type": "file"
+    },
+    {
+      "path": "components/immeubles/prospection/LiveSegmentHeader.tsx",
+      "accessCount": 8,
+      "lastAccessed": 1779389077323,
+      "type": "file"
+    },
+    {
+      "path": "components/immeubles/prospection/FloorSection.tsx",
+      "accessCount": 8,
+      "lastAccessed": 1779389104302,
+      "type": "file"
+    },
+    {
+      "path": "components/immeubles/details/StatusFilterSheet.tsx",
+      "accessCount": 8,
+      "lastAccessed": 1779389135210,
+      "type": "file"
+    },
+    {
+      "path": "components/ui/StatTile.tsx",
       "accessCount": 7,
-      "lastAccessed": 1779372772042,
+      "lastAccessed": 1779386495703,
+      "type": "file"
+    },
+    {
+      "path": "components/ui/IconBadge.tsx",
+      "accessCount": 7,
+      "lastAccessed": 1779387451736,
       "type": "file"
     },
     {
       "path": "components/immeubles/prospection/ProspectedDoorsList.tsx",
+      "accessCount": 7,
+      "lastAccessed": 1779388699623,
+      "type": "file"
+    },
+    {
+      "path": "components/immeubles/details/ActionToast.tsx",
       "accessCount": 6,
-      "lastAccessed": 1779348696285,
+      "lastAccessed": 1779389083131,
+      "type": "file"
+    },
+    {
+      "path": "components/immeubles/details/DetailsHeader.tsx",
+      "accessCount": 6,
+      "lastAccessed": 1779389148071,
+      "type": "file"
+    },
+    {
+      "path": "app/(app)/(tabs)/historique.tsx",
+      "accessCount": 5,
+      "lastAccessed": 1779386197790,
+      "type": "file"
+    },
+    {
+      "path": "app/(app)/(tabs)/equipe.tsx",
+      "accessCount": 5,
+      "lastAccessed": 1779386899063,
+      "type": "file"
+    },
+    {
+      "path": "app/(app)/(tabs)/statistiques.tsx",
+      "accessCount": 4,
+      "lastAccessed": 1779386669665,
       "type": "file"
     },
     {
       "path": "components/immeubles/prospection/RdvQuickPicker.tsx",
       "accessCount": 4,
-      "lastAccessed": 1779351790648,
+      "lastAccessed": 1779389186692,
       "type": "file"
     },
     {
-      "path": "services/audio/recordings/door-segment-tracker.ts",
+      "path": "app/(app)/(tabs)/agenda.tsx",
       "accessCount": 3,
-      "lastAccessed": 1779301184159,
+      "lastAccessed": 1779386012153,
       "type": "file"
     },
     {
-      "path": "components/immeubles/prospection/LiveSegmentHeader.tsx",
+      "path": "components/immeubles/prospection/ProspectionJourney.tsx",
       "accessCount": 3,
-      "lastAccessed": 1779308286446,
+      "lastAccessed": 1779388962913,
       "type": "file"
     },
     {
-      "path": "components/immeubles/details/EditPorteSheet.tsx",
-      "accessCount": 2,
-      "lastAccessed": 1779288707603,
+      "path": "components/immeubles/details/FloorPlanSheet.tsx",
+      "accessCount": 3,
+      "lastAccessed": 1779388983398,
       "type": "file"
     },
     {
-      "path": "types/api.ts",
+      "path": "components/immeubles/prospection/status-display.ts",
       "accessCount": 2,
-      "lastAccessed": 1779289411135,
-      "type": "file"
-    },
-    {
-      "path": "hooks/api/use-create-porte.ts",
-      "accessCount": 2,
-      "lastAccessed": 1779289419087,
-      "type": "file"
-    },
-    {
-      "path": "hooks/api/use-update-porte.ts",
-      "accessCount": 2,
-      "lastAccessed": 1779289419447,
+      "lastAccessed": 1779388310152,
       "type": "file"
     },
     {
       "path": "components/immeubles/prospection/StatusGrid.tsx",
       "accessCount": 2,
-      "lastAccessed": 1779289603707,
+      "lastAccessed": 1779388966438,
       "type": "file"
     },
     {
-      "path": "components/navigation/HamburgerMenuOverlay.tsx",
-      "accessCount": 2,
-      "lastAccessed": 1779299100629,
-      "type": "file"
-    },
-    {
-      "path": "services/audio/background/background-audio.service.ts",
-      "accessCount": 2,
-      "lastAccessed": 1779302162147,
-      "type": "file"
-    },
-    {
-      "path": "components/immeubles/prospection/FloorSection.tsx",
-      "accessCount": 2,
-      "lastAccessed": 1779303965618,
-      "type": "file"
-    },
-    {
-      "path": "components/immeubles/ConfirmActionOverlay.tsx",
-      "accessCount": 2,
-      "lastAccessed": 1779307777050,
-      "type": "file"
-    },
-    {
-      "path": "components/immeubles/details/DetailsHeader.tsx",
-      "accessCount": 2,
-      "lastAccessed": 1779308246808,
-      "type": "file"
-    },
-    {
-      "path": "components/immeubles/PorteDetailSheet.tsx",
-      "accessCount": 2,
-      "lastAccessed": 1779351230070,
-      "type": "file"
-    },
-    {
-      "path": "components/immeubles/details/StatusFilterSheet.tsx",
-      "accessCount": 2,
-      "lastAccessed": 1779367085211,
-      "type": "file"
-    },
-    {
-      "path": "components/ProfileMenuOverlay.tsx",
-      "accessCount": 2,
-      "lastAccessed": 1779373235511,
-      "type": "file"
-    },
-    {
-      "path": "app/(auth)/login.tsx",
-      "accessCount": 2,
-      "lastAccessed": 1779373848678,
-      "type": "file"
-    },
-    {
-      "path": "hooks/use-profile-sheet.tsx",
-      "accessCount": 2,
-      "lastAccessed": 1779374576144,
-      "type": "file"
-    },
-    {
-      "path": "constants/env.ts",
-      "accessCount": 2,
-      "lastAccessed": 1779375414438,
-      "type": "file"
-    },
-    {
-      "path": ".env",
-      "accessCount": 2,
-      "lastAccessed": 1779375421701,
-      "type": "file"
-    },
-    {
-      "path": "USER_FLOW.md",
+      "path": "components/ui/ProgressBar.tsx",
       "accessCount": 1,
-      "lastAccessed": 1779288223286,
-      "type": "file"
-    },
-    {
-      "path": "services/audio/recordings/recording.service.ts",
-      "accessCount": 1,
-      "lastAccessed": 1779288232179,
-      "type": "file"
-    },
-    {
-      "path": "components/immeubles/AddPorteSheet.tsx",
-      "accessCount": 1,
-      "lastAccessed": 1779288233229,
-      "type": "file"
-    },
-    {
-      "path": "services/api/portes/porte.mutations.ts",
-      "accessCount": 1,
-      "lastAccessed": 1779288687271,
-      "type": "file"
-    },
-    {
-      "path": "services/api/immeubles/immeuble.mutations.ts",
-      "accessCount": 1,
-      "lastAccessed": 1779288687577,
-      "type": "file"
-    },
-    {
-      "path": "hooks/api/use-create-immeuble.ts",
-      "accessCount": 1,
-      "lastAccessed": 1779288716302,
-      "type": "file"
-    },
-    {
-      "path": "services/audio/recordings/local-recording.service.ts",
-      "accessCount": 1,
-      "lastAccessed": 1779301184421,
-      "type": "file"
-    },
-    {
-      "path": "components/immeubles/prospection/status-display.ts",
-      "accessCount": 1,
-      "lastAccessed": 1779301447351,
+      "lastAccessed": 1779385687677,
       "type": "file"
     },
     {
       "path": "components/immeubles/prospection/StatusBadge.tsx",
       "accessCount": 1,
-      "lastAccessed": 1779301513754,
-      "type": "file"
-    },
-    {
-      "path": "components/immeubles/prospection/PorteTile.tsx",
-      "accessCount": 1,
-      "lastAccessed": 1779301533532,
-      "type": "file"
-    },
-    {
-      "path": "components/immeubles/prospection/BuildingFloorStrip.tsx",
-      "accessCount": 1,
-      "lastAccessed": 1779303934281,
-      "type": "file"
-    },
-    {
-      "path": "components/immeubles/prospection/ProspectionJourney.tsx",
-      "accessCount": 1,
-      "lastAccessed": 1779306188583,
-      "type": "file"
-    },
-    {
-      "path": "services/api/portes/porte.service.ts",
-      "accessCount": 1,
-      "lastAccessed": 1779307727209,
-      "type": "file"
-    },
-    {
-      "path": "components/immeubles/PortePickerOverlay.tsx",
-      "accessCount": 1,
-      "lastAccessed": 1779307836156,
-      "type": "file"
-    },
-    {
-      "path": "hooks/api/use-remove-porte-from-etage.ts",
-      "accessCount": 1,
-      "lastAccessed": 1779307851445,
-      "type": "file"
-    },
-    {
-      "path": "hooks/api/use-remove-porte.ts",
-      "accessCount": 1,
-      "lastAccessed": 1779307859725,
-      "type": "file"
-    },
-    {
-      "path": "components/navigation/ProwinLogo.tsx",
-      "accessCount": 1,
-      "lastAccessed": 1779372753241,
-      "type": "file"
-    },
-    {
-      "path": "services/audio/recordings/recording-upload.service.ts",
-      "accessCount": 1,
-      "lastAccessed": 1779375028291,
+      "lastAccessed": 1779388332524,
       "type": "file"
     }
   ],

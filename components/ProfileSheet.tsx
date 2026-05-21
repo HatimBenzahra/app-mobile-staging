@@ -7,6 +7,8 @@ import { useRouter } from "expo-router";
 import { forwardRef, useEffect, useMemo, useState } from "react";
 import { StyleSheet, Text, View, Pressable, useWindowDimensions } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { Card, Chip } from "@/components/ui";
+import { colors } from "@/constants/theme";
 
 type ProfileSheetProps = {
   userId: number | null;
@@ -79,18 +81,19 @@ const ProfileSheet = forwardRef<BottomSheetModal, ProfileSheetProps>(
             <Text style={styles.fullName}>
               {profile?.prenom} {profile?.nom}
             </Text>
-            <View style={styles.roleBadge}>
-              <Feather name={role === "manager" ? "briefcase" : "user"} size={12} color="#005BFF" />
-              <Text style={styles.roleText}>{roleLabel}</Text>
-            </View>
+            <Chip
+              tone="primary"
+              icon={role === "manager" ? "briefcase" : "user"}
+              label={roleLabel}
+            />
           </View>
 
           {/* Contact Info */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Informations personnelles</Text>
-            <View style={styles.infoCard}>
+            <Card variant="outlined" padding="md">
               <View style={styles.infoRow}>
-                <Feather name="mail" size={18} color="#64748B" />
+                <Feather name="mail" size={18} color={colors.textMuted} />
                 <View style={styles.infoContent}>
                   <Text style={styles.infoLabel}>Email</Text>
                   <Text style={styles.infoValue}>{email}</Text>
@@ -98,21 +101,21 @@ const ProfileSheet = forwardRef<BottomSheetModal, ProfileSheetProps>(
               </View>
               <View style={styles.divider} />
               <View style={styles.infoRow}>
-                <Feather name="phone" size={18} color="#64748B" />
+                <Feather name="phone" size={18} color={colors.textMuted} />
                 <View style={styles.infoContent}>
                   <Text style={styles.infoLabel}>Téléphone</Text>
                   <Text style={styles.infoValue}>{phone}</Text>
                 </View>
               </View>
-            </View>
+            </Card>
           </View>
 
           {/* Logout */}
           {confirmingLogout ? (
-            <View style={styles.confirmCard}>
+            <Card variant="filled" padding="md" style={{ backgroundColor: colors.dangerSoft }}>
               <View style={styles.confirmHeader}>
                 <View style={styles.confirmIcon}>
-                  <Feather name="log-out" size={14} color="#DC2626" />
+                  <Feather name="log-out" size={14} color={colors.danger} />
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.confirmTitle}>Se déconnecter ?</Text>
@@ -140,23 +143,23 @@ const ProfileSheet = forwardRef<BottomSheetModal, ProfileSheetProps>(
                   ]}
                   onPress={handleLogout}
                 >
-                  <Feather name="log-out" size={15} color="#FFFFFF" />
+                  <Feather name="log-out" size={15} color={colors.textOnPrimary} />
                   <Text style={styles.confirmBtnPrimaryText}>Confirmer</Text>
                 </Pressable>
               </View>
-            </View>
+            </Card>
           ) : (
             <Pressable
               style={({ pressed }) => [
                 styles.logoutRow,
-                pressed && { backgroundColor: "#FEF2F2" },
+                pressed && { backgroundColor: colors.dangerSoft },
               ]}
               onPress={() => setConfirmingLogout(true)}
               accessibilityRole="button"
               accessibilityLabel="Se déconnecter"
             >
               <View style={styles.logoutRowIcon}>
-                <Feather name="log-out" size={16} color="#DC2626" />
+                <Feather name="log-out" size={16} color={colors.danger} />
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={styles.logoutRowLabel}>Se déconnecter</Text>
@@ -191,7 +194,7 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     fontSize: 14,
-    color: "#64748B",
+    color: colors.textMuted,
   },
   header: {
     alignItems: "center",
@@ -202,9 +205,9 @@ const styles = StyleSheet.create({
     width: 88,
     height: 88,
     borderRadius: 44,
-    backgroundColor: "#E5EEFF",
+    backgroundColor: colors.primarySoft,
     borderWidth: 3,
-    borderColor: "#CCDEFF",
+    borderColor: colors.primaryMuted,
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 16,
@@ -212,27 +215,13 @@ const styles = StyleSheet.create({
   avatarText: {
     fontSize: 32,
     fontWeight: "700",
-    color: "#005BFF",
+    color: colors.primary,
   },
   fullName: {
     fontSize: 24,
     fontWeight: "700",
-    color: "#0F172A",
+    color: colors.text,
     marginBottom: 8,
-  },
-  roleBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    backgroundColor: "#E5EEFF",
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: 20,
-  },
-  roleText: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: "#005BFF",
   },
   section: {
     marginBottom: 24,
@@ -240,17 +229,10 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 13,
     fontWeight: "700",
-    color: "#64748B",
+    color: colors.textMuted,
     textTransform: "uppercase",
     letterSpacing: 0.5,
     marginBottom: 12,
-  },
-  infoCard: {
-    backgroundColor: "#F8FAFC",
-    borderRadius: 16,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
   },
   infoRow: {
     flexDirection: "row",
@@ -262,17 +244,17 @@ const styles = StyleSheet.create({
   },
   infoLabel: {
     fontSize: 12,
-    color: "#64748B",
+    color: colors.textMuted,
     marginBottom: 4,
   },
   infoValue: {
     fontSize: 15,
     fontWeight: "600",
-    color: "#0F172A",
+    color: colors.text,
   },
   divider: {
     height: 1,
-    backgroundColor: "#E2E8F0",
+    backgroundColor: colors.border,
     marginVertical: 14,
   },
   logoutRow: {
@@ -284,35 +266,26 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     borderWidth: 1,
     borderColor: "#FECACA",
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface,
     marginTop: 4,
   },
   logoutRowIcon: {
     width: 34,
     height: 34,
     borderRadius: 10,
-    backgroundColor: "#FEF2F2",
+    backgroundColor: colors.dangerSoft,
     alignItems: "center",
     justifyContent: "center",
   },
   logoutRowLabel: {
     fontSize: 15,
     fontWeight: "700",
-    color: "#DC2626",
+    color: colors.danger,
   },
   logoutRowHint: {
     marginTop: 2,
     fontSize: 12,
-    color: "#94A3B8",
-  },
-  confirmCard: {
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: "#FECACA",
-    backgroundColor: "#FFFBFB",
-    padding: 14,
-    gap: 14,
-    marginTop: 4,
+    color: colors.textSubtle,
   },
   confirmHeader: {
     flexDirection: "row",
@@ -323,7 +296,7 @@ const styles = StyleSheet.create({
     width: 30,
     height: 30,
     borderRadius: 9,
-    backgroundColor: "#FEE2E2",
+    backgroundColor: colors.dangerSoft,
     alignItems: "center",
     justifyContent: "center",
     marginTop: 2,
@@ -331,12 +304,12 @@ const styles = StyleSheet.create({
   confirmTitle: {
     fontSize: 15,
     fontWeight: "800",
-    color: "#0F172A",
+    color: colors.text,
   },
   confirmSubtitle: {
     marginTop: 4,
     fontSize: 12.5,
-    color: "#64748B",
+    color: colors.textMuted,
     lineHeight: 17,
   },
   confirmActions: {
@@ -353,19 +326,19 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   confirmBtnSecondary: {
-    backgroundColor: "#F1F5F9",
+    backgroundColor: colors.surfaceMuted,
   },
   confirmBtnSecondaryText: {
     fontSize: 13.5,
     fontWeight: "700",
-    color: "#475569",
+    color: colors.textStrong,
   },
   confirmBtnPrimary: {
-    backgroundColor: "#DC2626",
+    backgroundColor: colors.danger,
   },
   confirmBtnPrimaryText: {
     fontSize: 13.5,
     fontWeight: "700",
-    color: "#FFFFFF",
+    color: colors.textOnPrimary,
   },
 });

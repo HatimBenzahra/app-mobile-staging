@@ -1,8 +1,9 @@
 import AddImmeubleSheet from "@/components/immeubles/AddImmeubleSheet";
 import ImmeubleDetailsView from "@/components/immeubles/ImmeubleDetailsScreen";
-import { StatTile } from "@/components/ui";
+import { Card, Chip, PressableCard, StatTile } from "@/components/ui";
 import { useCreateImmeuble } from "@/hooks/api/use-create-immeuble";
 import { useWorkspaceProfile } from "@/hooks/api/use-workspace-profile";
+import { colors, progressColors } from "@/constants/theme";
 import { authService } from "@/services/auth";
 import type { Immeuble } from "@/types/api";
 import { Feather } from "@expo/vector-icons";
@@ -39,17 +40,17 @@ const FILTER_CHIPS: {
   icon: keyof typeof Feather.glyphMap;
   color: string;
 }[] = [
-  { key: "all", label: "Tous", icon: "layers", color: "#005BFF" },
+  { key: "all", label: "Tous", icon: "layers", color: colors.primary },
   {
     key: "incomplete",
     label: "En cours",
     icon: "activity",
-    color: "#005BFF",
+    color: colors.primary,
   },
-  { key: "low", label: "0-35%", icon: "trending-down", color: "#EF4444" },
-  { key: "mid", label: "35-70%", icon: "bar-chart-2", color: "#F59E0B" },
-  { key: "high", label: "70-99%", icon: "trending-up", color: "#22C55E" },
-  { key: "complete", label: "100%", icon: "check", color: "#16A34A" },
+  { key: "low", label: "0-35%", icon: "trending-down", color: progressColors.low },
+  { key: "mid", label: "35-70%", icon: "bar-chart-2", color: progressColors.mid },
+  { key: "high", label: "70-99%", icon: "trending-up", color: progressColors.high },
+  { key: "complete", label: "100%", icon: "check", color: progressColors.complete },
 ];
 
 export default function ImmeublesScreen({
@@ -309,10 +310,10 @@ export default function ImmeublesScreen({
         total === 0 ? 0 : Math.round((prospectees / total) * 100);
       const progressColor =
         progressPercent < 35
-          ? "#EF4444"
+          ? progressColors.low
           : progressPercent < 70
-            ? "#F59E0B"
-            : "#22C55E";
+            ? progressColors.mid
+            : progressColors.high;
 
       entries[immeuble.id] = {
         total,
@@ -492,10 +493,10 @@ export default function ImmeublesScreen({
           }
           ListEmptyComponent={
             !loading && !error ? (
-              <View style={styles.emptyCard}>
-                <Feather name="home" size={32} color="#94A3B8" />
+              <Card variant="elevated" padding="md" style={{ alignItems: "center", gap: 8 }}>
+                <Feather name="home" size={32} color={colors.textSubtle} />
                 <Text style={styles.emptyText}>Aucun immeuble trouve</Text>
-              </View>
+              </Card>
             ) : null
           }
           renderItem={({ item: row }) =>
@@ -533,27 +534,13 @@ export default function ImmeublesScreen({
                             ],
                           }}
                         >
-                          <Pressable
-                            style={[
-                              styles.filterChip,
-                              selected && styles.filterChipActive,
-                            ]}
+                          <Chip
+                            label={chip.label}
+                            icon={chip.icon}
+                            selected={selected}
+                            accent={chip.color}
                             onPress={() => setProgressFilter(chip.key)}
-                          >
-                            <Feather
-                              name={chip.icon}
-                              size={12}
-                              color={selected ? "#FFFFFF" : chip.color}
-                            />
-                            <Text
-                              style={[
-                                styles.filterChipText,
-                                selected && styles.filterChipTextActive,
-                              ]}
-                            >
-                              {chip.label}
-                            </Text>
-                          </Pressable>
+                          />
                         </Animated.View>
                       );
                     })}
@@ -568,12 +555,12 @@ export default function ImmeublesScreen({
                     ]}
                   >
                     <View style={styles.searchIconWrap}>
-                      <Feather name="search" size={18} color="#005BFF" />
+                      <Feather name="search" size={18} color={colors.primary} />
                     </View>
                     <TextInput
                       ref={searchInputRef}
                       placeholder="Rechercher un immeuble, adresse, ville?"
-                      placeholderTextColor="#94A3B8"
+                      placeholderTextColor={colors.textSubtle}
                       style={styles.searchInput}
                       value={query}
                       onChangeText={setQuery}
@@ -588,7 +575,7 @@ export default function ImmeublesScreen({
                           searchInputRef.current?.focus();
                         }}
                       >
-                        <Feather name="x" size={14} color="#64748B" />
+                        <Feather name="x" size={14} color={colors.textStrong} />
                       </Pressable>
                     )}
                     <Pressable
@@ -601,7 +588,7 @@ export default function ImmeublesScreen({
                       <Feather
                         name="sliders"
                         size={16}
-                        color={showFilters ? "#FFFFFF" : "#005BFF"}
+                        color={showFilters ? colors.textOnPrimary : colors.primary}
                       />
                     </Pressable>
                   </View>
@@ -626,7 +613,7 @@ export default function ImmeublesScreen({
                     total: 0,
                     prospectees: 0,
                     progressPercent: 0,
-                    progressColor: "#22C55E",
+                    progressColor: progressColors.high,
                   };
                   const cardLabel = `Appartement ${String.fromCharCode(65 + (index % 26))}`;
                   const anim = getCardAnimation(immeuble.id);
@@ -661,13 +648,15 @@ export default function ImmeublesScreen({
                         },
                       ]}
                     >
-                      <Pressable
-                        style={styles.card}
+                      <PressableCard
+                        variant="outlined"
+                        padding="md"
+                        style={{ flex: 1 }}
                         onPress={() => handleOpenImmeuble(immeuble.id)}
                       >
                         <View style={styles.cardHeader}>
                           <View style={styles.cardIcon}>
-                            <Feather name="home" size={18} color="#005BFF" />
+                            <Feather name="home" size={18} color={colors.primary} />
                           </View>
                           <Text style={styles.cardChip}>{cardLabel}</Text>
                         </View>
@@ -682,7 +671,7 @@ export default function ImmeublesScreen({
                             {immeuble.adresse}
                           </Text>
                           <View style={styles.cardMetaRow}>
-                            <Feather name="grid" size={11} color="#64748B" />
+                            <Feather name="grid" size={11} color={colors.textStrong} />
                             <Text style={styles.cardMeta}>
                               {immeuble.nbEtages} etages
                             </Text>
@@ -713,7 +702,7 @@ export default function ImmeublesScreen({
                             </Text>
                           </View>
                         </View>
-                      </Pressable>
+                      </PressableCard>
                     </Animated.View>
                   );
                 })}
@@ -729,7 +718,7 @@ export default function ImmeublesScreen({
           style={[styles.fab, { bottom: insets.bottom + 72 }]}
           onPress={() => setIsAddOpen(true)}
         >
-          <Feather name="plus" size={20} color="#FFFFFF" />
+          <Feather name="plus" size={20} color={colors.textOnPrimary} />
         </Pressable>
 
         <AddImmeubleSheet
@@ -760,7 +749,7 @@ export default function ImmeublesScreen({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F8FAFC",
+    backgroundColor: colors.background,
   },
   content: {
     padding: 18,
@@ -780,18 +769,18 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 14,
-    backgroundColor: "#E5EEFF",
+    backgroundColor: colors.primarySoft,
     alignItems: "center",
     justifyContent: "center",
   },
   title: {
     fontSize: 22,
     fontWeight: "700",
-    color: "#0F172A",
+    color: colors.text,
   },
   subtitle: {
     fontSize: 14,
-    color: "#64748B",
+    color: colors.textStrong,
   },
   searchWrap: {
     alignItems: "center",
@@ -801,15 +790,15 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
-    backgroundColor: "#F4F8FF",
+    backgroundColor: colors.primarySoft,
     borderRadius: 20,
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: colors.border,
   },
   searchBarShadow: {
-    shadowColor: "#0F172A",
+    shadowColor: colors.text,
     shadowOpacity: 0.08,
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 6 },
@@ -819,14 +808,14 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 14,
-    backgroundColor: "#CCDEFF",
+    backgroundColor: colors.primaryMuted,
     alignItems: "center",
     justifyContent: "center",
   },
   searchInput: {
     flex: 1,
     fontSize: 14,
-    color: "#0F172A",
+    color: colors.text,
     paddingVertical: 2,
   },
   summaryRow: {
@@ -837,21 +826,21 @@ const styles = StyleSheet.create({
     flex: 1,
     borderRadius: 18,
     padding: 14,
-    backgroundColor: "#005BFF",
+    backgroundColor: colors.primary,
   },
   summaryCardSecondary: {
     flex: 1,
     borderRadius: 18,
     padding: 14,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: colors.border,
   },
   summaryIconPrimary: {
     width: 30,
     height: 30,
     borderRadius: 10,
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    backgroundColor: colors.whiteAlpha20,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -859,7 +848,7 @@ const styles = StyleSheet.create({
     width: 30,
     height: 30,
     borderRadius: 10,
-    backgroundColor: "#E5EEFF",
+    backgroundColor: colors.primarySoft,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -867,23 +856,23 @@ const styles = StyleSheet.create({
     marginTop: 10,
     fontSize: 22,
     fontWeight: "700",
-    color: "#FFFFFF",
+    color: colors.textOnPrimary,
   },
   summaryLabel: {
     marginTop: 4,
     fontSize: 13,
-    color: "#CCDEFF",
+    color: colors.primaryMuted,
   },
   summaryValueSecondary: {
     marginTop: 10,
     fontSize: 22,
     fontWeight: "700",
-    color: "#0F172A",
+    color: colors.text,
   },
   summaryLabelSecondary: {
     marginTop: 4,
     fontSize: 13,
-    color: "#64748B",
+    color: colors.textStrong,
   },
   filterRow: {
     flexDirection: "row",
@@ -893,47 +882,17 @@ const styles = StyleSheet.create({
   filterRowAnimated: {
     overflow: "hidden",
   },
-  filterChip: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-    backgroundColor: "#FFFFFF",
-  },
-  filterChipActive: {
-    backgroundColor: "#005BFF",
-    borderColor: "#005BFF",
-  },
-  filterChipText: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: "#475569",
-  },
-  filterChipTextActive: {
-    color: "#FFFFFF",
-  },
   helper: {
     fontSize: 13,
-    color: "#64748B",
+    color: colors.textStrong,
   },
   error: {
     fontSize: 13,
-    color: "#DC2626",
-  },
-  emptyCard: {
-    padding: 20,
-    borderRadius: 999,
-    backgroundColor: "#FFFFFF",
-    alignItems: "center",
-    gap: 8,
+    color: colors.danger,
   },
   emptyText: {
     fontSize: 12,
-    color: "#94A3B8",
+    color: colors.textSubtle,
   },
   skeletonContent: {
     padding: 18,
@@ -949,7 +908,7 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 84,
     borderRadius: 18,
-    backgroundColor: "#E5E7EB",
+    backgroundColor: colors.border,
   },
   skeletonControls: {
     gap: 12,
@@ -965,12 +924,12 @@ const styles = StyleSheet.create({
     flexBasis: "23%",
     flexGrow: 1,
     borderRadius: 999,
-    backgroundColor: "#E5E7EB",
+    backgroundColor: colors.border,
   },
   skeletonSearch: {
     height: 52,
     borderRadius: 18,
-    backgroundColor: "#E5E7EB",
+    backgroundColor: colors.border,
   },
   skeletonCardRow: {
     flexDirection: "row",
@@ -981,7 +940,7 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 160,
     borderRadius: 22,
-    backgroundColor: "#E5E7EB",
+    backgroundColor: colors.border,
   },
   row: {
     flexDirection: "row",
@@ -991,19 +950,6 @@ const styles = StyleSheet.create({
   },
   cardWrap: {
     flex: 1,
-  },
-  card: {
-    flex: 1,
-    backgroundColor: "#FFFFFF",
-    borderRadius: 22,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-    shadowColor: "#0F172A",
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 8 },
-    elevation: 4,
   },
   cardPlaceholder: {
     flex: 1,
@@ -1018,7 +964,7 @@ const styles = StyleSheet.create({
     width: 38,
     height: 38,
     borderRadius: 14,
-    backgroundColor: "#E5EEFF",
+    backgroundColor: colors.primarySoft,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -1026,9 +972,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 999,
-    backgroundColor: "#F1F5F9",
+    backgroundColor: colors.surfaceMuted,
     fontSize: 11,
-    color: "#475569",
+    color: colors.textStrong,
     fontWeight: "600",
   },
   cardContent: {
@@ -1037,7 +983,7 @@ const styles = StyleSheet.create({
   cardTitle: {
     fontSize: 16,
     fontWeight: "700",
-    color: "#0F172A",
+    color: colors.text,
   },
   cardTitleCompact: {
     fontSize: 15,
@@ -1050,7 +996,7 @@ const styles = StyleSheet.create({
   },
   cardMeta: {
     fontSize: 14,
-    color: "#64748B",
+    color: colors.textStrong,
   },
   progressRow: {
     flexDirection: "row",
@@ -1062,18 +1008,18 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 8,
     borderRadius: 999,
-    backgroundColor: "#E2E8F0",
+    backgroundColor: colors.border,
     overflow: "hidden",
   },
   progressFill: {
     height: "100%",
     borderRadius: 999,
-    backgroundColor: "#005BFF",
+    backgroundColor: colors.primary,
   },
   progressText: {
     fontSize: 13,
     fontWeight: "600",
-    color: "#005BFF",
+    color: colors.primary,
   },
   fab: {
     position: "absolute",
@@ -1081,17 +1027,17 @@ const styles = StyleSheet.create({
     width: 52,
     height: 52,
     borderRadius: 26,
-    backgroundColor: "#005BFF",
+    backgroundColor: colors.primary,
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: "#0F172A",
+    shadowColor: colors.text,
     shadowOpacity: 0.2,
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 6 },
     elevation: 6,
   },
   controlsSticky: {
-    backgroundColor: "#F8FAFC",
+    backgroundColor: colors.background,
     paddingBottom: 12,
     gap: 12,
   },
@@ -1101,14 +1047,14 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   searchBarFocused: {
-    borderColor: "#005BFF",
-    backgroundColor: "#FFFFFF",
+    borderColor: colors.primary,
+    backgroundColor: colors.surface,
   },
   clearButton: {
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: "#F1F5F9",
+    backgroundColor: colors.surfaceMuted,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -1116,12 +1062,12 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 14,
-    backgroundColor: "#E5EEFF",
+    backgroundColor: colors.primarySoft,
     alignItems: "center",
     justifyContent: "center",
   },
   filterButtonActive: {
-    backgroundColor: "#005BFF",
+    backgroundColor: colors.primary,
   },
   cancelButton: {
     paddingHorizontal: 12,
@@ -1130,6 +1076,6 @@ const styles = StyleSheet.create({
   cancelText: {
     fontSize: 15,
     fontWeight: "600",
-    color: "#005BFF",
+    color: colors.primary,
   },
 });

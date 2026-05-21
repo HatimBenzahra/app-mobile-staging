@@ -7,6 +7,7 @@ import {
   Text,
   View,
 } from "react-native";
+import { colors } from "@/constants/theme";
 
 import {
   DEFAULT_STATUS_OPTION,
@@ -87,7 +88,7 @@ function FloorCard({
         </Text>
         {isComplete ? (
           <View style={styles.completeBadge}>
-            <Feather name="check" size={9} color="#FFFFFF" />
+            <Feather name="check" size={9} color={colors.textOnPrimary} />
           </View>
         ) : null}
       </View>
@@ -106,7 +107,7 @@ function FloorCard({
                 isTablet && styles.dotTablet,
                 {
                   backgroundColor: accent ?? "transparent",
-                  borderColor: accent ?? "#CBD5E1",
+                  borderColor: accent ?? colors.borderStrong,
                   borderWidth: accent ? 0 : 1.2,
                 },
               ]}
@@ -148,7 +149,7 @@ function BuildingFloorStripImpl({
       <View style={styles.headerRow}>
         <View style={styles.headerLeft}>
           <View style={styles.iconBadge}>
-            <Feather name="layers" size={13} color="#0F172A" />
+            <Feather name="layers" size={13} color={colors.text} />
           </View>
           <Text style={styles.headerTitle}>Cartographie</Text>
         </View>
@@ -184,12 +185,12 @@ function BuildingFloorStripImpl({
 
 const styles = StyleSheet.create({
   wrap: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface,
     borderRadius: 22,
     paddingTop: 14,
     paddingBottom: 14,
     borderWidth: 1,
-    borderColor: "#EAECEF",
+    borderColor: colors.border,
     gap: 12,
   },
   wrapTablet: {
@@ -212,14 +213,14 @@ const styles = StyleSheet.create({
     width: 26,
     height: 26,
     borderRadius: 8,
-    backgroundColor: "#F1F5F9",
+    backgroundColor: colors.surfaceMuted,
     alignItems: "center",
     justifyContent: "center",
   },
   headerTitle: {
     fontSize: 13,
     fontWeight: "800",
-    color: "#0F172A",
+    color: colors.text,
     letterSpacing: 0.4,
     textTransform: "uppercase",
   },
@@ -229,13 +230,13 @@ const styles = StyleSheet.create({
   headerPct: {
     fontSize: 17,
     fontWeight: "800",
-    color: "#0F172A",
+    color: colors.text,
     fontVariant: ["tabular-nums"],
     letterSpacing: -0.3,
   },
   headerCount: {
     fontSize: 11,
-    color: "#64748B",
+    color: colors.textMuted,
     fontWeight: "600",
     fontVariant: ["tabular-nums"],
   },
@@ -252,9 +253,9 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 10,
     borderRadius: 14,
-    backgroundColor: "#FAFAF7",
+    backgroundColor: colors.background,
     borderWidth: 1.5,
-    borderColor: "#E2E8F0",
+    borderColor: colors.border,
     alignItems: "center",
     gap: 8,
   },
@@ -264,8 +265,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
   },
   cardActive: {
-    backgroundColor: "#0F172A",
-    borderColor: "#0F172A",
+    backgroundColor: colors.text,
+    borderColor: colors.text,
   },
   cardHeader: {
     flexDirection: "row",
@@ -275,7 +276,7 @@ const styles = StyleSheet.create({
   etageNumber: {
     fontSize: 20,
     fontWeight: "800",
-    color: "#0F172A",
+    color: colors.text,
     fontVariant: ["tabular-nums"],
     letterSpacing: -0.5,
   },
@@ -283,13 +284,13 @@ const styles = StyleSheet.create({
     fontSize: 22,
   },
   etageNumberActive: {
-    color: "#FFFFFF",
+    color: colors.textOnPrimary,
   },
   completeBadge: {
     width: 14,
     height: 14,
     borderRadius: 999,
-    backgroundColor: "#059669",
+    backgroundColor: colors.success,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -312,14 +313,14 @@ const styles = StyleSheet.create({
   countText: {
     fontSize: 11,
     fontWeight: "700",
-    color: "#475569",
+    color: colors.textStrong,
     fontVariant: ["tabular-nums"],
   },
   countTextActive: {
-    color: "#FFFFFF",
+    color: colors.textOnPrimary,
   },
   countTextEmpty: {
-    color: "#94A3B8",
+    color: colors.textSubtle,
   },
 });
 

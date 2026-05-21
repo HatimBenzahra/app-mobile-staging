@@ -6,6 +6,8 @@ import { useRouter } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { Card, Chip } from "@/components/ui";
+import { colors } from "@/constants/theme";
 
 const ROLE_LABELS: Record<string, string> = {
   commercial: "Commercial",
@@ -64,7 +66,7 @@ export default function ProfileMenuOverlay() {
       <BlurView intensity={60} tint="light" style={StyleSheet.absoluteFill} />
       <View style={styles.dim} pointerEvents="none" />
       <Pressable style={styles.backdrop} onPress={close} />
-      <View style={[styles.panel, { top: insets.top + 52 }]}>
+      <Card variant="elevated" padding="none" style={[styles.panel, { top: insets.top + 52 }]}>
         <View style={styles.profileRow}>
           <View style={styles.avatar}>
             <Text style={styles.avatarText}>{initials}</Text>
@@ -73,16 +75,14 @@ export default function ProfileMenuOverlay() {
             <Text style={styles.profileEmail} numberOfLines={1}>
               {email ?? "Compte connecté"}
             </Text>
-            <View style={styles.rolePill}>
-              <Text style={styles.rolePillText}>{roleLabel}</Text>
-            </View>
+            <Chip tone="primary" label={roleLabel} />
           </View>
         </View>
 
         <View style={styles.divider} />
 
         {confirming ? (
-          <View style={styles.confirmBlock}>
+          <Card variant="filled" padding="sm" style={{ backgroundColor: colors.dangerSoft }}>
             <Text style={styles.confirmText}>
               Confirmer la déconnexion ?
             </Text>
@@ -105,29 +105,29 @@ export default function ProfileMenuOverlay() {
                 ]}
                 onPress={handleLogout}
               >
-                <Feather name="log-out" size={14} color="#FFFFFF" />
+                <Feather name="log-out" size={14} color={colors.textOnPrimary} />
                 <Text style={styles.btnDangerText}>Se déconnecter</Text>
               </Pressable>
             </View>
-          </View>
+          </Card>
         ) : (
           <Pressable
             style={({ pressed }) => [
               styles.logoutItem,
-              pressed && { backgroundColor: "#FEE2E2" },
+              pressed && { backgroundColor: colors.dangerSoft },
             ]}
             onPress={() => setConfirming(true)}
             accessibilityRole="button"
             accessibilityLabel="Se déconnecter"
           >
             <View style={styles.logoutIcon}>
-              <Feather name="log-out" size={15} color="#DC2626" />
+              <Feather name="log-out" size={15} color={colors.danger} />
             </View>
             <Text style={styles.logoutLabel}>Se déconnecter</Text>
             <Feather name="chevron-right" size={16} color="#FCA5A5" />
           </Pressable>
         )}
-      </View>
+      </Card>
     </View>
   );
 }
@@ -146,19 +146,11 @@ const styles = StyleSheet.create({
   panel: {
     position: "absolute",
     right: 16,
-    backgroundColor: "#FFFFFF",
     borderRadius: 18,
     paddingVertical: 10,
     paddingHorizontal: 10,
     minWidth: 280,
     maxWidth: 340,
-    shadowColor: "#0F172A",
-    shadowOpacity: 0.18,
-    shadowRadius: 22,
-    shadowOffset: { width: 0, height: 12 },
-    elevation: 12,
-    borderWidth: 1,
-    borderColor: "#F1F5F9",
   },
   profileRow: {
     flexDirection: "row",
@@ -171,16 +163,16 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: "#E5EEFF",
+    backgroundColor: colors.primarySoft,
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1,
-    borderColor: "#CCDEFF",
+    borderColor: colors.primaryMuted,
   },
   avatarText: {
     fontSize: 13.5,
     fontWeight: "800",
-    color: "#0049CC",
+    color: colors.primary,
     letterSpacing: 0.5,
   },
   profileTextWrap: {
@@ -191,25 +183,11 @@ const styles = StyleSheet.create({
   profileEmail: {
     fontSize: 13.5,
     fontWeight: "700",
-    color: "#0F172A",
-  },
-  rolePill: {
-    alignSelf: "flex-start",
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 999,
-    backgroundColor: "#F1F5F9",
-  },
-  rolePillText: {
-    fontSize: 10.5,
-    fontWeight: "700",
-    color: "#475569",
-    letterSpacing: 0.3,
-    textTransform: "uppercase",
+    color: colors.text,
   },
   divider: {
     height: 1,
-    backgroundColor: "#F1F5F9",
+    backgroundColor: colors.surfaceMuted,
     marginVertical: 6,
   },
   logoutItem: {
@@ -224,7 +202,7 @@ const styles = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 8,
-    backgroundColor: "#FEF2F2",
+    backgroundColor: colors.dangerSoft,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -232,17 +210,12 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 14,
     fontWeight: "700",
-    color: "#DC2626",
-  },
-  confirmBlock: {
-    paddingVertical: 8,
-    paddingHorizontal: 6,
-    gap: 12,
+    color: colors.danger,
   },
   confirmText: {
     fontSize: 13.5,
     fontWeight: "600",
-    color: "#0F172A",
+    color: colors.text,
     textAlign: "center",
   },
   confirmRow: {
@@ -259,19 +232,19 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   btnSecondary: {
-    backgroundColor: "#F1F5F9",
+    backgroundColor: colors.surfaceMuted,
   },
   btnSecondaryText: {
     fontSize: 13.5,
     fontWeight: "700",
-    color: "#475569",
+    color: colors.textStrong,
   },
   btnDanger: {
-    backgroundColor: "#DC2626",
+    backgroundColor: colors.danger,
   },
   btnDangerText: {
     fontSize: 13.5,
     fontWeight: "700",
-    color: "#FFFFFF",
+    color: colors.textOnPrimary,
   },
 });

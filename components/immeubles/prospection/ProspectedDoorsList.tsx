@@ -1,6 +1,7 @@
 import { Feather } from "@expo/vector-icons";
 import { memo, useMemo, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
+import { colors } from "@/constants/theme";
 
 import BuildingFloorStrip from "@/components/immeubles/prospection/BuildingFloorStrip";
 import FloorSection from "@/components/immeubles/prospection/FloorSection";
@@ -78,7 +79,7 @@ function ProspectedDoorsListImpl({
             <Feather
               name={hasFilters ? "filter" : "home"}
               size={22}
-              color="#0F172A"
+              color={colors.text}
             />
           </View>
           <Text style={styles.emptyTitle}>
@@ -91,7 +92,7 @@ function ProspectedDoorsListImpl({
           </Text>
           {!hasFilters ? (
             <View style={styles.emptyHintPill}>
-              <Feather name="arrow-down-right" size={13} color="#94A3B8" />
+              <Feather name="arrow-down-right" size={13} color={colors.textSubtle} />
               <Text style={styles.emptyHintText}>Nouvelle prospection</Text>
             </View>
           ) : null}
@@ -133,9 +134,9 @@ const styles = StyleSheet.create({
     paddingVertical: 28,
     paddingHorizontal: 24,
     borderRadius: 24,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: "#EAECEF",
+    borderColor: colors.border,
     alignItems: "center",
     gap: 10,
   },
@@ -148,9 +149,9 @@ const styles = StyleSheet.create({
     width: 52,
     height: 52,
     borderRadius: 18,
-    backgroundColor: "#F1F5F9",
+    backgroundColor: colors.surfaceMuted,
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: colors.border,
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 4,
@@ -158,12 +159,12 @@ const styles = StyleSheet.create({
   emptyTitle: {
     fontSize: 17,
     fontWeight: "800",
-    color: "#0F172A",
+    color: colors.text,
     letterSpacing: -0.3,
   },
   emptyText: {
     fontSize: 13,
-    color: "#64748B",
+    color: colors.textMuted,
     textAlign: "center",
     lineHeight: 19,
     maxWidth: 320,
@@ -176,14 +177,14 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     paddingHorizontal: 12,
     borderRadius: 999,
-    backgroundColor: "#F8FAFC",
+    backgroundColor: colors.background,
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: colors.border,
   },
   emptyHintText: {
     fontSize: 11,
     fontWeight: "700",
-    color: "#64748B",
+    color: colors.textMuted,
     letterSpacing: 0.4,
     textTransform: "uppercase",
   },

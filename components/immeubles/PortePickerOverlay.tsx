@@ -12,6 +12,8 @@ import {
   useWindowDimensions,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { Card, Chip, PressableCard } from "@/components/ui";
+import { colors } from "@/constants/theme";
 
 import {
   DEFAULT_STATUS_OPTION,
@@ -120,7 +122,7 @@ export default function PortePickerOverlay({
 
             <View style={styles.header}>
               <View style={styles.headerIcon}>
-                <Feather name="trash-2" size={18} color="#DC2626" />
+                <Feather name="trash-2" size={18} color={colors.danger} />
               </View>
               <View style={styles.headerText}>
                 <Text style={styles.title}>{title}</Text>
@@ -132,7 +134,7 @@ export default function PortePickerOverlay({
                 hitSlop={10}
                 accessibilityLabel="Fermer"
               >
-                <Feather name="x" size={18} color="#64748B" />
+                <Feather name="x" size={18} color={colors.textMuted} />
               </Pressable>
             </View>
 
@@ -146,17 +148,15 @@ export default function PortePickerOverlay({
               showsVerticalScrollIndicator={false}
             >
               {sections.length === 0 ? (
-                <View style={styles.emptyCard}>
-                  <Feather name="inbox" size={20} color="#94A3B8" />
+                <Card variant="filled" padding="md" style={styles.emptyCardContainer}>
+                  <Feather name="inbox" size={20} color={colors.textSubtle} />
                   <Text style={styles.emptyText}>Aucune porte à supprimer</Text>
-                </View>
+                </Card>
               ) : (
                 sections.map((section) => (
                   <View key={section.etage} style={styles.section}>
                     <View style={styles.sectionHeader}>
-                      <View style={styles.etageBadge}>
-                        <Text style={styles.etageBadgeText}>{section.etage}</Text>
-                      </View>
+                      <Chip tone="primary" label={String(section.etage)} />
                       <Text style={styles.sectionTitle}>
                         Étage {section.etage}
                       </Text>
@@ -175,8 +175,10 @@ export default function PortePickerOverlay({
                           : DEFAULT_STATUS_OPTION;
 
                         return (
-                          <Pressable
+                          <PressableCard
                             key={porte.id}
+                            variant="outlined"
+                            padding="none"
                             onPress={() =>
                               setSelectedId((prev) =>
                                 prev === porte.id ? null : porte.id,
@@ -205,7 +207,7 @@ export default function PortePickerOverlay({
                                   <Feather
                                     name="trash-2"
                                     size={12}
-                                    color="#FFFFFF"
+                                    color={colors.textOnPrimary}
                                   />
                                 </View>
                               ) : (
@@ -227,7 +229,7 @@ export default function PortePickerOverlay({
                             >
                               {status.label}
                             </Text>
-                          </Pressable>
+                          </PressableCard>
                         );
                       })}
                     </View>
@@ -257,7 +259,7 @@ export default function PortePickerOverlay({
                   if (selected) onSelect(selected);
                 }}
               >
-                <Feather name="trash-2" size={15} color="#FFFFFF" />
+                <Feather name="trash-2" size={15} color={colors.textOnPrimary} />
                 <Text style={styles.confirmBtnText}>
                   {selected
                     ? `${confirmLabel} ${selected.numero}`
@@ -289,11 +291,11 @@ const styles = StyleSheet.create({
   },
   sheet: {
     width: "100%",
-    backgroundColor: "#FAFAF7",
+    backgroundColor: colors.background,
     borderRadius: 28,
     paddingTop: 14,
     paddingBottom: 0,
-    shadowColor: "#0F172A",
+    shadowColor: colors.text,
     shadowOpacity: 0.24,
     shadowRadius: 32,
     shadowOffset: { width: 0, height: 16 },
@@ -309,7 +311,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 5,
     borderRadius: 999,
-    backgroundColor: "#E2E8F0",
+    backgroundColor: colors.border,
     marginBottom: 4,
   },
   header: {
@@ -324,7 +326,7 @@ const styles = StyleSheet.create({
     width: 42,
     height: 42,
     borderRadius: 14,
-    backgroundColor: "#FEE2E2",
+    backgroundColor: colors.dangerSoft,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -335,13 +337,13 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 16.5,
     fontWeight: "800",
-    color: "#0F172A",
+    color: colors.text,
     letterSpacing: -0.3,
   },
   hint: {
     marginTop: 3,
     fontSize: 12,
-    color: "#64748B",
+    color: colors.textMuted,
     lineHeight: 16,
   },
   closeBtn: {
@@ -350,13 +352,13 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: colors.border,
   },
   divider: {
     height: 1,
-    backgroundColor: "#E2E8F0",
+    backgroundColor: colors.border,
     marginHorizontal: 18,
   },
   scrollContent: {
@@ -370,7 +372,7 @@ const styles = StyleSheet.create({
     paddingTop: 20,
     gap: 24,
   },
-  emptyCard: {
+  emptyCardContainer: {
     alignItems: "center",
     justifyContent: "center",
     gap: 10,
@@ -378,7 +380,7 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 13,
-    color: "#94A3B8",
+    color: colors.textSubtle,
     fontWeight: "600",
   },
   section: {
@@ -390,32 +392,17 @@ const styles = StyleSheet.create({
     gap: 10,
     paddingHorizontal: 2,
   },
-  etageBadge: {
-    minWidth: 26,
-    height: 26,
-    paddingHorizontal: 7,
-    borderRadius: 8,
-    backgroundColor: "#0F172A",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  etageBadgeText: {
-    color: "#FFFFFF",
-    fontSize: 12,
-    fontWeight: "800",
-    fontVariant: ["tabular-nums"],
-  },
   sectionTitle: {
     flex: 1,
     fontSize: 12,
     fontWeight: "800",
-    color: "#0F172A",
+    color: colors.text,
     letterSpacing: 1.2,
     textTransform: "uppercase",
   },
   sectionCount: {
     fontSize: 11,
-    color: "#94A3B8",
+    color: colors.textSubtle,
     fontWeight: "700",
     letterSpacing: 0.4,
     textTransform: "uppercase",
@@ -433,9 +420,6 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     padding: 12,
     borderRadius: 14,
-    backgroundColor: "#FFFFFF",
-    borderWidth: 1.5,
-    borderColor: "#EAECEF",
     gap: 6,
     minHeight: 76,
   },
@@ -444,8 +428,8 @@ const styles = StyleSheet.create({
     padding: 14,
   },
   tileSelected: {
-    backgroundColor: "#DC2626",
-    borderColor: "#DC2626",
+    backgroundColor: colors.danger,
+    borderColor: colors.danger,
   },
   tileTop: {
     flexDirection: "row",
@@ -455,13 +439,13 @@ const styles = StyleSheet.create({
   tileNumber: {
     fontSize: 18,
     fontWeight: "800",
-    color: "#0F172A",
+    color: colors.text,
     fontVariant: ["tabular-nums"],
     letterSpacing: -0.4,
     flex: 1,
   },
   tileNumberSelected: {
-    color: "#FFFFFF",
+    color: colors.textOnPrimary,
   },
   tileStatusDot: {
     width: 9,
@@ -490,26 +474,26 @@ const styles = StyleSheet.create({
     paddingHorizontal: 18,
     paddingTop: 14,
     paddingBottom: 18,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface,
     borderTopWidth: 1,
-    borderTopColor: "#EAECEF",
+    borderTopColor: colors.border,
   },
   cancelBtn: {
     flex: 1,
     borderRadius: 16,
     borderWidth: 1.5,
-    borderColor: "#E2E8F0",
+    borderColor: colors.border,
     paddingVertical: 14,
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface,
   },
   cancelBtnPressed: {
-    backgroundColor: "#F8FAFC",
+    backgroundColor: colors.background,
   },
   cancelBtnText: {
     fontSize: 14,
     fontWeight: "700",
-    color: "#475569",
+    color: colors.textStrong,
   },
   confirmBtn: {
     flex: 1.4,
@@ -519,15 +503,15 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#DC2626",
-    shadowColor: "#DC2626",
+    backgroundColor: colors.danger,
+    shadowColor: colors.danger,
     shadowOpacity: 0.28,
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 6 },
     elevation: 6,
   },
   confirmBtnDisabled: {
-    backgroundColor: "#CBD5E1",
+    backgroundColor: colors.borderStrong,
     shadowOpacity: 0,
     elevation: 0,
   },
@@ -537,7 +521,7 @@ const styles = StyleSheet.create({
   confirmBtnText: {
     fontSize: 14,
     fontWeight: "800",
-    color: "#FFFFFF",
+    color: colors.textOnPrimary,
     letterSpacing: 0.1,
   },
 });

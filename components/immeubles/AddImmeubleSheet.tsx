@@ -1,4 +1,6 @@
-﻿import type { CreateImmeubleInput } from "@/types/api";
+﻿import { Card } from "@/components/ui";
+import { colors } from "@/constants/theme";
+import type { CreateImmeubleInput } from "@/types/api";
 import { Feather } from "@expo/vector-icons";
 import {
   BottomSheetBackdrop,
@@ -336,18 +338,18 @@ export default function AddImmeubleSheet({
                 <Feather
                   name={isAddressSelected ? "check-circle" : "map-pin"}
                   size={16}
-                  color={isAddressSelected ? "#16A34A" : "#94A3B8"}
+                  color={isAddressSelected ? colors.success : colors.textSubtle}
                 />
                 <TextInput
                   ref={adresseInputRef}
                   placeholder="N° rue, code postal, ville…"
-                  placeholderTextColor="#94A3B8"
+                  placeholderTextColor={colors.textSubtle}
                   style={[styles.input, styles.inputInline]}
                   value={formData.adresse}
                   onChangeText={(value) => handleChange("adresse", value)}
                 />
                 {loadingSuggestions ? (
-                  <ActivityIndicator size="small" color="#005BFF" />
+                  <ActivityIndicator size="small" color={colors.primary} />
                 ) : formData.adresse.length > 0 ? (
                   <Pressable
                     onPress={() => {
@@ -356,7 +358,7 @@ export default function AddImmeubleSheet({
                     }}
                     hitSlop={8}
                   >
-                    <Feather name="x" size={16} color="#94A3B8" />
+                    <Feather name="x" size={16} color={colors.textSubtle} />
                   </Pressable>
                 ) : null}
               </Pressable>
@@ -370,7 +372,7 @@ export default function AddImmeubleSheet({
               )}
 
               {addressSuggestions.length > 0 && (
-                <View style={styles.suggestionsCard}>
+                <Card variant="outlined" padding="none" style={styles.suggestionsCard}>
                   {addressSuggestions.map((suggestion, idx) => {
                     const p = suggestion.properties;
                     const title =
@@ -390,7 +392,7 @@ export default function AddImmeubleSheet({
                         onPress={() => selectAddress(suggestion)}
                       >
                         <View style={styles.suggestionIcon}>
-                          <Feather name="map-pin" size={14} color="#005BFF" />
+                          <Feather name="map-pin" size={14} color={colors.primary} />
                         </View>
                         <View style={styles.suggestionText}>
                           <Text
@@ -411,12 +413,12 @@ export default function AddImmeubleSheet({
                         <Feather
                           name="corner-down-left"
                           size={14}
-                          color="#CBD5E1"
+                          color={colors.borderStrong}
                         />
                       </Pressable>
                     );
                   })}
-                </View>
+                </Card>
               )}
 
               <Text style={[styles.label, styles.labelSpacing]}>
@@ -441,7 +443,7 @@ export default function AddImmeubleSheet({
                   <TextInput
                     keyboardType="number-pad"
                     placeholder="5"
-                    placeholderTextColor="#94A3B8"
+                    placeholderTextColor={colors.textSubtle}
                     style={[styles.input, errors.nbEtages && styles.inputError]}
                     value={formData.nbEtages}
                     onChangeText={(value) => handleChange("nbEtages", value)}
@@ -455,7 +457,7 @@ export default function AddImmeubleSheet({
                   <TextInput
                     keyboardType="number-pad"
                     placeholder="4"
-                    placeholderTextColor="#94A3B8"
+                    placeholderTextColor={colors.textSubtle}
                     style={[
                       styles.input,
                       errors.nbPortesParEtage && styles.inputError,
@@ -471,9 +473,9 @@ export default function AddImmeubleSheet({
                 </View>
               </View>
 
-              <View style={styles.summaryCard}>
+              <Card variant="filled" padding="md" style={styles.summaryCard}>
                 <View style={styles.summaryIcon}>
-                  <Feather name="layers" size={16} color="#005BFF" />
+                  <Feather name="layers" size={16} color={colors.primary} />
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.summaryLabel}>Capacité estimée</Text>
@@ -482,15 +484,15 @@ export default function AddImmeubleSheet({
                   </Text>
                 </View>
                 <Text style={styles.summaryValue}>{totalPortes}</Text>
-              </View>
+              </Card>
             </>
           )}
 
           {currentStep === 2 && (
             <>
-              <View style={styles.switchRow}>
+              <Card variant="outlined" padding="md" style={styles.switchRow}>
                 <View style={styles.switchIcon}>
-                  <Feather name="chevrons-up" size={16} color="#005BFF" />
+                  <Feather name="chevrons-up" size={16} color={colors.primary} />
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.label}>Ascenseur</Text>
@@ -503,18 +505,18 @@ export default function AddImmeubleSheet({
                   onValueChange={(value) =>
                     handleChange("ascenseurPresent", value)
                   }
-                  trackColor={{ false: "#E2E8F0", true: "#99BDFF" }}
-                  thumbColor={formData.ascenseurPresent ? "#005BFF" : "#FFFFFF"}
+                  trackColor={{ false: colors.border, true: colors.primaryRing }}
+                  thumbColor={formData.ascenseurPresent ? colors.primary : colors.surface}
                 />
-              </View>
+              </Card>
 
               <View style={styles.field}>
                 <Text style={styles.label}>Code d'accès</Text>
                 <View style={styles.inputRow}>
-                  <Feather name="key" size={16} color="#94A3B8" />
+                  <Feather name="key" size={16} color={colors.textSubtle} />
                   <TextInput
                     placeholder="Ex: 1234A"
-                    placeholderTextColor="#94A3B8"
+                    placeholderTextColor={colors.textSubtle}
                     style={[styles.input, styles.inputInline]}
                     value={formData.digitalCode}
                     onChangeText={(value) => handleChange("digitalCode", value)}
@@ -539,7 +541,7 @@ export default function AddImmeubleSheet({
             <Feather
               name={currentStep === 0 ? "x" : "chevron-left"}
               size={16}
-              color="#475569"
+              color={colors.textStrong}
             />
             <Text style={styles.ghostText}>
               {currentStep === 0 ? "Annuler" : "Retour"}
@@ -555,7 +557,7 @@ export default function AddImmeubleSheet({
             disabled={loading}
           >
             {loading ? (
-              <ActivityIndicator color="#FFFFFF" size="small" />
+              <ActivityIndicator color={colors.textInverse} size="small" />
             ) : (
               <>
                 <Text style={styles.primaryText}>
@@ -568,7 +570,7 @@ export default function AddImmeubleSheet({
                       : "arrow-right"
                   }
                   size={16}
-                  color="#FFFFFF"
+                  color={colors.textInverse}
                 />
               </>
             )}
@@ -581,7 +583,7 @@ export default function AddImmeubleSheet({
 
 const styles = StyleSheet.create({
   sheetBackground: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
   },
@@ -608,7 +610,7 @@ const styles = StyleSheet.create({
   eyebrow: {
     fontSize: 11,
     fontWeight: "700",
-    color: "#005BFF",
+    color: colors.primary,
     letterSpacing: 1.2,
     textTransform: "uppercase",
   },
@@ -616,7 +618,7 @@ const styles = StyleSheet.create({
     marginTop: 4,
     fontSize: 22,
     fontWeight: "800",
-    color: "#0F172A",
+    color: colors.text,
     letterSpacing: -0.3,
   },
   progressTrack: {
@@ -629,10 +631,10 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 4,
     borderRadius: 999,
-    backgroundColor: "#E2E8F0",
+    backgroundColor: colors.border,
   },
   progressSegActive: {
-    backgroundColor: "#0F172A",
+    backgroundColor: colors.text,
   },
   content: {
     paddingTop: 18,
@@ -642,7 +644,7 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 12.5,
     fontWeight: "700",
-    color: "#475569",
+    color: colors.textStrong,
     letterSpacing: 0.2,
     marginBottom: 8,
   },
@@ -651,13 +653,13 @@ const styles = StyleSheet.create({
   },
   input: {
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: colors.border,
     borderRadius: 14,
     paddingHorizontal: 14,
     paddingVertical: 13,
     fontSize: 15,
-    color: "#0F172A",
-    backgroundColor: "#FFFFFF",
+    color: colors.text,
+    backgroundColor: colors.surface,
     fontWeight: "500",
   },
   inputInline: {
@@ -672,11 +674,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 10,
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: colors.border,
     borderRadius: 14,
     paddingHorizontal: 14,
     paddingVertical: 12,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface,
   },
   inputRowSelected: {
     borderColor: "#86EFAC",
@@ -684,34 +686,25 @@ const styles = StyleSheet.create({
   },
   inputRowError: {
     borderColor: "#FCA5A5",
-    backgroundColor: "#FEF2F2",
+    backgroundColor: colors.dangerSoft,
   },
   inputError: {
     borderColor: "#FCA5A5",
   },
   error: {
-    color: "#EF4444",
+    color: colors.danger,
     fontSize: 12,
     marginTop: 4,
   },
   hintText: {
     marginTop: 6,
     fontSize: 11.5,
-    color: "#94A3B8",
+    color: colors.textSubtle,
     fontWeight: "500",
   },
   suggestionsCard: {
     marginTop: 10,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-    backgroundColor: "#FFFFFF",
     overflow: "hidden",
-    shadowColor: "#0F172A",
-    shadowOpacity: 0.04,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 6 },
-    elevation: 2,
   },
   suggestionItem: {
     flexDirection: "row",
@@ -720,16 +713,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: "#F1F5F9",
+    borderBottomColor: colors.surfaceMuted,
   },
   suggestionItemPressed: {
-    backgroundColor: "#F8FAFC",
+    backgroundColor: colors.background,
   },
   suggestionIcon: {
     width: 30,
     height: 30,
     borderRadius: 10,
-    backgroundColor: "#E5EEFF",
+    backgroundColor: colors.primarySoft,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -740,12 +733,12 @@ const styles = StyleSheet.create({
   suggestionTitle: {
     fontSize: 13.5,
     fontWeight: "700",
-    color: "#0F172A",
+    color: colors.text,
   },
   suggestionSubtitle: {
     marginTop: 2,
     fontSize: 11.5,
-    color: "#64748B",
+    color: colors.textMuted,
     fontWeight: "500",
   },
   row: {
@@ -759,35 +752,30 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 14,
-    backgroundColor: "#F8FAFC",
-    borderRadius: 16,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
   },
   summaryIcon: {
     width: 36,
     height: 36,
     borderRadius: 12,
-    backgroundColor: "#E5EEFF",
+    backgroundColor: colors.primarySoft,
     alignItems: "center",
     justifyContent: "center",
   },
   summaryLabel: {
     fontSize: 13,
     fontWeight: "700",
-    color: "#0F172A",
+    color: colors.text,
   },
   summaryHint: {
     marginTop: 2,
     fontSize: 11.5,
-    color: "#64748B",
+    color: colors.textMuted,
     fontWeight: "500",
   },
   summaryValue: {
     fontSize: 22,
     fontWeight: "800",
-    color: "#0F172A",
+    color: colors.text,
     fontVariant: ["tabular-nums"],
     minWidth: 36,
     textAlign: "right",
@@ -795,24 +783,19 @@ const styles = StyleSheet.create({
   helper: {
     marginTop: 2,
     fontSize: 12,
-    color: "#64748B",
+    color: colors.textMuted,
     fontWeight: "500",
   },
   switchRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: 14,
-    padding: 16,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-    backgroundColor: "#FFFFFF",
   },
   switchIcon: {
     width: 36,
     height: 36,
     borderRadius: 12,
-    backgroundColor: "#E5EEFF",
+    backgroundColor: colors.primarySoft,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -821,7 +804,7 @@ const styles = StyleSheet.create({
     gap: 10,
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: "#F1F5F9",
+    borderTopColor: colors.surfaceMuted,
   },
   ghostButton: {
     flexDirection: "row",
@@ -831,12 +814,12 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     paddingHorizontal: 18,
     borderRadius: 14,
-    backgroundColor: "#F1F5F9",
+    backgroundColor: colors.surfaceMuted,
   },
   ghostText: {
     fontSize: 14,
     fontWeight: "700",
-    color: "#475569",
+    color: colors.textStrong,
   },
   primaryButton: {
     flex: 1,
@@ -846,15 +829,15 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingVertical: 14,
     borderRadius: 14,
-    backgroundColor: "#0F172A",
+    backgroundColor: colors.text,
   },
   primaryDisabled: {
-    backgroundColor: "#94A3B8",
+    backgroundColor: colors.textSubtle,
   },
   primaryText: {
     fontSize: 14.5,
     fontWeight: "700",
-    color: "#FFFFFF",
+    color: colors.textInverse,
     letterSpacing: 0.2,
   },
 });

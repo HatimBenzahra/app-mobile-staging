@@ -1,6 +1,8 @@
 import { Feather } from "@expo/vector-icons";
 import { memo, useEffect, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
+import { colors } from "@/constants/theme";
+
 
 type LiveSegmentHeaderProps = {
   porteNumero: string;
@@ -44,7 +46,7 @@ function LiveSegmentHeaderImpl({
         </Text>
       </View>
       <View style={styles.chrono}>
-        <Feather name="clock" size={13} color="#0F172A" />
+        <Feather name="clock" size={13} color={colors.text} />
         <Text style={styles.chronoText}>{formatChrono(elapsedMs)}</Text>
       </View>
     </View>
@@ -53,12 +55,12 @@ function LiveSegmentHeaderImpl({
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface,
     borderRadius: 20,
     paddingHorizontal: 18,
     paddingVertical: 16,
     borderWidth: 1,
-    borderColor: "#EAECEF",
+    borderColor: colors.border,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
@@ -74,14 +76,14 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   eyebrow: {
-    color: "#64748B",
+    color: colors.textMuted,
     fontSize: 11,
     fontWeight: "800",
     letterSpacing: 1.2,
     textTransform: "uppercase",
   },
   name: {
-    color: "#0F172A",
+    color: colors.text,
     fontSize: 19,
     fontWeight: "800",
     letterSpacing: -0.4,
@@ -93,12 +95,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 10,
     borderRadius: 14,
-    backgroundColor: "#F1F5F9",
+    backgroundColor: colors.surfaceMuted,
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: colors.border,
   },
   chronoText: {
-    color: "#0F172A",
+    color: colors.text,
     fontSize: 15,
     fontWeight: "800",
     fontVariant: ["tabular-nums"],

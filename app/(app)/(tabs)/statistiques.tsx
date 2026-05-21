@@ -3,6 +3,8 @@ import { useWorkspaceProfile } from "@/hooks/api/use-workspace-profile";
 import { authService } from "@/services/auth";
 import { dataSyncService } from "@/services/sync/data-sync.service";
 import type { TimelinePoint } from "@/types/api";
+import { Card, Chip, PressableCard, StatTile } from "@/components/ui";
+import { colors } from "@/constants/theme";
 import { Feather } from "@expo/vector-icons";
 import { useIsFocused } from "@react-navigation/native";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -391,16 +393,16 @@ export default function StatistiquesScreen({
     return `${day} ${month}`;
   }, []);
 
-  const pieData = useMemo(() => {
+  const pieData = useMemo((): { label: string; value: number; color: string }[] => {
     const base = [
-      { label: "Contrats", value: filteredKpi.contrats, color: "#005BFF" },
-      { label: "RDV", value: filteredKpi.rdv, color: "#10B981" },
-      { label: "Refus", value: filteredKpi.refus, color: "#F59E0B" },
-      { label: "Absents", value: filteredKpi.absents, color: "#EF4444" },
+      { label: "Contrats", value: filteredKpi.contrats, color: colors.primary },
+      { label: "RDV", value: filteredKpi.rdv, color: colors.success },
+      { label: "Refus", value: filteredKpi.refus, color: colors.warning },
+      { label: "Absents", value: filteredKpi.absents, color: colors.danger },
     ];
     const total = base.reduce((sum, item) => sum + item.value, 0);
     if (total === 0) {
-      return [{ label: "Aucune", value: 1, color: "#E2E8F0" }];
+      return [{ label: "Aucune", value: 1, color: colors.border }];
     }
     return base;
   }, [filteredKpi]);
@@ -556,7 +558,7 @@ export default function StatistiquesScreen({
           <Animated.View
             key={`section-skeleton-${index}`}
             style={[
-              styles.sectionCard,
+              styles.sectionSkeletonCard,
               styles.sectionCardTopSpacing,
               { opacity: skeletonOpacity },
             ]}
@@ -579,7 +581,7 @@ export default function StatistiquesScreen({
       ]}
     >
       <Animated.View style={{ opacity: contentOpacity }}>
-      <View style={styles.overviewCard}>
+      <Card variant="elevated" padding="lg" style={styles.overviewCardGap}>
         <View style={styles.overviewHeader}>
           <View>
             <Text style={styles.overviewTitle}>Vue d'ensemble</Text>
@@ -601,70 +603,57 @@ export default function StatistiquesScreen({
         </View>
 
         <View style={styles.kpiGrid}>
-          <View style={styles.kpiCard}>
-            <View style={styles.kpiHeader}>
-              <Text style={styles.kpiLabel}>Immeubles</Text>
-              <View style={styles.kpiIcon}>
-                <Feather name="home" size={18} color="#005BFF" />
-              </View>
-            </View>
-            <Text style={styles.kpiValue}>
-              {isLoading ? "--" : filteredKpi.immeubles}
-            </Text>
-            <Text style={styles.kpiHint}>Prospectés</Text>
-          </View>
-          <View style={styles.kpiCard}>
-            <View style={styles.kpiHeader}>
-              <Text style={styles.kpiLabel}>Portes</Text>
-              <View style={styles.kpiIcon}>
-                <Feather name="grid" size={18} color="#005BFF" />
-              </View>
-            </View>
-            <Text style={styles.kpiValue}>
-              {isLoading ? "--" : filteredKpi.portes}
-            </Text>
-            <Text style={styles.kpiHint}>Prospectées</Text>
-          </View>
-          <View style={styles.kpiCard}>
-            <View style={styles.kpiHeader}>
-              <Text style={styles.kpiLabel}>RDV pris</Text>
-              <View style={styles.kpiIcon}>
-                <Feather name="calendar" size={18} color="#005BFF" />
-              </View>
-            </View>
-            <Text style={styles.kpiValue}>{isLoading ? "--" : filteredKpi.rdv}</Text>
-            <Text style={styles.kpiHint}>Rendez-vous</Text>
-          </View>
-          <View style={styles.kpiCard}>
-            <View style={styles.kpiHeader}>
-              <Text style={styles.kpiLabel}>Contrats</Text>
-              <View style={styles.kpiIcon}>
-                <Feather name="award" size={18} color="#005BFF" />
-              </View>
-            </View>
-            <Text style={styles.kpiValue}>{isLoading ? "--" : filteredKpi.contrats}</Text>
-            <Text style={styles.kpiHint}>Signés</Text>
-          </View>
-          <View style={styles.kpiCard}>
-            <View style={styles.kpiHeader}>
-              <Text style={styles.kpiLabel}>Refus</Text>
-              <View style={styles.kpiIcon}>
-                <Feather name="x-circle" size={18} color="#005BFF" />
-              </View>
-            </View>
-            <Text style={styles.kpiValue}>{isLoading ? "--" : filteredKpi.refus}</Text>
-            <Text style={styles.kpiHint}>Interactions</Text>
-          </View>
-          <View style={styles.kpiCard}>
-            <View style={styles.kpiHeader}>
-              <Text style={styles.kpiLabel}>Absents</Text>
-              <View style={styles.kpiIcon}>
-                <Feather name="user-x" size={18} color="#005BFF" />
-              </View>
-            </View>
-            <Text style={styles.kpiValue}>{isLoading ? "--" : filteredKpi.absents}</Text>
-            <Text style={styles.kpiHint}>Non rencontrés</Text>
-          </View>
+          <StatTile
+            icon="home"
+            label="Immeubles"
+            value={isLoading ? "--" : filteredKpi.immeubles}
+            emphasis="default"
+            hint="Prospectés"
+            style={styles.kpiTile}
+          />
+          <StatTile
+            icon="grid"
+            label="Portes"
+            value={isLoading ? "--" : filteredKpi.portes}
+            emphasis="default"
+            hint="Prospectées"
+            style={styles.kpiTile}
+          />
+          <StatTile
+            icon="calendar"
+            label="RDV pris"
+            value={isLoading ? "--" : filteredKpi.rdv}
+            emphasis="default"
+            hint="Rendez-vous"
+            style={styles.kpiTile}
+          />
+          <StatTile
+            icon="award"
+            label="Contrats"
+            value={isLoading ? "--" : filteredKpi.contrats}
+            emphasis="default"
+            iconTone="success"
+            hint="Signés"
+            style={styles.kpiTile}
+          />
+          <StatTile
+            icon="x-circle"
+            label="Refus"
+            value={isLoading ? "--" : filteredKpi.refus}
+            emphasis="default"
+            iconTone="danger"
+            hint="Interactions"
+            style={styles.kpiTile}
+          />
+          <StatTile
+            icon="user-x"
+            label="Absents"
+            value={isLoading ? "--" : filteredKpi.absents}
+            emphasis="default"
+            iconTone="warning"
+            hint="Non rencontrés"
+            style={styles.kpiTile}
+          />
         </View>
 
         <View style={styles.overviewDivider} />
@@ -674,15 +663,15 @@ export default function StatistiquesScreen({
             <Text style={styles.chartHeaderTitle}>Activité / jour</Text>
             <View style={styles.chartLegendRow}>
               <View style={styles.chartLegendItem}>
-                <View style={[styles.chartLegendDot, { backgroundColor: "#005BFF" }]} />
+                <View style={[styles.chartLegendDot, { backgroundColor: colors.primary }]} />
                 <Text style={styles.chartLegendText}>Portes</Text>
               </View>
               <View style={styles.chartLegendItem}>
-                <View style={[styles.chartLegendDot, { backgroundColor: "#10B981" }]} />
+                <View style={[styles.chartLegendDot, { backgroundColor: colors.success }]} />
                 <Text style={styles.chartLegendText}>RDV</Text>
               </View>
               <View style={styles.chartLegendItem}>
-                <View style={[styles.chartLegendDot, { backgroundColor: "#F59E0B" }]} />
+                <View style={[styles.chartLegendDot, { backgroundColor: colors.warning }]} />
                 <Text style={styles.chartLegendText}>Contrats</Text>
               </View>
             </View>
@@ -697,9 +686,9 @@ export default function StatistiquesScreen({
               width={chartWidth}
               curved
               thickness={2.5}
-              color="#005BFF"
-              color2="#10B981"
-              color3="#F59E0B"
+              color={colors.primary}
+              color2={colors.success}
+              color3={colors.warning}
               areaChart
               startFillColor="rgba(0, 91, 255, 0.12)"
               endFillColor="rgba(0, 91, 255, 0)"
@@ -720,7 +709,7 @@ export default function StatistiquesScreen({
               yAxisTextStyle={styles.yAxisLabel}
               yAxisColor="transparent"
               yAxisThickness={0}
-              xAxisColor="#E2E8F0"
+              xAxisColor={colors.border}
               xAxisThickness={1}
               hideRules
               rulesColor="transparent"
@@ -733,9 +722,9 @@ export default function StatistiquesScreen({
               spacing={chartSpacing}
               initialSpacing={12}
               endSpacing={12}
-              dataPointsColor1="#005BFF"
-              dataPointsColor2="#10B981"
-              dataPointsColor3="#F59E0B"
+              dataPointsColor1={colors.primary}
+              dataPointsColor2={colors.success}
+              dataPointsColor3={colors.warning}
               dataPointsRadius1={3}
               dataPointsRadius2={3}
               dataPointsRadius3={3}
@@ -787,9 +776,9 @@ export default function StatistiquesScreen({
             )}
           </View>
         </View>
-      </View>
+      </Card>
 
-      <View style={[styles.sectionCard, styles.sectionCardTopSpacing]}>
+      <Card variant="elevated" padding="md" style={[styles.sectionCardGap, styles.sectionCardTopSpacing]}>
         <View style={styles.sectionHeaderRow}>
           <View>
             <Text style={styles.sectionTitle}>Rendez-vous</Text>
@@ -797,15 +786,15 @@ export default function StatistiquesScreen({
           </View>
           <View style={styles.weekNav}>
             <Pressable onPress={() => setWeekOffset((w) => w - 1)} style={styles.weekNavBtn}>
-              <Feather name="chevron-left" size={18} color="#005BFF" />
+              <Feather name="chevron-left" size={18} color={colors.primary} />
             </Pressable>
             {weekOffset !== 0 && (
               <Pressable onPress={() => { setWeekOffset(0); setSelectedDay(todayKey); }} style={styles.weekNavBtn}>
-                <Feather name="rotate-ccw" size={14} color="#005BFF" />
+                <Feather name="rotate-ccw" size={14} color={colors.primary} />
               </Pressable>
             )}
             <Pressable onPress={() => setWeekOffset((w) => w + 1)} style={styles.weekNavBtn}>
-              <Feather name="chevron-right" size={18} color="#005BFF" />
+              <Feather name="chevron-right" size={18} color={colors.primary} />
             </Pressable>
           </View>
         </View>
@@ -844,22 +833,25 @@ export default function StatistiquesScreen({
 
         {selectedDayRdvs.length === 0 ? (
           <View style={styles.rdvEmpty}>
-            <Feather name="calendar" size={28} color="#CBD5E1" />
+            <Feather name="calendar" size={28} color={colors.borderStrong} />
             <Text style={styles.rdvEmptyText}>Aucun rendez-vous</Text>
           </View>
         ) : (
           <View style={styles.rdvList}>
             {selectedDayRdvs.map((item) => (
-              <Pressable
+              <PressableCard
                 key={`${item.porteId}-${item.rdvDate}`}
-                style={styles.rdvCard}
+                variant="outlined"
+                padding="md"
+                style={styles.rdvCardRow}
                 onPress={() => onNavigateToImmeuble?.(item.immeubleId)}
               >
                 <View style={styles.rdvTimeCol}>
-                  <View style={styles.rdvTimeBadge}>
-                    <Feather name="clock" size={11} color="#005BFF" />
-                    <Text style={styles.rdvTimeText}>{item.rdvTime || "--:--"}</Text>
-                  </View>
+                  <Chip
+                    label={item.rdvTime || "--:--"}
+                    icon="clock"
+                    tone="primary"
+                  />
                 </View>
                 <View style={styles.rdvInfoCol}>
                   <Text style={styles.rdvPorteLabel} numberOfLines={1}>
@@ -869,7 +861,7 @@ export default function StatistiquesScreen({
                     {item.etage === 0 ? "RDC" : `${item.etage}${item.etage === 1 ? "er" : "ème"} étage`}
                   </Text>
                   <View style={styles.rdvAddressRow}>
-                    <Feather name="map-pin" size={11} color="#94A3B8" />
+                    <Feather name="map-pin" size={11} color={colors.textSubtle} />
                     <Text style={styles.rdvAddressText} numberOfLines={1}>{item.adresse}</Text>
                   </View>
                   {item.commentaire ? (
@@ -877,13 +869,13 @@ export default function StatistiquesScreen({
                   ) : null}
                 </View>
                 <View style={styles.rdvChevron}>
-                  <Feather name="chevron-right" size={16} color="#CBD5E1" />
+                  <Feather name="chevron-right" size={16} color={colors.borderStrong} />
                 </View>
-              </Pressable>
+              </PressableCard>
             ))}
           </View>
         )}
-      </View>
+      </Card>
 
 
       </Animated.View>
@@ -894,7 +886,7 @@ export default function StatistiquesScreen({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F8FAFC",
+    backgroundColor: colors.background,
   },
   content: {
     padding: 20,
@@ -906,16 +898,21 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: "700",
-    color: "#0F172A",
+    color: colors.text,
   },
   subtitle: {
     fontSize: 14,
-    color: "#64748B",
+    color: colors.textMuted,
   },
   kpiGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
     gap: 12,
+  },
+  kpiTile: {
+    flexGrow: 1,
+    flexShrink: 0,
+    flexBasis: 140,
   },
   kpiCard: {
     flexGrow: 1,
@@ -924,9 +921,9 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 14,
     minHeight: 110,
-    backgroundColor: "#F8FAFC",
+    backgroundColor: colors.background,
     borderWidth: 1,
-    borderColor: "#F1F5F9",
+    borderColor: colors.surfaceMuted,
   },
   kpiHeader: {
     flexDirection: "row",
@@ -937,7 +934,7 @@ const styles = StyleSheet.create({
     width: 34,
     height: 34,
     borderRadius: 12,
-    backgroundColor: "#E5EEFF",
+    backgroundColor: colors.primarySoft,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -945,27 +942,30 @@ const styles = StyleSheet.create({
     marginTop: 16,
     fontSize: 28,
     fontWeight: "700",
-    color: "#0F172A",
+    color: colors.text,
   },
   kpiLabel: {
     fontSize: 13,
     fontWeight: "600",
-    color: "#0F172A",
+    color: colors.text,
   },
   kpiHint: {
     marginTop: 4,
     fontSize: 12,
-    color: "#64748B",
+    color: colors.textMuted,
   },
-  sectionCard: {
+  sectionSkeletonCard: {
     borderRadius: 20,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface,
     padding: 16,
-    shadowColor: "#0F172A",
+    shadowColor: colors.text,
     shadowOpacity: 0.06,
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 6 },
     elevation: 3,
+    gap: 16,
+  },
+  sectionCardGap: {
     gap: 16,
   },
   sectionCardTopSpacing: {
@@ -986,18 +986,18 @@ const styles = StyleSheet.create({
     width: 38,
     height: 38,
     borderRadius: 14,
-    backgroundColor: "#E5EEFF",
+    backgroundColor: colors.primarySoft,
     alignItems: "center",
     justifyContent: "center",
   },
   sectionTitle: {
     fontSize: 16,
     fontWeight: "700",
-    color: "#0F172A",
+    color: colors.text,
   },
   sectionSubtitle: {
     fontSize: 12,
-    color: "#94A3B8",
+    color: colors.textSubtle,
     marginTop: 2,
   },
   sectionRow: {
@@ -1011,31 +1011,31 @@ const styles = StyleSheet.create({
   sectionValue: {
     fontSize: 20,
     fontWeight: "700",
-    color: "#0F172A",
+    color: colors.text,
   },
   sectionLabel: {
     fontSize: 12,
-    color: "#64748B",
+    color: colors.textMuted,
   },
   sectionDivider: {
     width: 1,
     height: 32,
-    backgroundColor: "#E2E8F0",
+    backgroundColor: colors.border,
     marginHorizontal: 12,
   },
 
   chartSurface: {
     alignSelf: "center",
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface,
     overflow: "hidden",
   },
   yAxisLabel: {
     fontSize: 11,
-    color: "#94A3B8",
+    color: colors.textSubtle,
   },
   axisLabel: {
     fontSize: 10,
-    color: "#94A3B8",
+    color: colors.textSubtle,
   },
   giftedChartWrap: {
     paddingTop: 8,
@@ -1047,7 +1047,7 @@ const styles = StyleSheet.create({
   pieSectionTitle: {
     fontSize: 14,
     fontWeight: "700",
-    color: "#0F172A",
+    color: colors.text,
   },
   pieRow: {
     flexDirection: "row",
@@ -1067,11 +1067,11 @@ const styles = StyleSheet.create({
   pieCenterValue: {
     fontSize: 22,
     fontWeight: "700",
-    color: "#0F172A",
+    color: colors.text,
   },
   pieCenterHint: {
     fontSize: 11,
-    color: "#94A3B8",
+    color: colors.textSubtle,
     marginTop: -2,
   },
   pieLegendCol: {
@@ -1091,31 +1091,23 @@ const styles = StyleSheet.create({
   pieLegendLabel: {
     flex: 1,
     fontSize: 13,
-    color: "#64748B",
+    color: colors.textMuted,
   },
   pieLegendValue: {
     fontSize: 14,
     fontWeight: "700",
-    color: "#0F172A",
+    color: colors.text,
     minWidth: 24,
     textAlign: "right",
   },
   pieLegendPercent: {
     fontSize: 12,
     fontWeight: "600",
-    color: "#94A3B8",
+    color: colors.textSubtle,
     minWidth: 36,
     textAlign: "right",
   },
-  overviewCard: {
-    borderRadius: 20,
-    backgroundColor: "#FFFFFF",
-    padding: 20,
-    shadowColor: "#0F172A",
-    shadowOpacity: 0.08,
-    shadowRadius: 16,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 4,
+  overviewCardGap: {
     gap: 20,
   },
   overviewHeader: {
@@ -1127,16 +1119,16 @@ const styles = StyleSheet.create({
   overviewTitle: {
     fontSize: 17,
     fontWeight: "700",
-    color: "#0F172A",
+    color: colors.text,
   },
   overviewSubtitle: {
     fontSize: 12,
-    color: "#94A3B8",
+    color: colors.textSubtle,
     marginTop: 2,
   },
   segmentedControl: {
     flexDirection: "row",
-    backgroundColor: "#F1F5F9",
+    backgroundColor: colors.surfaceMuted,
     borderRadius: 12,
     padding: 3,
     gap: 2,
@@ -1147,8 +1139,8 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   segmentBtnActive: {
-    backgroundColor: "#FFFFFF",
-    shadowColor: "#0F172A",
+    backgroundColor: colors.surface,
+    shadowColor: colors.text,
     shadowOpacity: 0.08,
     shadowRadius: 4,
     shadowOffset: { width: 0, height: 1 },
@@ -1157,14 +1149,14 @@ const styles = StyleSheet.create({
   segmentText: {
     fontSize: 12,
     fontWeight: "600",
-    color: "#94A3B8",
+    color: colors.textSubtle,
   },
   segmentTextActive: {
-    color: "#005BFF",
+    color: colors.primary,
   },
   overviewDivider: {
     height: 1,
-    backgroundColor: "#F1F5F9",
+    backgroundColor: colors.surfaceMuted,
   },
   chartSection: {
     gap: 12,
@@ -1178,50 +1170,50 @@ const styles = StyleSheet.create({
   chartHeaderTitle: {
     fontSize: 14,
     fontWeight: "700",
-    color: "#0F172A",
+    color: colors.text,
   },
   loadingText: {
     fontSize: 12,
-    color: "#94A3B8",
+    color: colors.textSubtle,
     textAlign: "center",
   },
   kpiSkeletonTop: {
     width: "52%",
     height: 14,
     borderRadius: 7,
-    backgroundColor: "#E2E8F0",
+    backgroundColor: colors.border,
   },
   kpiSkeletonValue: {
     marginTop: 16,
     width: "64%",
     height: 28,
     borderRadius: 12,
-    backgroundColor: "#E2E8F0",
+    backgroundColor: colors.border,
   },
   kpiSkeletonHint: {
     marginTop: 10,
     width: "58%",
     height: 12,
     borderRadius: 6,
-    backgroundColor: "#E2E8F0",
+    backgroundColor: colors.border,
   },
   sectionSkeletonTitle: {
     width: "40%",
     height: 16,
     borderRadius: 8,
-    backgroundColor: "#E2E8F0",
+    backgroundColor: colors.border,
   },
   sectionSkeletonSubtitle: {
     width: "58%",
     height: 12,
     borderRadius: 6,
-    backgroundColor: "#E2E8F0",
+    backgroundColor: colors.border,
   },
   sectionSkeletonChart: {
     marginTop: 8,
     height: 170,
     borderRadius: 14,
-    backgroundColor: "#E2E8F0",
+    backgroundColor: colors.border,
   },
   chartLegendRow: {
     flexDirection: "row",
@@ -1240,7 +1232,7 @@ const styles = StyleSheet.create({
   chartLegendText: {
     fontSize: 11,
     fontWeight: "600",
-    color: "#94A3B8",
+    color: colors.textSubtle,
   },
   weekNav: {
     flexDirection: "row",
@@ -1251,7 +1243,7 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 10,
-    backgroundColor: "#E5EEFF",
+    backgroundColor: colors.primarySoft,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -1265,42 +1257,42 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingVertical: 8,
     borderRadius: 12,
-    backgroundColor: "#F8FAFC",
+    backgroundColor: colors.background,
     gap: 2,
   },
   dayPillActive: {
-    backgroundColor: "#005BFF",
+    backgroundColor: colors.primary,
   },
   dayPillToday: {
-    backgroundColor: "#E5EEFF",
+    backgroundColor: colors.primarySoft,
     borderWidth: 1,
-    borderColor: "#99BDFF",
+    borderColor: colors.primaryRing,
   },
   dayPillLabel: {
     fontSize: 10,
     fontWeight: "600",
-    color: "#94A3B8",
+    color: colors.textSubtle,
     textTransform: "uppercase",
   },
   dayPillLabelActive: {
-    color: "#FFFFFF",
+    color: colors.surface,
   },
   dayPillDate: {
     fontSize: 16,
     fontWeight: "700",
-    color: "#0F172A",
+    color: colors.text,
   },
   dayPillDateActive: {
-    color: "#FFFFFF",
+    color: colors.surface,
   },
   dayPillDot: {
     width: 5,
     height: 5,
     borderRadius: 3,
-    backgroundColor: "#005BFF",
+    backgroundColor: colors.primary,
   },
   dayPillDotActive: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface,
   },
   dayPillDotSpacer: {
     width: 5,
@@ -1314,38 +1306,19 @@ const styles = StyleSheet.create({
   },
   rdvEmptyText: {
     fontSize: 13,
-    color: "#94A3B8",
+    color: colors.textSubtle,
   },
   rdvList: {
     gap: 8,
   },
-  rdvCard: {
+  rdvCardRow: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#F8FAFC",
-    borderRadius: 14,
-    padding: 12,
     gap: 12,
-    borderWidth: 1,
-    borderColor: "#F1F5F9",
   },
   rdvTimeCol: {
     alignItems: "center",
     justifyContent: "center",
-  },
-  rdvTimeBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    backgroundColor: "#E5EEFF",
-    paddingHorizontal: 8,
-    paddingVertical: 5,
-    borderRadius: 8,
-  },
-  rdvTimeText: {
-    fontSize: 12,
-    fontWeight: "700",
-    color: "#005BFF",
   },
   rdvInfoCol: {
     flex: 1,
@@ -1354,11 +1327,11 @@ const styles = StyleSheet.create({
   rdvPorteLabel: {
     fontSize: 14,
     fontWeight: "700",
-    color: "#0F172A",
+    color: colors.text,
   },
   rdvEtageLabel: {
     fontSize: 12,
-    color: "#64748B",
+    color: colors.textMuted,
   },
   rdvAddressRow: {
     flexDirection: "row",
@@ -1368,12 +1341,12 @@ const styles = StyleSheet.create({
   },
   rdvAddressText: {
     fontSize: 11,
-    color: "#94A3B8",
+    color: colors.textSubtle,
     flex: 1,
   },
   rdvComment: {
     fontSize: 11,
-    color: "#64748B",
+    color: colors.textMuted,
     fontStyle: "italic",
     marginTop: 4,
   },

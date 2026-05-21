@@ -2,6 +2,7 @@ import { Animated, Text, View } from "react-native";
 import type { StyleProp, TextStyle, ViewStyle } from "react-native";
 import { memo } from "react";
 import { Feather } from "@expo/vector-icons";
+import { colors } from "@/constants/theme";
 
 type ActionToastProps = {
   topInset: number;
@@ -31,7 +32,7 @@ function ActionToast({
   const iconName: keyof typeof Feather.glyphMap = isError
     ? "alert-circle"
     : "check";
-  const iconBg = isError ? "#EF4444" : "#34D399";
+  const iconBg = isError ? colors.danger : colors.success;
 
   return (
     <View style={[styles.toastOverlay, { top: topInset + 8 }]}>
@@ -42,7 +43,7 @@ function ActionToast({
         ]}
       >
         <View style={[styles.toastIcon, { backgroundColor: iconBg }]}>
-          <Feather name={iconName} size={14} color="#FFFFFF" />
+          <Feather name={iconName} size={14} color={colors.textOnPrimary} />
         </View>
         <View style={styles.toastText}>
           <Text style={styles.toastTitle}>{title}</Text>

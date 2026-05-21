@@ -1,3 +1,5 @@
+import { Card } from "@/components/ui";
+import { colors } from "@/constants/theme";
 import { Feather } from "@expo/vector-icons";
 import {
   BottomSheetBackdrop,
@@ -141,7 +143,7 @@ export default function AddPorteSheet({
       <View style={[styles.sheet, isTablet && styles.sheetTablet]}>
         <View style={styles.header}>
           <View style={styles.headerIcon}>
-            <Feather name="plus-circle" size={18} color="#005BFF" />
+            <Feather name="plus-circle" size={18} color={colors.primary} />
           </View>
           <View style={styles.headerText}>
             <Text style={styles.title}>Ajouter une porte</Text>
@@ -155,10 +157,10 @@ export default function AddPorteSheet({
           contentContainerStyle={styles.content}
           keyboardShouldPersistTaps="handled"
         >
-          <View style={styles.card}>
+          <Card variant="outlined" padding="md" style={styles.card}>
             <Text style={styles.label}>Etage</Text>
             <View style={[styles.inputRow, errors.etage && styles.inputError]}>
-              <Feather name="layers" size={16} color="#64748B" />
+              <Feather name="layers" size={16} color={colors.textMuted} />
               <TextInput
                 placeholder="Ex: 2"
                 keyboardType="number-pad"
@@ -170,12 +172,12 @@ export default function AddPorteSheet({
             {errors.etage ? (
               <Text style={styles.error}>{errors.etage}</Text>
             ) : null}
-          </View>
+          </Card>
 
-          <View style={styles.card}>
+          <Card variant="outlined" padding="md" style={styles.card}>
             <Text style={styles.label}>Numero de porte</Text>
             <View style={[styles.inputRow, errors.numero && styles.inputError]}>
-              <Feather name="hash" size={16} color="#64748B" />
+              <Feather name="hash" size={16} color={colors.textMuted} />
               <TextInput
                 placeholder="Ex: 3"
                 value={form.numero}
@@ -186,12 +188,12 @@ export default function AddPorteSheet({
             {errors.numero ? (
               <Text style={styles.error}>{errors.numero}</Text>
             ) : null}
-          </View>
+          </Card>
 
-          <View style={styles.card}>
+          <Card variant="outlined" padding="md" style={styles.card}>
             <Text style={styles.label}>Nom personnalise (optionnel)</Text>
             <View style={styles.inputRow}>
-              <Feather name="edit-3" size={16} color="#64748B" />
+              <Feather name="edit-3" size={16} color={colors.textMuted} />
               <TextInput
                 placeholder="Ex: Mme Martin"
                 value={form.nomPersonnalise}
@@ -199,7 +201,7 @@ export default function AddPorteSheet({
                 style={styles.inputInline}
               />
             </View>
-          </View>
+          </Card>
         </BottomSheetScrollView>
 
         <View style={styles.footer}>
@@ -217,7 +219,7 @@ export default function AddPorteSheet({
 
 const styles = StyleSheet.create({
   sheetBackground: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
   },
@@ -247,7 +249,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 14,
-    backgroundColor: "#CCDEFF",
+    backgroundColor: colors.primaryMuted,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -257,29 +259,24 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 18,
     fontWeight: "700",
-    color: "#0F172A",
+    color: colors.text,
   },
   subtitle: {
     marginTop: 4,
     fontSize: 12,
-    color: "#64748B",
+    color: colors.textMuted,
   },
   content: {
     paddingVertical: 8,
     gap: 12,
   },
   card: {
-    borderRadius: 16,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-    backgroundColor: "#F8FAFC",
     gap: 8,
   },
   label: {
     fontSize: 12,
     fontWeight: "700",
-    color: "#0F172A",
+    color: colors.text,
     textTransform: "uppercase",
     letterSpacing: 0.8,
   },
@@ -288,23 +285,23 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 8,
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: colors.border,
     borderRadius: 14,
     paddingHorizontal: 12,
     paddingVertical: 10,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface,
   },
   inputInline: {
     flex: 1,
     fontSize: 14,
-    color: "#0F172A",
+    color: colors.text,
   },
   inputError: {
     borderColor: "#FCA5A5",
   },
   error: {
     fontSize: 11,
-    color: "#EF4444",
+    color: colors.danger,
   },
   footer: {
     flexDirection: "row",
@@ -314,25 +311,25 @@ const styles = StyleSheet.create({
     flex: 1,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: colors.border,
     paddingVertical: 12,
     alignItems: "center",
   },
   ghostText: {
     fontSize: 13,
     fontWeight: "600",
-    color: "#475569",
+    color: colors.textStrong,
   },
   primaryButton: {
     flex: 1,
     borderRadius: 14,
-    backgroundColor: "#005BFF",
+    backgroundColor: colors.primary,
     paddingVertical: 12,
     alignItems: "center",
   },
   primaryText: {
     fontSize: 13,
     fontWeight: "700",
-    color: "#FFFFFF",
+    color: colors.textOnPrimary,
   },
 });

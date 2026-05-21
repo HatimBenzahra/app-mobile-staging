@@ -12,6 +12,7 @@ import {
   TextInput,
   View,
 } from "react-native";
+import { colors, palette } from "@/constants/theme";
 
 import type { Porte } from "@/types/api";
 
@@ -104,10 +105,10 @@ function EditPorteSheet({
         : "award";
 
   const heroIconColor = isRdv
-    ? "#0049CC"
+    ? palette.primary[700]
     : isArgumente || isCommentOnly
-      ? "#B45309"
-      : "#047857";
+      ? colors.warningText
+      : colors.successText;
 
   const heroTitle = isRdv
     ? "Rendez-vous"
@@ -179,7 +180,7 @@ function EditPorteSheet({
           <View style={[styles.sheetCard, isTablet && styles.sheetCardTablet]}>
             <Text style={styles.sheetLabel}>Nom personnalise</Text>
             <View style={styles.inputRow}>
-              <Feather name="edit-3" size={16} color="#6B7280" />
+              <Feather name="edit-3" size={16} color={colors.textMuted} />
               <TextInput
                 placeholder={`Porte ${editPorte?.numero || ""}`}
                 value={editForm.nomPersonnalise}
@@ -206,7 +207,7 @@ function EditPorteSheet({
                 <View
                   style={[styles.sheetSectionIcon, styles.sheetSectionIconBlue]}
                 >
-                  <Feather name="calendar" size={14} color="#0049CC" />
+                  <Feather name="calendar" size={14} color={palette.primary[700]} />
                 </View>
                 <View style={styles.sheetSectionText}>
                   <Text style={styles.sheetSectionTitle}>Quand</Text>
@@ -222,7 +223,7 @@ function EditPorteSheet({
                     onPress={openDatePicker}
                   >
                     <View style={styles.pickerIcon}>
-                      <Feather name="calendar" size={16} color="#0049CC" />
+                      <Feather name="calendar" size={16} color={palette.primary[700]} />
                     </View>
                     <View style={styles.pickerText}>
                       <Text style={styles.pickerTitle}>Date</Text>
@@ -230,14 +231,14 @@ function EditPorteSheet({
                         {formatDateLabel(editForm.rdvDate)}
                       </Text>
                     </View>
-                    <Feather name="chevron-right" size={16} color="#94A3B8" />
+                    <Feather name="chevron-right" size={16} color={colors.textSubtle} />
                   </Pressable>
                   <Pressable
                     style={[styles.pickerRow, styles.pickerRowPrimary]}
                     onPress={openTimePicker}
                   >
                     <View style={styles.pickerIcon}>
-                      <Feather name="clock" size={16} color="#0049CC" />
+                      <Feather name="clock" size={16} color={palette.primary[700]} />
                     </View>
                     <View style={styles.pickerText}>
                       <Text style={styles.pickerTitle}>Heure</Text>
@@ -245,7 +246,7 @@ function EditPorteSheet({
                         {formatTimeLabel(editForm.rdvTime)}
                       </Text>
                     </View>
-                    <Feather name="chevron-right" size={16} color="#94A3B8" />
+                    <Feather name="chevron-right" size={16} color={colors.textSubtle} />
                   </Pressable>
                 </>
               ) : (
@@ -254,7 +255,7 @@ function EditPorteSheet({
                     Activez le DatePicker natif pour une meilleure experience.
                   </Text>
                   <View style={styles.inputRow}>
-                    <Feather name="calendar" size={16} color="#6B7280" />
+                    <Feather name="calendar" size={16} color={colors.textMuted} />
                     <TextInput
                       placeholder="YYYY-MM-DD"
                       value={editForm.rdvDate}
@@ -266,7 +267,7 @@ function EditPorteSheet({
                     />
                   </View>
                   <View style={[styles.inputRow, styles.inputRowSpacing]}>
-                    <Feather name="clock" size={16} color="#6B7280" />
+                    <Feather name="clock" size={16} color={colors.textMuted} />
                     <TextInput
                       placeholder="HH:mm"
                       value={editForm.rdvTime}
@@ -297,7 +298,7 @@ function EditPorteSheet({
                     styles.sheetSectionIconGreen,
                   ]}
                 >
-                  <Feather name="award" size={14} color="#047857" />
+                  <Feather name="award" size={14} color={colors.successText} />
                 </View>
                 <View style={styles.sheetSectionText}>
                   <Text style={styles.sheetSectionTitle}>Contrats signes</Text>
@@ -316,7 +317,7 @@ function EditPorteSheet({
                     }))
                   }
                 >
-                  <Feather name="minus" size={16} color="#111827" />
+                  <Feather name="minus" size={16} color={colors.text} />
                 </Pressable>
                 <View style={styles.counterValueWrap}>
                   <Text style={styles.counterValue}>{editForm.nbContrats}</Text>
@@ -331,7 +332,7 @@ function EditPorteSheet({
                     }))
                   }
                 >
-                  <Feather name="plus" size={16} color="#111827" />
+                  <Feather name="plus" size={16} color={colors.text} />
                 </Pressable>
               </View>
             </View>
@@ -343,7 +344,7 @@ function EditPorteSheet({
                 <Feather
                   name="message-square"
                   size={14}
-                  color={isArgumente ? "#B45309" : "#005BFF"}
+                  color={isArgumente ? colors.warningText : colors.primary}
                 />
               </View>
               <View style={styles.sheetSectionText}>

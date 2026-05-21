@@ -1,6 +1,7 @@
 import { Feather } from "@expo/vector-icons";
 import { memo } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
+import { colors } from "@/constants/theme";
 
 type DetailsHeaderProps = {
   topInset: number;
@@ -34,7 +35,7 @@ function DetailsHeader({
         accessibilityRole="button"
         accessibilityLabel="Retour"
       >
-        <Feather name="chevron-left" size={20} color="#FFFFFF" />
+        <Feather name="chevron-left" size={20} color={colors.textOnPrimary} />
       </Pressable>
 
       <View style={styles.text}>
@@ -59,18 +60,18 @@ const styles = StyleSheet.create({
     gap: 14,
     paddingHorizontal: 18,
     paddingBottom: 16,
-    backgroundColor: "#FAFAF7",
+    backgroundColor: colors.background,
     borderBottomWidth: 1,
-    borderBottomColor: "#EAECEF",
+    borderBottomColor: colors.border,
   },
   backButton: {
     width: 40,
     height: 40,
     borderRadius: 14,
-    backgroundColor: "#0F172A",
+    backgroundColor: colors.text,
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: "#0F172A",
+    shadowColor: colors.text,
     shadowOpacity: 0.15,
     shadowRadius: 6,
     shadowOffset: { width: 0, height: 3 },
@@ -87,7 +88,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 19,
     fontWeight: "800",
-    color: "#0F172A",
+    color: colors.text,
     letterSpacing: -0.4,
   },
   subtitleRow: {
@@ -100,11 +101,11 @@ const styles = StyleSheet.create({
     width: 5,
     height: 5,
     borderRadius: 999,
-    backgroundColor: "#94A3B8",
+    backgroundColor: colors.textSubtle,
   },
   subtitle: {
     fontSize: 12.5,
-    color: "#64748B",
+    color: colors.textMuted,
     fontWeight: "600",
     letterSpacing: 0.1,
   },

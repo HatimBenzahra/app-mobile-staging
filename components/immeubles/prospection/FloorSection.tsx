@@ -1,6 +1,7 @@
 import { Feather } from "@expo/vector-icons";
 import { memo } from "react";
 import { StyleSheet, Text, View } from "react-native";
+import { colors } from "@/constants/theme";
 
 import PorteTile from "@/components/immeubles/prospection/PorteTile";
 import type { Porte } from "@/types/api";
@@ -71,7 +72,8 @@ function FloorSectionImpl({
             </Text>
             {isComplete ? (
               <View style={styles.completeChip}>
-                <Feather name="check" size={9} color="#047857" />
+                <Feather name="check" size={9} color={colors.successText} />
+
                 <Text style={styles.completeChipText}>Complet</Text>
               </View>
             ) : null}
@@ -111,12 +113,12 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   headerCard: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface,
     borderRadius: 18,
     paddingHorizontal: 14,
     paddingVertical: 12,
     borderWidth: 1,
-    borderColor: "#EAECEF",
+    borderColor: colors.border,
     gap: 10,
   },
   headerCardTablet: {
@@ -124,8 +126,8 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
   },
   headerCardFocused: {
-    borderColor: "#0F172A",
-    backgroundColor: "#F8FAFC",
+    borderColor: colors.text,
+    backgroundColor: colors.background,
   },
   headerTop: {
     flexDirection: "row",
@@ -142,7 +144,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 12,
-    backgroundColor: "#0F172A",
+    backgroundColor: colors.text,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -152,10 +154,10 @@ const styles = StyleSheet.create({
     borderRadius: 14,
   },
   etageBadgeComplete: {
-    backgroundColor: "#047857",
+    backgroundColor: colors.successText,
   },
   etageBadgeText: {
-    color: "#FFFFFF",
+    color: colors.textOnPrimary,
     fontSize: 18,
     fontWeight: "800",
     fontVariant: ["tabular-nums"],
@@ -171,7 +173,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 15,
     fontWeight: "800",
-    color: "#0F172A",
+    color: colors.text,
     letterSpacing: -0.2,
   },
   titleTablet: {
@@ -180,7 +182,7 @@ const styles = StyleSheet.create({
   subtitle: {
     marginTop: 2,
     fontSize: 11.5,
-    color: "#64748B",
+    color: colors.textMuted,
     fontWeight: "600",
   },
   headerRight: {
@@ -190,7 +192,7 @@ const styles = StyleSheet.create({
   pct: {
     fontSize: 17,
     fontWeight: "800",
-    color: "#0F172A",
+    color: colors.text,
     fontVariant: ["tabular-nums"],
     letterSpacing: -0.3,
   },
@@ -204,27 +206,27 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 999,
-    backgroundColor: "#D1FAE5",
+    backgroundColor: colors.successSoft,
   },
   completeChipText: {
     fontSize: 10,
     fontWeight: "800",
-    color: "#047857",
+    color: colors.successText,
     letterSpacing: 0.3,
   },
   progressTrack: {
     height: 6,
     borderRadius: 999,
-    backgroundColor: "#F1F5F9",
+    backgroundColor: colors.surfaceMuted,
     overflow: "hidden",
   },
   progressFill: {
     height: "100%",
-    backgroundColor: "#0F172A",
+    backgroundColor: colors.text,
     borderRadius: 999,
   },
   progressFillComplete: {
-    backgroundColor: "#047857",
+    backgroundColor: colors.successText,
   },
   grid: {
     flexDirection: "row",

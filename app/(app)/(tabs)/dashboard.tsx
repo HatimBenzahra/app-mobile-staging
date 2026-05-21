@@ -2,6 +2,8 @@ import { useWorkspaceProfile } from "@/hooks/api/use-workspace-profile";
 import { authService } from "@/services/auth";
 import type { Commercial, Manager } from "@/types/api";
 import { calculateRank, RANKS } from "@/utils/business/ranks";
+import { Card, IconBadge, PressableCard } from "@/components/ui";
+import { colors } from "@/constants/theme";
 import { Feather } from "@expo/vector-icons";
 import { BottomSheetModal, BottomSheetView } from "@gorhom/bottom-sheet";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -29,7 +31,7 @@ const BAR_AREA_HEIGHT = 140;
 
 const SimpleBarChart = memo(function SimpleBarChart({
   data,
-  color = "#005BFF",
+  color = colors.primary,
 }: {
   data: WeeklyData[];
   color?: string;
@@ -267,19 +269,17 @@ export default function DashboardScreen() {
       >
         <Animated.View style={{ opacity: contentOpacity }}>
           {/* Rank Card - Compact */}
-          <View style={styles.mainCard}>
+          <Card variant="elevated" padding="lg">
             {/* Rank Header */}
             <View style={styles.rankHeader}>
-              <View style={styles.rankBadge}>
-                <Feather name="award" size={24} color="#F59E0B" />
-              </View>
+              <IconBadge icon="award" tone="warning" size="lg" />
               <View style={styles.rankInfo}>
                 <Text style={styles.rankTitle}>{rankInfo.name}</Text>
                 <Text style={styles.rankPoints}>{rankInfo.points} points</Text>
               </View>
-              <Pressable style={styles.infoButton} onPress={handleOpenInfo}>
+              <PressableCard variant="filled" padding="none" style={{ width: 32, height: 32, alignItems: "center", justifyContent: "center", borderRadius: 16 }} onPress={handleOpenInfo}>
                 <Feather name="info" size={18} color="#005BFF" />
-              </Pressable>
+              </PressableCard>
               {rankInfo.isMaxRank && (
                 <Feather name="check-circle" size={20} color="#10B981" />
               )}
@@ -305,10 +305,10 @@ export default function DashboardScreen() {
                 </Text>
               </View>
             )}
-          </View>
+          </Card>
 
           {/* Charts Slider */}
-          <View style={styles.chartCard} onLayout={handleChartCardLayout}>
+          <Card variant="elevated" padding="lg" onLayout={handleChartCardLayout} style={styles.chartCardContainer}>
             {chartSlideWidth > 0 && (
             <GestureScrollView
               ref={chartScrollRef}
@@ -402,7 +402,7 @@ export default function DashboardScreen() {
                 </Text>
               </Pressable>
             </View>
-          </View>
+          </Card>
         </Animated.View>
       </ScrollView>
 
@@ -418,7 +418,7 @@ export default function DashboardScreen() {
             <Text style={styles.sheetTitle}>Calcul des points</Text>
           </View>
           <View style={styles.formulaGrid}>
-            <View style={styles.formulaItem}>
+            <Card variant="filled" padding="md" style={styles.formulaItemRow}>
               <View
                 style={[styles.formulaIcon, { backgroundColor: "#ECFDF5" }]}
               >
@@ -426,8 +426,8 @@ export default function DashboardScreen() {
               </View>
               <Text style={styles.formulaItemLabel}>Contrat signé</Text>
               <Text style={styles.formulaItemValue}>100 pts</Text>
-            </View>
-            <View style={styles.formulaItem}>
+            </Card>
+            <Card variant="filled" padding="md" style={styles.formulaItemRow}>
               <View
                 style={[styles.formulaIcon, { backgroundColor: "#F5F3FF" }]}
               >
@@ -435,8 +435,8 @@ export default function DashboardScreen() {
               </View>
               <Text style={styles.formulaItemLabel}>RDV pris</Text>
               <Text style={styles.formulaItemValue}>20 pts</Text>
-            </View>
-            <View style={styles.formulaItem}>
+            </Card>
+            <Card variant="filled" padding="md" style={styles.formulaItemRow}>
               <View
                 style={[styles.formulaIcon, { backgroundColor: "#E5EEFF" }]}
               >
@@ -444,7 +444,7 @@ export default function DashboardScreen() {
               </View>
               <Text style={styles.formulaItemLabel}>Immeuble visité</Text>
               <Text style={styles.formulaItemValue}>5 pts</Text>
-            </View>
+            </Card>
           </View>
           <Text style={styles.formulaNote}>
             Votre rang est calculé en fonction de ces actions. Plus vous êtes
@@ -538,16 +538,6 @@ const styles = StyleSheet.create({
   loadingText: {
     fontSize: 14,
     color: "#64748B",
-  },
-  mainCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 20,
-    padding: 20,
-    shadowColor: "#0F172A",
-    shadowOpacity: 0.08,
-    shadowRadius: 16,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 4,
   },
   sectionCard: {
     marginTop: 16,
@@ -660,24 +650,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 12,
   },
-  infoButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: "#E5EEFF",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  rankBadge: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: "#FFFBEB",
-    borderWidth: 3,
-    borderColor: "#FEF3C7",
-    alignItems: "center",
-    justifyContent: "center",
-  },
   rankInfo: {
     flex: 1,
   },
@@ -728,16 +700,8 @@ const styles = StyleSheet.create({
     color: "#64748B",
     textAlign: "center",
   },
-  chartCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 20,
-    padding: 20,
+  chartCardContainer: {
     marginTop: 20,
-    shadowColor: "#0F172A",
-    shadowOpacity: 0.08,
-    shadowRadius: 16,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 4,
   },
   chartSlide: {
     paddingHorizontal: 0,
@@ -887,10 +851,7 @@ const styles = StyleSheet.create({
     gap: 12,
     marginBottom: 20,
   },
-  formulaItem: {
-    backgroundColor: "#F8FAFC",
-    borderRadius: 14,
-    padding: 16,
+  formulaItemRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: 14,

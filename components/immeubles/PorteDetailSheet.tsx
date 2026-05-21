@@ -1,3 +1,5 @@
+import { Card } from "@/components/ui";
+import { colors } from "@/constants/theme";
 import { Feather } from "@expo/vector-icons";
 import { useEffect, useRef } from "react";
 import {
@@ -176,7 +178,7 @@ export default function PorteDetailSheet({
                   hitSlop={10}
                   accessibilityLabel="Fermer"
                 >
-                  <Feather name="x" size={18} color="#64748B" />
+                  <Feather name="x" size={18} color={colors.textMuted} />
                 </Pressable>
               </View>
 
@@ -193,11 +195,11 @@ export default function PorteDetailSheet({
               </View>
 
               <View style={styles.factsGrid}>
-                <View style={styles.factCard}>
+                <Card variant="outlined" padding="md" style={styles.factCard}>
                   <View
                     style={[
                       styles.factIcon,
-                      { backgroundColor: "#0F172A" },
+                      { backgroundColor: colors.text },
                     ]}
                   >
                     <Feather name="clock" size={13} color="#FFFFFF" />
@@ -206,8 +208,8 @@ export default function PorteDetailSheet({
                   <Text style={styles.factValue}>
                     {duration ?? "—"}
                   </Text>
-                </View>
-                <View style={styles.factCard}>
+                </Card>
+                <Card variant="outlined" padding="md" style={styles.factCard}>
                   <View
                     style={[
                       styles.factIcon,
@@ -227,15 +229,14 @@ export default function PorteDetailSheet({
                       {lastVisitAbsolute}
                     </Text>
                   ) : null}
-                </View>
+                </Card>
               </View>
 
               {hasRdv ? (
-                <View
-                  style={[
-                    styles.detailRow,
-                    { backgroundColor: "#E0F2FE", borderColor: "#BAE6FD" },
-                  ]}
+                <Card
+                  variant="filled"
+                  padding="md"
+                  style={[styles.detailRow, { backgroundColor: colors.infoSoft, borderColor: "#BAE6FD", borderWidth: 1 }]}
                 >
                   <Feather name="calendar" size={15} color="#0C4A6E" />
                   <View style={{ flex: 1 }}>
@@ -247,12 +248,12 @@ export default function PorteDetailSheet({
                       {porte.rdvTime ? ` à ${porte.rdvTime}` : ""}
                     </Text>
                   </View>
-                </View>
+                </Card>
               ) : null}
 
               {porte.nbRepassages && porte.nbRepassages > 0 ? (
                 <View style={styles.detailRow}>
-                  <Feather name="repeat" size={15} color="#475569" />
+                  <Feather name="repeat" size={15} color={colors.textStrong} />
                   <View style={{ flex: 1 }}>
                     <Text style={styles.detailRowLabel}>Repassages</Text>
                     <Text style={styles.detailRowValue}>
@@ -263,13 +264,13 @@ export default function PorteDetailSheet({
               ) : null}
 
               {porte.commentaire?.trim() ? (
-                <View style={styles.commentBlock}>
+                <Card variant="outlined" padding="md" style={styles.commentBlock}>
                   <View style={styles.commentHeader}>
-                    <Feather name="edit-3" size={13} color="#64748B" />
+                    <Feather name="edit-3" size={13} color={colors.textMuted} />
                     <Text style={styles.commentHeaderText}>Commentaire</Text>
                   </View>
                   <Text style={styles.commentBody}>{porte.commentaire}</Text>
-                </View>
+                </Card>
               ) : null}
             </ScrollView>
 
@@ -282,7 +283,7 @@ export default function PorteDetailSheet({
                   ]}
                   onPress={() => onResume(porte)}
                 >
-                  <Feather name="arrow-right" size={15} color="#FFFFFF" />
+                  <Feather name="arrow-right" size={15} color={colors.textInverse} />
                   <Text style={styles.primaryBtnText}>
                     Reprendre la prospection
                   </Text>
@@ -301,7 +302,7 @@ export default function PorteDetailSheet({
                 <Feather
                   name="edit-3"
                   size={15}
-                  color={canResume ? "#0F172A" : "#FFFFFF"}
+                  color={canResume ? colors.text : colors.textInverse}
                 />
                 <Text
                   style={
@@ -336,11 +337,11 @@ const styles = StyleSheet.create({
   },
   sheet: {
     width: "100%",
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface,
     borderRadius: 28,
     paddingTop: 14,
     paddingBottom: 0,
-    shadowColor: "#0F172A",
+    shadowColor: colors.text,
     shadowOpacity: 0.22,
     shadowRadius: 32,
     shadowOffset: { width: 0, height: 16 },
@@ -355,7 +356,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 5,
     borderRadius: 999,
-    backgroundColor: "#E2E8F0",
+    backgroundColor: colors.border,
     marginBottom: 6,
   },
   scrollContent: {
@@ -391,9 +392,9 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#F8FAFC",
+    backgroundColor: colors.background,
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: colors.border,
   },
   identity: {
     gap: 4,
@@ -401,14 +402,14 @@ const styles = StyleSheet.create({
   eyebrow: {
     fontSize: 11,
     fontWeight: "800",
-    color: "#94A3B8",
+    color: colors.textSubtle,
     letterSpacing: 1.4,
     textTransform: "uppercase",
   },
   porteNumber: {
     fontSize: 44,
     fontWeight: "800",
-    color: "#0F172A",
+    color: colors.text,
     letterSpacing: -1.4,
     fontVariant: ["tabular-nums"],
     lineHeight: 48,
@@ -416,7 +417,7 @@ const styles = StyleSheet.create({
   porteName: {
     marginTop: 2,
     fontSize: 13,
-    color: "#475569",
+    color: colors.textStrong,
     fontWeight: "600",
   },
   factsGrid: {
@@ -425,11 +426,6 @@ const styles = StyleSheet.create({
   },
   factCard: {
     flex: 1,
-    padding: 12,
-    borderRadius: 16,
-    backgroundColor: "#FAFAF7",
-    borderWidth: 1,
-    borderColor: "#EAECEF",
     gap: 6,
   },
   factIcon: {
@@ -442,7 +438,7 @@ const styles = StyleSheet.create({
   factLabel: {
     fontSize: 10.5,
     fontWeight: "800",
-    color: "#94A3B8",
+    color: colors.textSubtle,
     letterSpacing: 1,
     textTransform: "uppercase",
     marginTop: 2,
@@ -450,46 +446,35 @@ const styles = StyleSheet.create({
   factValue: {
     fontSize: 16,
     fontWeight: "800",
-    color: "#0F172A",
+    color: colors.text,
     letterSpacing: -0.3,
     fontVariant: ["tabular-nums"],
   },
   factSubvalue: {
     marginTop: 2,
     fontSize: 11,
-    color: "#64748B",
+    color: colors.textMuted,
     fontWeight: "600",
   },
   detailRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
-    paddingVertical: 12,
-    paddingHorizontal: 14,
-    borderRadius: 14,
-    backgroundColor: "#F8FAFC",
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
   },
   detailRowLabel: {
     fontSize: 10.5,
     fontWeight: "800",
-    color: "#94A3B8",
+    color: colors.textSubtle,
     letterSpacing: 1,
     textTransform: "uppercase",
   },
   detailRowValue: {
     marginTop: 2,
     fontSize: 14,
-    color: "#0F172A",
+    color: colors.text,
     fontWeight: "700",
   },
   commentBlock: {
-    padding: 14,
-    borderRadius: 16,
-    backgroundColor: "#FAFAF7",
-    borderWidth: 1,
-    borderColor: "#EAECEF",
     gap: 8,
   },
   commentHeader: {
@@ -500,13 +485,13 @@ const styles = StyleSheet.create({
   commentHeaderText: {
     fontSize: 11,
     fontWeight: "800",
-    color: "#475569",
+    color: colors.textStrong,
     letterSpacing: 0.8,
     textTransform: "uppercase",
   },
   commentBody: {
     fontSize: 13.5,
-    color: "#0F172A",
+    color: colors.text,
     lineHeight: 19,
   },
   footer: {
@@ -515,9 +500,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 22,
     paddingTop: 14,
     paddingBottom: 18,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface,
     borderTopWidth: 1,
-    borderTopColor: "#EAECEF",
+    borderTopColor: colors.border,
   },
   primaryBtn: {
     flexDirection: "row",
@@ -526,8 +511,8 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingVertical: 14,
     borderRadius: 16,
-    backgroundColor: "#0F172A",
-    shadowColor: "#0F172A",
+    backgroundColor: colors.text,
+    shadowColor: colors.text,
     shadowOpacity: 0.18,
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 5 },
@@ -537,7 +522,7 @@ const styles = StyleSheet.create({
     opacity: 0.92,
   },
   primaryBtnText: {
-    color: "#FFFFFF",
+    color: colors.textInverse,
     fontSize: 14,
     fontWeight: "800",
     letterSpacing: 0.1,
@@ -549,15 +534,15 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingVertical: 13,
     borderRadius: 16,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface,
     borderWidth: 1.5,
-    borderColor: "#E2E8F0",
+    borderColor: colors.border,
   },
   ghostBtnPressed: {
-    backgroundColor: "#F8FAFC",
+    backgroundColor: colors.background,
   },
   ghostBtnText: {
-    color: "#0F172A",
+    color: colors.text,
     fontSize: 14,
     fontWeight: "700",
     letterSpacing: 0.1,

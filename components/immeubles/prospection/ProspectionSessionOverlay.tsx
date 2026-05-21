@@ -47,6 +47,7 @@ import type {
   SaveStatusInput,
 } from "@/hooks/prospection/use-prospection-session";
 import type { Porte } from "@/types/api";
+import { colors } from "@/constants/theme";
 
 type ProspectionSessionOverlayProps = {
   session: ProspectionSessionApi;
@@ -421,7 +422,7 @@ function NamingView({
               accessibilityLabel="Retour aux étages"
               hitSlop={10}
             >
-              <Feather name="chevron-left" size={22} color="#0F172A" />
+              <Feather name="chevron-left" size={22} color={colors.text} />
             </Pressable>
           ) : (
             <Pressable
@@ -431,7 +432,7 @@ function NamingView({
               accessibilityLabel="Fermer"
               hitSlop={10}
             >
-              <Feather name="x" size={20} color="#0F172A" />
+              <Feather name="x" size={20} color={colors.text} />
             </Pressable>
           )}
           <View style={styles.stepBadge}>
@@ -536,7 +537,7 @@ function NamingView({
                     accessibilityLabel="Diminuer le numéro"
                     hitSlop={6}
                   >
-                    <Feather name="minus" size={18} color="#0F172A" />
+                    <Feather name="minus" size={18} color={colors.text} />
                   </Pressable>
                   <View style={styles.newPorteNumWrap}>
                     <Text style={styles.newPorteEyebrow}>Numéro de porte</Text>
@@ -568,7 +569,7 @@ function NamingView({
                     accessibilityLabel="Augmenter le numéro"
                     hitSlop={6}
                   >
-                    <Feather name="plus" size={18} color="#FFFFFF" />
+                    <Feather name="plus" size={18} color={colors.textOnPrimary} />
                   </Pressable>
                 </View>
                 {customNum !== null && customNum !== suggestedNum ? (
@@ -577,7 +578,7 @@ function NamingView({
                     style={styles.newPorteReset}
                     hitSlop={6}
                   >
-                    <Feather name="rotate-ccw" size={11} color="#94A3B8" />
+                    <Feather name="rotate-ccw" size={11} color={colors.textSubtle} />
                     <Text style={styles.newPorteResetText}>
                       Revenir à {suggestedNum}
                     </Text>
@@ -585,7 +586,7 @@ function NamingView({
                 ) : null}
                 {duplicatePorte ? (
                   <View style={styles.dupBox}>
-                    <Feather name="info" size={13} color="#B45309" />
+                    <Feather name="info" size={13} color={colors.warningText} />
                     <Text style={styles.dupText}>
                       Porte {duplicatePorte.numero} existe déjà
                       {duplicatePorte.etage !== selectedEtage
@@ -599,7 +600,7 @@ function NamingView({
 
               {error ? (
                 <View style={styles.errorBox}>
-                  <Feather name="alert-circle" size={13} color="#B91C1C" />
+                  <Feather name="alert-circle" size={13} color={colors.dangerText} />
                   <Text style={styles.errorText}>{error}</Text>
                 </View>
               ) : null}
@@ -621,7 +622,7 @@ function NamingView({
                       : `Démarrer la porte ${effectiveNum}`}
                 </Text>
                 {!isCreating ? (
-                  <Feather name="arrow-right" size={18} color="#FFFFFF" />
+                  <Feather name="arrow-right" size={18} color={colors.textOnPrimary} />
                 ) : null}
               </Pressable>
             </View>
@@ -684,7 +685,7 @@ function ReadyView({
               accessibilityRole="button"
               hitSlop={10}
             >
-              <Feather name="chevron-left" size={22} color="#0F172A" />
+              <Feather name="chevron-left" size={22} color={colors.text} />
             </Pressable>
             <View style={styles.stepBadge}>
               <View style={styles.dotDone} />
@@ -702,7 +703,7 @@ function ReadyView({
           <View style={[styles.porteCard, isTablet && styles.porteCardTablet]}>
             <View style={styles.porteCardTopRow}>
               <View style={styles.porteIconWrap}>
-                <Feather name="bell" size={20} color="#0F172A" />
+                <Feather name="bell" size={20} color={colors.text} />
               </View>
               <View style={styles.porteEtageBadge}>
                 <Text style={styles.porteEtageText}>
@@ -944,10 +945,10 @@ function ActiveView({
                 <View
                   style={[
                     styles.conditionalIcon,
-                    { backgroundColor: "#D1FAE5" },
+                    { backgroundColor: colors.successSoft },
                   ]}
                 >
-                  <Feather name="award" size={14} color="#059669" />
+                  <Feather name="award" size={14} color={colors.success} />
                 </View>
                 <Text style={styles.conditionalTitle}>Contrats signés</Text>
               </View>
@@ -959,7 +960,7 @@ function ActiveView({
                   }
                   hitSlop={6}
                 >
-                  <Feather name="minus" size={16} color="#0F172A" />
+                  <Feather name="minus" size={16} color={colors.text} />
                 </Pressable>
                 <View style={styles.counterValueWrap}>
                   <Text style={styles.counterValue}>{nbContrats}</Text>
@@ -970,7 +971,7 @@ function ActiveView({
                   onPress={() => setNbContrats((v) => v + 1)}
                   hitSlop={6}
                 >
-                  <Feather name="plus" size={16} color="#FFFFFF" />
+                  <Feather name="plus" size={16} color={colors.textOnPrimary} />
                 </Pressable>
               </View>
             </Animated.View>
@@ -994,12 +995,12 @@ function ActiveView({
               </View>
             </View>
             <View style={styles.inputWrap}>
-              <Feather name="user" size={14} color="#64748B" />
+              <Feather name="user" size={14} color={colors.textMuted} />
               <TextInput
                 value={nomPersonnalise}
                 onChangeText={setNomPersonnalise}
                 placeholder="Nom (ex: Mme Martin)"
-                placeholderTextColor="#94A3B8"
+                placeholderTextColor={colors.textSubtle}
                 style={styles.input}
               />
             </View>
@@ -1026,7 +1027,7 @@ function ActiveView({
           >
             <Text style={styles.ctaText}>{ctaLabel}</Text>
             {!isSaving && selectedStatus ? (
-              <Feather name="check" size={18} color="#FFFFFF" />
+              <Feather name="check" size={18} color={colors.textOnPrimary} />
             ) : null}
           </Pressable>
 
@@ -1036,7 +1037,7 @@ function ActiveView({
             disabled={isSaving}
             hitSlop={6}
           >
-            <Feather name="x-circle" size={13} color="#94A3B8" />
+            <Feather name="x-circle" size={13} color={colors.textSubtle} />
             <Text style={styles.abortBtnText}>Annuler ce passage</Text>
           </Pressable>
         </ScrollView>
@@ -1062,7 +1063,7 @@ const styles = StyleSheet.create({
   },
   viewRoot: {
     flex: 1,
-    backgroundColor: "#FAFAF7",
+    backgroundColor: colors.background,
   },
   viewRootTablet: {
     borderRadius: 32,
@@ -1078,9 +1079,9 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 12,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: colors.border,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -1093,19 +1094,19 @@ const styles = StyleSheet.create({
     width: 22,
     height: 6,
     borderRadius: 3,
-    backgroundColor: "#0F172A",
+    backgroundColor: colors.text,
   },
   dotInactive: {
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: "#CBD5E1",
+    backgroundColor: colors.borderStrong,
   },
   dotDone: {
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: "#0F172A",
+    backgroundColor: colors.text,
   },
   heroBlock: {
     gap: 8,
@@ -1113,28 +1114,28 @@ const styles = StyleSheet.create({
   eyebrow: {
     fontSize: 11,
     fontWeight: "800",
-    color: "#0284C7",
+    color: colors.info,
     textTransform: "uppercase",
     letterSpacing: 1.6,
   },
   heroTitle: {
     fontSize: 28,
     fontWeight: "800",
-    color: "#0F172A",
+    color: colors.text,
     letterSpacing: -0.6,
   },
   heroLead: {
     fontSize: 13.5,
-    color: "#475569",
+    color: colors.textStrong,
     lineHeight: 19,
   },
   formCard: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface,
     borderRadius: 22,
     padding: 16,
     gap: 14,
     borderWidth: 1,
-    borderColor: "#EAECEF",
+    borderColor: colors.border,
   },
   fieldGroup: {
     gap: 8,
@@ -1142,7 +1143,7 @@ const styles = StyleSheet.create({
   fieldLabel: {
     fontSize: 11,
     fontWeight: "800",
-    color: "#0F172A",
+    color: colors.text,
     letterSpacing: 1.2,
     textTransform: "uppercase",
   },
@@ -1153,24 +1154,24 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 12,
     borderRadius: 14,
-    backgroundColor: "#F8FAFC",
+    backgroundColor: colors.background,
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: colors.border,
   },
   input: {
     flex: 1,
     fontSize: 14.5,
-    color: "#0F172A",
+    color: colors.text,
     paddingVertical: 0,
   },
   numPrefix: {
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 8,
-    backgroundColor: "#0F172A",
+    backgroundColor: colors.text,
   },
   numPrefixText: {
-    color: "#FFFFFF",
+    color: colors.textOnPrimary,
     fontSize: 13,
     fontWeight: "800",
     fontVariant: ["tabular-nums"],
@@ -1178,7 +1179,7 @@ const styles = StyleSheet.create({
   },
   fieldHint: {
     fontSize: 11,
-    color: "#94A3B8",
+    color: colors.textSubtle,
     marginTop: 2,
     lineHeight: 15,
   },
@@ -1189,13 +1190,13 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 12,
     borderRadius: 12,
-    backgroundColor: "#FEF2F2",
+    backgroundColor: colors.dangerSoft,
     borderWidth: 1,
     borderColor: "#FECACA",
   },
   errorText: {
     fontSize: 12.5,
-    color: "#B91C1C",
+    color: colors.dangerText,
     fontWeight: "600",
   },
   dupBox: {
@@ -1206,7 +1207,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 12,
     borderRadius: 12,
-    backgroundColor: "#FFFBEB",
+    backgroundColor: colors.warningSoft,
     borderWidth: 1,
     borderColor: "#FDE68A",
   },
@@ -1224,28 +1225,28 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     paddingHorizontal: 22,
     borderRadius: 18,
-    backgroundColor: "#0F172A",
+    backgroundColor: colors.text,
   },
   ctaPressed: {
     backgroundColor: "#1E293B",
   },
   ctaDisabled: {
-    backgroundColor: "#94A3B8",
+    backgroundColor: colors.textSubtle,
   },
   ctaText: {
-    color: "#FFFFFF",
+    color: colors.textOnPrimary,
     fontSize: 15,
     fontWeight: "700",
     letterSpacing: -0.1,
   },
   porteCard: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface,
     borderRadius: 26,
     padding: 22,
     gap: 12,
     borderWidth: 1,
-    borderColor: "#EAECEF",
-    shadowColor: "#0F172A",
+    borderColor: colors.border,
+    shadowColor: colors.text,
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.06,
     shadowRadius: 18,
@@ -1265,34 +1266,34 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#FAFAF7",
+    backgroundColor: colors.background,
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: colors.border,
   },
   porteEtageBadge: {
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 999,
-    backgroundColor: "#0F172A",
+    backgroundColor: colors.text,
   },
   porteEtageText: {
     fontSize: 11,
     fontWeight: "800",
-    color: "#FFFFFF",
+    color: colors.textOnPrimary,
     letterSpacing: 1.2,
     textTransform: "uppercase",
   },
   porteNumber: {
     fontSize: 64,
     fontWeight: "800",
-    color: "#0F172A",
+    color: colors.text,
     letterSpacing: -2,
     lineHeight: 70,
     fontVariant: ["tabular-nums"],
   },
   porteSubtitle: {
     fontSize: 14,
-    color: "#475569",
+    color: colors.textStrong,
   },
   tipCard: {
     flexDirection: "row",
@@ -1300,26 +1301,26 @@ const styles = StyleSheet.create({
     gap: 12,
     padding: 14,
     borderRadius: 16,
-    backgroundColor: "#F1F5F9",
+    backgroundColor: colors.surfaceMuted,
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: colors.border,
   },
   tipDot: {
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: "#0284C7",
+    backgroundColor: colors.info,
     marginTop: 6,
   },
   tipTitle: {
     fontSize: 13,
     fontWeight: "700",
-    color: "#0F172A",
+    color: colors.text,
   },
   tipBody: {
     marginTop: 4,
     fontSize: 12,
-    color: "#475569",
+    color: colors.textStrong,
     lineHeight: 17,
   },
   startBtn: {
@@ -1330,15 +1331,15 @@ const styles = StyleSheet.create({
     paddingVertical: 18,
     paddingHorizontal: 24,
     borderRadius: 22,
-    backgroundColor: "#DC2626",
-    shadowColor: "#DC2626",
+    backgroundColor: colors.danger,
+    shadowColor: colors.danger,
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.25,
     shadowRadius: 14,
     elevation: 6,
   },
   startBtnPressed: {
-    backgroundColor: "#B91C1C",
+    backgroundColor: colors.dangerText,
   },
   startBtnIcon: {
     width: 28,
@@ -1349,7 +1350,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   startBtnText: {
-    color: "#FFFFFF",
+    color: colors.textOnPrimary,
     fontSize: 16,
     fontWeight: "800",
     letterSpacing: 0.2,
@@ -1361,16 +1362,16 @@ const styles = StyleSheet.create({
   },
   ghostBtnText: {
     fontSize: 13,
-    color: "#64748B",
+    color: colors.textMuted,
     fontWeight: "600",
   },
   conditionalCard: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface,
     borderRadius: 20,
     padding: 14,
     gap: 12,
     borderWidth: 1,
-    borderColor: "#EAECEF",
+    borderColor: colors.border,
   },
   conditionalHeader: {
     flexDirection: "row",
@@ -1387,12 +1388,12 @@ const styles = StyleSheet.create({
   conditionalTitle: {
     fontSize: 13,
     fontWeight: "700",
-    color: "#0F172A",
+    color: colors.text,
   },
   commentSubtitle: {
     marginTop: 2,
     fontSize: 11,
-    color: "#94A3B8",
+    color: colors.textSubtle,
   },
   dualInputRow: {
     flexDirection: "row",
@@ -1405,9 +1406,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 11,
     borderRadius: 14,
-    backgroundColor: "#F8FAFC",
+    backgroundColor: colors.background,
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: colors.border,
   },
   counterRow: {
     flexDirection: "row",
@@ -1421,13 +1422,13 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#F1F5F9",
+    backgroundColor: colors.surfaceMuted,
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: colors.border,
   },
   counterBtnPrimary: {
-    backgroundColor: "#0F172A",
-    borderColor: "#0F172A",
+    backgroundColor: colors.text,
+    borderColor: colors.text,
   },
   counterValueWrap: {
     alignItems: "center",
@@ -1435,34 +1436,34 @@ const styles = StyleSheet.create({
   counterValue: {
     fontSize: 30,
     fontWeight: "800",
-    color: "#0F172A",
+    color: colors.text,
     fontVariant: ["tabular-nums"],
     letterSpacing: -1,
   },
   counterLabel: {
     marginTop: 2,
     fontSize: 11,
-    color: "#64748B",
+    color: colors.textMuted,
     fontWeight: "600",
   },
   commentCard: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface,
     borderRadius: 20,
     padding: 14,
     gap: 10,
     borderWidth: 1,
-    borderColor: "#EAECEF",
+    borderColor: colors.border,
   },
   textarea: {
     minHeight: 78,
     paddingHorizontal: 14,
     paddingVertical: 12,
     borderRadius: 14,
-    backgroundColor: "#F8FAFC",
+    backgroundColor: colors.background,
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: colors.border,
     fontSize: 14,
-    color: "#0F172A",
+    color: colors.text,
   },
   abortBtn: {
     flexDirection: "row",
@@ -1474,7 +1475,7 @@ const styles = StyleSheet.create({
   },
   abortBtnText: {
     fontSize: 12,
-    color: "#94A3B8",
+    color: colors.textSubtle,
     fontWeight: "600",
   },
   // ── Floor picker ────────────────────────────────────────────────
@@ -1486,9 +1487,9 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     paddingHorizontal: 12,
     borderRadius: 18,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface,
     borderWidth: 1.5,
-    borderColor: "#EAECEF",
+    borderColor: colors.border,
     alignItems: "center",
     gap: 8,
     minHeight: 96,
@@ -1499,8 +1500,8 @@ const styles = StyleSheet.create({
     minHeight: 110,
   },
   floorCardSelected: {
-    backgroundColor: "#0F172A",
-    borderColor: "#0F172A",
+    backgroundColor: colors.text,
+    borderColor: colors.text,
   },
   floorCardTop: {
     flexDirection: "row",
@@ -1511,7 +1512,7 @@ const styles = StyleSheet.create({
   floorCardNumber: {
     fontSize: 28,
     fontWeight: "800",
-    color: "#0F172A",
+    color: colors.text,
     fontVariant: ["tabular-nums"],
     letterSpacing: -1,
     lineHeight: 32,
@@ -1521,20 +1522,20 @@ const styles = StyleSheet.create({
     lineHeight: 36,
   },
   floorCardNumberSelected: {
-    color: "#FFFFFF",
+    color: colors.textOnPrimary,
   },
   floorCardCheck: {
     width: 16,
     height: 16,
     borderRadius: 999,
-    backgroundColor: "#059669",
+    backgroundColor: colors.success,
     alignItems: "center",
     justifyContent: "center",
   },
   floorCardRatio: {
     fontSize: 11,
     fontWeight: "700",
-    color: "#64748B",
+    color: colors.textMuted,
     fontVariant: ["tabular-nums"],
     letterSpacing: 0.2,
   },
@@ -1545,7 +1546,7 @@ const styles = StyleSheet.create({
     width: "100%",
     height: 4,
     borderRadius: 999,
-    backgroundColor: "#F1F5F9",
+    backgroundColor: colors.surfaceMuted,
     overflow: "hidden",
     marginTop: 2,
   },
@@ -1560,7 +1561,7 @@ const styles = StyleSheet.create({
   sectionLabel: {
     fontSize: 11,
     fontWeight: "800",
-    color: "#475569",
+    color: colors.textStrong,
     letterSpacing: 1.2,
     textTransform: "uppercase",
     paddingHorizontal: 2,
@@ -1573,9 +1574,9 @@ const styles = StyleSheet.create({
     position: "relative",
     padding: 12,
     borderRadius: 16,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: "#EAECEF",
+    borderColor: colors.border,
     overflow: "hidden",
     gap: 8,
     minHeight: 80,
@@ -1590,7 +1591,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 18,
     fontWeight: "800",
-    color: "#0F172A",
+    color: colors.text,
     fontVariant: ["tabular-nums"],
     letterSpacing: -0.3,
   },
@@ -1617,9 +1618,9 @@ const styles = StyleSheet.create({
   newPorteCard: {
     padding: 16,
     borderRadius: 20,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: "#EAECEF",
+    borderColor: colors.border,
     gap: 10,
   },
   newPorteRow: {
@@ -1635,7 +1636,7 @@ const styles = StyleSheet.create({
   newPorteEyebrow: {
     fontSize: 10,
     fontWeight: "800",
-    color: "#94A3B8",
+    color: colors.textSubtle,
     letterSpacing: 1.2,
     textTransform: "uppercase",
   },
@@ -1643,7 +1644,7 @@ const styles = StyleSheet.create({
     marginTop: 4,
     fontSize: 36,
     fontWeight: "800",
-    color: "#0F172A",
+    color: colors.text,
     fontVariant: ["tabular-nums"],
     letterSpacing: -1.2,
     lineHeight: 40,
@@ -1652,7 +1653,7 @@ const styles = StyleSheet.create({
     marginTop: 4,
     fontSize: 36,
     fontWeight: "800",
-    color: "#0F172A",
+    color: colors.text,
     fontVariant: ["tabular-nums"],
     letterSpacing: -1.2,
     textAlign: "center",
@@ -1660,9 +1661,9 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     paddingHorizontal: 12,
     borderRadius: 12,
-    backgroundColor: "#F8FAFC",
+    backgroundColor: colors.background,
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: colors.border,
   },
   stepperBtn: {
     width: 48,
@@ -1670,13 +1671,13 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#F1F5F9",
+    backgroundColor: colors.surfaceMuted,
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: colors.border,
   },
   stepperBtnPrimary: {
-    backgroundColor: "#0F172A",
-    borderColor: "#0F172A",
+    backgroundColor: colors.text,
+    borderColor: colors.text,
   },
   newPorteReset: {
     alignSelf: "center",
@@ -1688,7 +1689,7 @@ const styles = StyleSheet.create({
   },
   newPorteResetText: {
     fontSize: 11,
-    color: "#94A3B8",
+    color: colors.textSubtle,
     fontWeight: "600",
   },
 });

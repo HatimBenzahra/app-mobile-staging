@@ -3,6 +3,7 @@ import { BottomSheetModal, BottomSheetScrollView } from "@gorhom/bottom-sheet";
 import type { ReactElement, RefObject } from "react";
 import { memo } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
+import { colors } from "@/constants/theme";
 
 type StatusOption = {
   value: string;
@@ -85,7 +86,7 @@ function StatusFilterSheet({
             accessibilityRole="button"
             accessibilityLabel="Fermer"
           >
-            <Feather name="x" size={18} color="#0F172A" />
+            <Feather name="x" size={18} color={colors.text} />
           </Pressable>
         </View>
 
@@ -100,7 +101,7 @@ function StatusFilterSheet({
           >
             <View style={s.rowLeft}>
               <View style={s.rowIconNeutral}>
-                <Feather name="layers" size={15} color="#0F172A" />
+                <Feather name="layers" size={15} color={colors.text} />
               </View>
               <Text
                 style={[
@@ -114,7 +115,7 @@ function StatusFilterSheet({
             <View style={s.rowRight}>
               <Text style={s.countText}>{totalCount}</Text>
               {activeStatusFilter === null ? (
-                <Feather name="check" size={16} color="#0F172A" />
+                <Feather name="check" size={16} color={colors.text} />
               ) : null}
             </View>
           </Pressable>
@@ -196,13 +197,13 @@ const s = StyleSheet.create({
   title: {
     fontSize: 18,
     fontWeight: "700",
-    color: "#0F172A",
+    color: colors.text,
     letterSpacing: -0.2,
   },
   subtitle: {
     marginTop: 4,
     fontSize: 12.5,
-    color: "#64748B",
+    color: colors.textMuted,
     fontWeight: "500",
   },
   closeBtn: {
@@ -211,7 +212,7 @@ const s = StyleSheet.create({
     borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#F1F5F9",
+    backgroundColor: colors.surfaceMuted,
   },
   list: {
     paddingHorizontal: 16,
@@ -225,13 +226,13 @@ const s = StyleSheet.create({
     paddingVertical: 12,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: "#E5E7EB",
-    backgroundColor: "#FFFFFF",
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
     gap: 12,
   },
   rowActiveNeutral: {
-    backgroundColor: "#F1F5F9",
-    borderColor: "#CBD5E1",
+    backgroundColor: colors.surfaceMuted,
+    borderColor: colors.borderStrong,
   },
   rowLeft: {
     flexDirection: "row",
@@ -253,17 +254,17 @@ const s = StyleSheet.create({
     borderRadius: 8,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#F1F5F9",
+    backgroundColor: colors.surfaceMuted,
   },
   rowLabel: {
     fontSize: 14.5,
     fontWeight: "600",
-    color: "#0F172A",
+    color: colors.text,
     flex: 1,
     minWidth: 0,
   },
   rowLabelActive: {
-    color: "#0F172A",
+    color: colors.text,
   },
   rowRight: {
     flexDirection: "row",
@@ -273,7 +274,7 @@ const s = StyleSheet.create({
   countText: {
     fontSize: 13,
     fontWeight: "700",
-    color: "#475569",
+    color: colors.textStrong,
     fontVariant: ["tabular-nums"],
     minWidth: 18,
     textAlign: "right",

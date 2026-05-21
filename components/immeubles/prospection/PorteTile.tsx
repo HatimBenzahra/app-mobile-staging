@@ -1,6 +1,7 @@
 import { Feather } from "@expo/vector-icons";
 import { memo, useCallback } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
+import { colors } from "@/constants/theme";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -87,7 +88,7 @@ function PorteTileImpl({ porte, onPress, isTablet = false }: PorteTileProps) {
           </Text>
           {porte.commentaire ? (
             <View style={styles.commentChip}>
-              <Feather name="message-circle" size={9} color="#64748B" />
+              <Feather name="message-circle" size={9} color={colors.textMuted} />
             </View>
           ) : null}
         </View>
@@ -109,9 +110,9 @@ const styles = StyleSheet.create({
     paddingBottom: 16,
     minHeight: 96,
     borderRadius: 16,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: "#EAECEF",
+    borderColor: colors.border,
     overflow: "hidden",
     justifyContent: "space-between",
     gap: 10,
@@ -134,7 +135,7 @@ const styles = StyleSheet.create({
   number: {
     fontSize: 22,
     fontWeight: "800",
-    color: "#0F172A",
+    color: colors.text,
     letterSpacing: -0.5,
     fontVariant: ["tabular-nums"],
   },
@@ -144,7 +145,7 @@ const styles = StyleSheet.create({
   subName: {
     marginTop: 2,
     fontSize: 11,
-    color: "#94A3B8",
+    color: colors.textSubtle,
     fontWeight: "600",
   },
   iconBox: {
@@ -170,7 +171,7 @@ const styles = StyleSheet.create({
     width: 18,
     height: 18,
     borderRadius: 999,
-    backgroundColor: "#F1F5F9",
+    backgroundColor: colors.surfaceMuted,
     alignItems: "center",
     justifyContent: "center",
   },
