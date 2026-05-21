@@ -1,5 +1,4 @@
-﻿import { MAPBOX_ACCESS_TOKEN } from "@/constants/env";
-import type { CreateImmeubleInput } from "@/types/api";
+﻿import type { CreateImmeubleInput } from "@/types/api";
 import { Feather } from "@expo/vector-icons";
 import {
   BottomSheetBackdrop,
@@ -20,10 +19,18 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-type MapboxFeature = {
-  id: string;
-  place_name: string;
-  text: string;
+type AdresseFeature = {
+  properties: {
+    id?: string;
+    label: string;
+    name?: string;
+    postcode?: string;
+    city?: string;
+    context?: string;
+    housenumber?: string;
+    street?: string;
+    type?: string;
+  };
   geometry?: {
     coordinates?: [number, number];
   };
@@ -38,16 +45,10 @@ type AddImmeubleSheetProps = {
   ownerRole?: string | null;
 };
 
-const STEPS: { id: string; title: string; icon: keyof typeof Feather.glyphMap }[] = [
-  { id: "address", title: "Adresse", icon: "map-pin" },
-  { id: "details", title: "Details", icon: "home" },
-  { id: "access", title: "Acces", icon: "key" },
-];
-
-const STEP_HINTS = [
-  "Precise l'adresse pour retrouver l'immeuble facilement.",
-  "Complete les etages et portes pour calculer les stats.",
-  "Ajoute les acces pour gagner du temps sur le terrain.",
+const STEPS = [
+  { id: "address" },
+  { id: "details" },
+  { id: "access" },
 ];
 
 export default function AddImmeubleSheet({
@@ -75,7 +76,7 @@ export default function AddImmeubleSheet({
     longitude: null as number | null,
   });
   const [errors, setErrors] = useState<Record<string, string | null>>({});
-  const [addressSuggestions, setAddressSuggestions] = useState<MapboxFeature[]>(
+  const [addressSuggestions, setAddressSuggestions] = useState<AdresseFeature[]>(
     [],
   );
   const [loadingSuggestions, setLoadingSuggestions] = useState(false);
@@ -91,7 +92,7 @@ export default function AddImmeubleSheet({
     if (isAddressSelected) return;
     const query = formData.adresse.trim();
     const timeoutId = setTimeout(() => {
-      if (query.length < 3 || !MAPBOX_ACCESS_TOKEN) {
+      if (query.length < 3) {
         setAddressSuggestions([]);
         return;
       }
@@ -160,16 +161,16 @@ export default function AddImmeubleSheet({
   const searchAddresses = async (query: string) => {
     setLoadingSuggestions(true);
     try {
-      const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(
+      const url = `https://api-adresse.data.gouv.fr/search/?q=${encodeURIComponent(
         query,
-      )}.json?access_token=${MAPBOX_ACCESS_TOKEN}&country=fr&proximity=2.3522,48.8566&types=address,poi&limit=6&language=fr`;
+      )}&limit=6&autocomplete=1`;
       const response = await fetch(url);
       if (!response.ok) {
         setAddressSuggestions([]);
         return;
       }
       const data = await response.json();
-      setAddressSuggestions(data?.features || []);
+      setAddressSuggestions((data?.features as AdresseFeature[]) || []);
     } catch {
       setAddressSuggestions([]);
     } finally {
@@ -177,7 +178,7 @@ export default function AddImmeubleSheet({
     }
   };
 
-  const selectAddress = (address: MapboxFeature) => {
+  const selectAddress = (address: AdresseFeature) => {
     setIsAddressSelected(true);
     setAddressSuggestions([]);
     const coordinates = address.geometry?.coordinates;
@@ -186,7 +187,7 @@ export default function AddImmeubleSheet({
 
     setFormData((prev) => ({
       ...prev,
-      adresse: address.place_name,
+      adresse: address.properties.label,
       latitude,
       longitude,
     }));
@@ -204,10 +205,9 @@ export default function AddImmeubleSheet({
     if (
       step === 0 &&
       formData.adresse.trim() &&
-      MAPBOX_ACCESS_TOKEN &&
       !isAddressSelected
     ) {
-      nextErrors.adresse = "Adresse invalide";
+      nextErrors.adresse = "Sélectionne une adresse dans la liste";
     }
     if (step === 1) {
       if (!formData.nbEtages || Number(formData.nbEtages) < 1) {
@@ -294,46 +294,28 @@ export default function AddImmeubleSheet({
     >
       <View style={[styles.sheet, isTablet && styles.sheetTablet]}>
         <View style={styles.header}>
-          <View>
-            <Text style={styles.title}>Ajouter un immeuble</Text>
-            <Text style={styles.subtitle}>{STEPS[currentStep].title}</Text>
-          </View>
+          <Text style={styles.eyebrow}>
+            Étape {currentStep + 1} sur {STEPS.length}
+          </Text>
+          <Text style={styles.title}>
+            {currentStep === 0
+              ? "Adresse"
+              : currentStep === 1
+                ? "Détails de l'immeuble"
+                : "Accès"}
+          </Text>
         </View>
 
-        <View style={styles.stepRow}>
-          {STEPS.map((step, index) => {
-            const isActive = index === currentStep;
-            const isDone = index < currentStep;
-            const iconName = isDone ? "check" : step.icon;
-            const iconColor = isActive
-              ? "#FFFFFF"
-              : isDone
-                ? "#FFFFFF"
-                : "#94A3B8";
-            return (
-              <View key={step.id} style={styles.stepItem}>
-                <View
-                  style={[
-                    styles.stepCircle,
-                    isActive && styles.stepCircleActive,
-                    isDone && styles.stepCircleDone,
-                  ]}
-                >
-                  <Feather name={iconName} size={14} color={iconColor} />
-                </View>
-                <Text
-                  style={[
-                    styles.stepLabel,
-                    isActive && styles.stepLabelActive,
-                    isDone && styles.stepLabelDone,
-                  ]}
-                >
-                  {step.title}
-                </Text>
-                {index < STEPS.length - 1 && <View style={styles.stepLine} />}
-              </View>
-            );
-          })}
+        <View style={styles.progressTrack}>
+          {STEPS.map((step, index) => (
+            <View
+              key={step.id}
+              style={[
+                styles.progressSeg,
+                index <= currentStep && styles.progressSegActive,
+              ]}
+            />
+          ))}
         </View>
 
         <BottomSheetScrollView
@@ -344,61 +326,98 @@ export default function AddImmeubleSheet({
             <>
               <Text style={styles.label}>Adresse de l&apos;immeuble</Text>
               <Pressable
-                style={styles.inputRow}
+                style={[
+                  styles.inputRow,
+                  isAddressSelected && styles.inputRowSelected,
+                  errors.adresse && styles.inputRowError,
+                ]}
                 onPress={() => adresseInputRef.current?.focus()}
               >
-                <Feather name="map-pin" size={16} color="#94A3B8" />
+                <Feather
+                  name={isAddressSelected ? "check-circle" : "map-pin"}
+                  size={16}
+                  color={isAddressSelected ? "#16A34A" : "#94A3B8"}
+                />
                 <TextInput
                   ref={adresseInputRef}
-                  placeholder="Tape une adresse..."
-                  style={[
-                    styles.input,
-                    styles.inputInline,
-                    errors.adresse && styles.inputError,
-                  ]}
+                  placeholder="N° rue, code postal, ville…"
+                  placeholderTextColor="#94A3B8"
+                  style={[styles.input, styles.inputInline]}
                   value={formData.adresse}
                   onChangeText={(value) => handleChange("adresse", value)}
                 />
                 {loadingSuggestions ? (
                   <ActivityIndicator size="small" color="#2563EB" />
+                ) : formData.adresse.length > 0 ? (
+                  <Pressable
+                    onPress={() => {
+                      handleChange("adresse", "");
+                      setAddressSuggestions([]);
+                    }}
+                    hitSlop={8}
+                  >
+                    <Feather name="x" size={16} color="#94A3B8" />
+                  </Pressable>
                 ) : null}
               </Pressable>
               {errors.adresse ? (
                 <Text style={styles.error}>{errors.adresse}</Text>
-              ) : null}
+              ) : (
+                <Text style={styles.hintText}>
+                  Suggestions fournies par l&apos;API officielle des adresses
+                  françaises (BAN).
+                </Text>
+              )}
 
               {addressSuggestions.length > 0 && (
                 <View style={styles.suggestionsCard}>
-                  {addressSuggestions.map((suggestion) => (
-                    <Pressable
-                      key={suggestion.id}
-                      style={styles.suggestionItem}
-                      onPress={() => selectAddress(suggestion)}
-                    >
-                      <Feather name="map-pin" size={14} color="#2563EB" />
-                      <View style={styles.suggestionText}>
-                        <Text style={styles.suggestionTitle} numberOfLines={1}>
-                          {suggestion.text}
-                        </Text>
-                        <Text
-                          style={styles.suggestionSubtitle}
-                          numberOfLines={1}
-                        >
-                          {suggestion.place_name}
-                        </Text>
-                      </View>
-                    </Pressable>
-                  ))}
+                  {addressSuggestions.map((suggestion, idx) => {
+                    const p = suggestion.properties;
+                    const title =
+                      [p.housenumber, p.street].filter(Boolean).join(" ") ||
+                      p.name ||
+                      p.label;
+                    const subtitle = [p.postcode, p.city]
+                      .filter(Boolean)
+                      .join(" ");
+                    return (
+                      <Pressable
+                        key={p.id ?? `${p.label}-${idx}`}
+                        style={({ pressed }) => [
+                          styles.suggestionItem,
+                          pressed && styles.suggestionItemPressed,
+                        ]}
+                        onPress={() => selectAddress(suggestion)}
+                      >
+                        <View style={styles.suggestionIcon}>
+                          <Feather name="map-pin" size={14} color="#2563EB" />
+                        </View>
+                        <View style={styles.suggestionText}>
+                          <Text
+                            style={styles.suggestionTitle}
+                            numberOfLines={1}
+                          >
+                            {title}
+                          </Text>
+                          {subtitle ? (
+                            <Text
+                              style={styles.suggestionSubtitle}
+                              numberOfLines={1}
+                            >
+                              {subtitle}
+                            </Text>
+                          ) : null}
+                        </View>
+                        <Feather
+                          name="corner-down-left"
+                          size={14}
+                          color="#CBD5E1"
+                        />
+                      </Pressable>
+                    );
+                  })}
                 </View>
               )}
-
-              {false ? (
-                <View style={styles.mapboxWarning}>
-                  <Text style={styles.mapboxWarningText}>
-                    Configuration Mapbox manquante — saisie manuelle uniquement
-                  </Text>
-                </View>
-              ) : null}
 
               <Text style={[styles.label, styles.labelSpacing]}>
                 Complement (optionnel)
@@ -418,10 +437,11 @@ export default function AddImmeubleSheet({
             <>
               <View style={styles.row}>
                 <View style={styles.field}>
-                  <Text style={styles.label}>Etages</Text>
+                  <Text style={styles.label}>Nombre d'étages</Text>
                   <TextInput
                     keyboardType="number-pad"
-                    placeholder="Ex: 5"
+                    placeholder="5"
+                    placeholderTextColor="#94A3B8"
                     style={[styles.input, errors.nbEtages && styles.inputError]}
                     value={formData.nbEtages}
                     onChangeText={(value) => handleChange("nbEtages", value)}
@@ -431,10 +451,11 @@ export default function AddImmeubleSheet({
                   ) : null}
                 </View>
                 <View style={styles.field}>
-                  <Text style={styles.label}>Portes/etage</Text>
+                  <Text style={styles.label}>Portes par étage</Text>
                   <TextInput
                     keyboardType="number-pad"
-                    placeholder="Ex: 4"
+                    placeholder="4"
+                    placeholderTextColor="#94A3B8"
                     style={[
                       styles.input,
                       errors.nbPortesParEtage && styles.inputError,
@@ -451,8 +472,16 @@ export default function AddImmeubleSheet({
               </View>
 
               <View style={styles.summaryCard}>
-                <Text style={styles.summaryLabel}>Total estime</Text>
-                <Text style={styles.summaryValue}>{totalPortes} portes</Text>
+                <View style={styles.summaryIcon}>
+                  <Feather name="layers" size={16} color="#2563EB" />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.summaryLabel}>Capacité estimée</Text>
+                  <Text style={styles.summaryHint}>
+                    Total de portes que tu pourras prospecter dans cet immeuble.
+                  </Text>
+                </View>
+                <Text style={styles.summaryValue}>{totalPortes}</Text>
               </View>
             </>
           )}
@@ -460,10 +489,13 @@ export default function AddImmeubleSheet({
           {currentStep === 2 && (
             <>
               <View style={styles.switchRow}>
-                <View>
+                <View style={styles.switchIcon}>
+                  <Feather name="chevrons-up" size={16} color="#2563EB" />
+                </View>
+                <View style={{ flex: 1 }}>
                   <Text style={styles.label}>Ascenseur</Text>
                   <Text style={styles.helper}>
-                    Presence d&apos;un ascenseur
+                    L'immeuble dispose d'un ascenseur ?
                   </Text>
                 </View>
                 <Switch
@@ -471,43 +503,75 @@ export default function AddImmeubleSheet({
                   onValueChange={(value) =>
                     handleChange("ascenseurPresent", value)
                   }
+                  trackColor={{ false: "#E2E8F0", true: "#BFDBFE" }}
+                  thumbColor={formData.ascenseurPresent ? "#2563EB" : "#FFFFFF"}
                 />
               </View>
 
-              <Text style={[styles.label, styles.labelSpacing]}>
-                Code digital
-              </Text>
-              <TextInput
-                placeholder="Ex: 1234A"
-                style={styles.input}
-                value={formData.digitalCode}
-                onChangeText={(value) => handleChange("digitalCode", value)}
-              />
+              <View style={styles.field}>
+                <Text style={styles.label}>Code d'accès</Text>
+                <View style={styles.inputRow}>
+                  <Feather name="key" size={16} color="#94A3B8" />
+                  <TextInput
+                    placeholder="Ex: 1234A"
+                    placeholderTextColor="#94A3B8"
+                    style={[styles.input, styles.inputInline]}
+                    value={formData.digitalCode}
+                    onChangeText={(value) => handleChange("digitalCode", value)}
+                  />
+                </View>
+                <Text style={styles.hintText}>
+                  Optionnel — pour gagner du temps en arrivant sur place.
+                </Text>
+              </View>
             </>
           )}
         </BottomSheetScrollView>
 
         <View style={styles.footer}>
-          <View style={styles.footerHint}>
-            <Text style={styles.footerHintTitle}>Conseils</Text>
-            <Text style={styles.footerHintText}>{STEP_HINTS[currentStep]}</Text>
-          </View>
           <Pressable
-            style={styles.ghostButton}
+            style={({ pressed }) => [
+              styles.ghostButton,
+              pressed && { opacity: 0.85 },
+            ]}
             onPress={currentStep === 0 ? close : prevStep}
           >
+            <Feather
+              name={currentStep === 0 ? "x" : "chevron-left"}
+              size={16}
+              color="#475569"
+            />
             <Text style={styles.ghostText}>
               {currentStep === 0 ? "Annuler" : "Retour"}
             </Text>
           </Pressable>
           <Pressable
-            style={[styles.primaryButton, loading && styles.primaryDisabled]}
+            style={({ pressed }) => [
+              styles.primaryButton,
+              pressed && !loading && { opacity: 0.92 },
+              loading && styles.primaryDisabled,
+            ]}
             onPress={currentStep === STEPS.length - 1 ? submit : nextStep}
             disabled={loading}
           >
-            <Text style={styles.primaryText}>
-              {currentStep === STEPS.length - 1 ? "Creer" : "Suivant"}
-            </Text>
+            {loading ? (
+              <ActivityIndicator color="#FFFFFF" size="small" />
+            ) : (
+              <>
+                <Text style={styles.primaryText}>
+                  {currentStep === STEPS.length - 1 ? "Créer l'immeuble" : "Suivant"}
+                </Text>
+                <Feather
+                  name={
+                    currentStep === STEPS.length - 1
+                      ? "check"
+                      : "arrow-right"
+                  }
+                  size={16}
+                  color="#FFFFFF"
+                />
+              </>
+            )}
           </Pressable>
         </View>
       </View>
@@ -528,125 +592,99 @@ const styles = StyleSheet.create({
     backgroundColor: "#CBD5F5",
   },
   sheet: {
-    paddingHorizontal: 16,
-    paddingTop: 12,
+    paddingHorizontal: 20,
+    paddingTop: 8,
     paddingBottom: 16,
   },
   sheetTablet: {
-    paddingHorizontal: 24,
-    paddingTop: 18,
+    paddingHorizontal: 28,
+    paddingTop: 12,
     paddingBottom: 20,
   },
   header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    paddingTop: 4,
+    paddingBottom: 12,
+  },
+  eyebrow: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: "#2563EB",
+    letterSpacing: 1.2,
+    textTransform: "uppercase",
   },
   title: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#0F172A",
-  },
-  subtitle: {
     marginTop: 4,
-    fontSize: 12,
-    color: "#64748B",
+    fontSize: 22,
+    fontWeight: "800",
+    color: "#0F172A",
+    letterSpacing: -0.3,
   },
-  close: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#F1F5F9",
-  },
-  stepRow: {
+  progressTrack: {
     flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginTop: 12,
+    gap: 6,
+    marginTop: 4,
     marginBottom: 8,
   },
-  stepItem: {
+  progressSeg: {
     flex: 1,
-    alignItems: "center",
-    position: "relative",
-  },
-  stepCircle: {
-    width: 34,
-    height: 34,
-    borderRadius: 12,
-    backgroundColor: "#F1F5F9",
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  stepCircleActive: {
-    backgroundColor: "#2563EB",
-    borderColor: "#2563EB",
-  },
-  stepCircleDone: {
-    backgroundColor: "#16A34A",
-    borderColor: "#16A34A",
-  },
-  stepLabel: {
-    marginTop: 6,
-    fontSize: 11,
-    fontWeight: "600",
-    color: "#94A3B8",
-  },
-  stepLabelActive: {
-    color: "#2563EB",
-  },
-  stepLabelDone: {
-    color: "#16A34A",
-  },
-  stepLine: {
-    position: "absolute",
-    right: -24,
-    top: 17,
-    width: 48,
-    height: 2,
+    height: 4,
+    borderRadius: 999,
     backgroundColor: "#E2E8F0",
   },
+  progressSegActive: {
+    backgroundColor: "#0F172A",
+  },
   content: {
-    paddingVertical: 16,
-    gap: 12,
+    paddingTop: 18,
+    paddingBottom: 8,
+    gap: 16,
   },
   label: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: "#0F172A",
+    fontSize: 12.5,
+    fontWeight: "700",
+    color: "#475569",
+    letterSpacing: 0.2,
+    marginBottom: 8,
   },
   labelSpacing: {
-    marginTop: 6,
+    marginTop: 8,
   },
   input: {
     borderWidth: 1,
     borderColor: "#E2E8F0",
     borderRadius: 14,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    fontSize: 13,
+    paddingHorizontal: 14,
+    paddingVertical: 13,
+    fontSize: 15,
     color: "#0F172A",
     backgroundColor: "#FFFFFF",
+    fontWeight: "500",
   },
   inputInline: {
+    flex: 1,
     borderWidth: 0,
     paddingHorizontal: 0,
     paddingVertical: 0,
+    backgroundColor: "transparent",
   },
   inputRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
+    gap: 10,
     borderWidth: 1,
     borderColor: "#E2E8F0",
     borderRadius: 14,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
     backgroundColor: "#FFFFFF",
+  },
+  inputRowSelected: {
+    borderColor: "#86EFAC",
+    backgroundColor: "#F0FDF4",
+  },
+  inputRowError: {
+    borderColor: "#FCA5A5",
+    backgroundColor: "#FEF2F2",
   },
   inputError: {
     borderColor: "#FCA5A5",
@@ -654,46 +692,61 @@ const styles = StyleSheet.create({
   error: {
     color: "#EF4444",
     fontSize: 12,
+    marginTop: 4,
+  },
+  hintText: {
+    marginTop: 6,
+    fontSize: 11.5,
+    color: "#94A3B8",
+    fontWeight: "500",
   },
   suggestionsCard: {
-    marginTop: 8,
-    borderRadius: 14,
+    marginTop: 10,
+    borderRadius: 16,
     borderWidth: 1,
     borderColor: "#E2E8F0",
     backgroundColor: "#FFFFFF",
     overflow: "hidden",
+    shadowColor: "#0F172A",
+    shadowOpacity: 0.04,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 2,
   },
   suggestionItem: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
+    gap: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
     borderBottomWidth: 1,
     borderBottomColor: "#F1F5F9",
   },
+  suggestionItemPressed: {
+    backgroundColor: "#F8FAFC",
+  },
+  suggestionIcon: {
+    width: 30,
+    height: 30,
+    borderRadius: 10,
+    backgroundColor: "#EFF6FF",
+    alignItems: "center",
+    justifyContent: "center",
+  },
   suggestionText: {
     flex: 1,
+    minWidth: 0,
   },
   suggestionTitle: {
-    fontSize: 12,
-    fontWeight: "600",
+    fontSize: 13.5,
+    fontWeight: "700",
     color: "#0F172A",
   },
   suggestionSubtitle: {
     marginTop: 2,
-    fontSize: 11,
+    fontSize: 11.5,
     color: "#64748B",
-  },
-  mapboxWarning: {
-    marginTop: 8,
-    padding: 10,
-    borderRadius: 10,
-    backgroundColor: "#FEF3C7",
-  },
-  mapboxWarningText: {
-    fontSize: 11,
-    color: "#92400E",
+    fontWeight: "500",
   },
   row: {
     flexDirection: "row",
@@ -703,89 +756,105 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   summaryCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 14,
     backgroundColor: "#F8FAFC",
-    borderRadius: 14,
-    padding: 14,
+    borderRadius: 16,
+    padding: 16,
     borderWidth: 1,
     borderColor: "#E2E8F0",
   },
-  summaryLabel: {
-    fontSize: 11,
-    color: "#64748B",
-    textTransform: "uppercase",
-    letterSpacing: 1,
+  summaryIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    backgroundColor: "#EFF6FF",
+    alignItems: "center",
+    justifyContent: "center",
   },
-  summaryValue: {
-    marginTop: 4,
-    fontSize: 18,
+  summaryLabel: {
+    fontSize: 13,
     fontWeight: "700",
     color: "#0F172A",
+  },
+  summaryHint: {
+    marginTop: 2,
+    fontSize: 11.5,
+    color: "#64748B",
+    fontWeight: "500",
+  },
+  summaryValue: {
+    fontSize: 22,
+    fontWeight: "800",
+    color: "#0F172A",
+    fontVariant: ["tabular-nums"],
+    minWidth: 36,
+    textAlign: "right",
   },
   helper: {
     marginTop: 2,
     fontSize: 12,
-    color: "#94A3B8",
+    color: "#64748B",
+    fontWeight: "500",
   },
   switchRow: {
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
-    padding: 12,
-    borderRadius: 14,
+    gap: 14,
+    padding: 16,
+    borderRadius: 16,
     borderWidth: 1,
     borderColor: "#E2E8F0",
-    backgroundColor: "#F8FAFC",
+    backgroundColor: "#FFFFFF",
+  },
+  switchIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    backgroundColor: "#EFF6FF",
+    alignItems: "center",
+    justifyContent: "center",
   },
   footer: {
     flexDirection: "row",
-    gap: 12,
-    marginTop: 8,
-    flexWrap: "wrap",
-  },
-  footerHint: {
-    width: "100%",
-    padding: 12,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-    backgroundColor: "#F8FAFC",
-  },
-  footerHintTitle: {
-    fontSize: 12,
-    fontWeight: "700",
-    color: "#0F172A",
-  },
-  footerHintText: {
-    marginTop: 4,
-    fontSize: 12,
-    color: "#475569",
+    gap: 10,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: "#F1F5F9",
   },
   ghostButton: {
-    flex: 1,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-    paddingVertical: 12,
+    flexDirection: "row",
     alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    paddingVertical: 14,
+    paddingHorizontal: 18,
+    borderRadius: 14,
+    backgroundColor: "#F1F5F9",
   },
   ghostText: {
-    fontSize: 13,
-    fontWeight: "600",
+    fontSize: 14,
+    fontWeight: "700",
     color: "#475569",
   },
   primaryButton: {
     flex: 1,
-    borderRadius: 14,
-    backgroundColor: "#2563EB",
-    paddingVertical: 12,
+    flexDirection: "row",
     alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    paddingVertical: 14,
+    borderRadius: 14,
+    backgroundColor: "#0F172A",
   },
   primaryDisabled: {
-    opacity: 0.6,
+    backgroundColor: "#94A3B8",
   },
   primaryText: {
-    fontSize: 13,
+    fontSize: 14.5,
     fontWeight: "700",
     color: "#FFFFFF",
+    letterSpacing: 0.2,
   },
 });
