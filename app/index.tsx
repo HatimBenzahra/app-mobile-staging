@@ -27,7 +27,7 @@ export default function Index() {
   if (!targetRoute) {
     return (
       <View style={styles.loaderWrap}>
-        <ActivityIndicator size="small" color="#2563EB" />
+        <ActivityIndicator size="small" color="#005BFF" />
       </View>
     );
   }

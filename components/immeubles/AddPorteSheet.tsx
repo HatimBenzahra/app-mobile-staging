@@ -141,7 +141,7 @@ export default function AddPorteSheet({
       <View style={[styles.sheet, isTablet && styles.sheetTablet]}>
         <View style={styles.header}>
           <View style={styles.headerIcon}>
-            <Feather name="plus-circle" size={18} color="#2563EB" />
+            <Feather name="plus-circle" size={18} color="#005BFF" />
           </View>
           <View style={styles.headerText}>
             <Text style={styles.title}>Ajouter une porte</Text>
@@ -247,7 +247,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 14,
-    backgroundColor: "#DBEAFE",
+    backgroundColor: "#CCDEFF",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -326,7 +326,7 @@ const styles = StyleSheet.create({
   primaryButton: {
     flex: 1,
     borderRadius: 14,
-    backgroundColor: "#2563EB",
+    backgroundColor: "#005BFF",
     paddingVertical: 12,
     alignItems: "center",
   },

@@ -28,7 +28,7 @@ const STATUS_STYLE: Record<
 > = {
   NON_VISITE: { label: "Non visite", bg: "#E2E8F0", fg: "#475569", dot: "#94A3B8" },
   ABSENT: { label: "Absent", bg: "#FFF7ED", fg: "#9A3412", dot: "#F97316" },
-  RENDEZ_VOUS_PRIS: { label: "RDV pris", bg: "#EFF6FF", fg: "#1D4ED8", dot: "#2563EB" },
+  RENDEZ_VOUS_PRIS: { label: "RDV pris", bg: "#E5EEFF", fg: "#0049CC", dot: "#005BFF" },
   CONTRAT_SIGNE: { label: "Contrat signe", bg: "#ECFDF3", fg: "#047857", dot: "#22C55E" },
   REFUS: { label: "Refus", bg: "#FEF2F2", fg: "#B91C1C", dot: "#EF4444" },
   ARGUMENTE: { label: "Argumente", bg: "#EEF2FF", fg: "#4338CA", dot: "#6366F1" },
@@ -169,7 +169,7 @@ const HistoriqueImmeubleCard = memo(
               </View>
               <View style={styles.cardStats}>
                 <View style={styles.statChip}>
-                  <Feather name="grid" size={12} color="#2563EB" />
+                  <Feather name="grid" size={12} color="#005BFF" />
                   <Text style={styles.statText}>{historyMeta.porteCount} portes</Text>
                 </View>
                 <View style={styles.statChip}>
@@ -695,8 +695,8 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFFFFF",
   },
   filterChipActive: {
-    backgroundColor: "#2563EB",
-    borderColor: "#2563EB",
+    backgroundColor: "#005BFF",
+    borderColor: "#005BFF",
   },
   filterText: {
     fontSize: 12,
@@ -787,7 +787,7 @@ const styles = StyleSheet.create({
     width: 38,
     height: 38,
     borderRadius: 12,
-    backgroundColor: "#2563EB",
+    backgroundColor: "#005BFF",
     alignItems: "center",
     justifyContent: "center",
   },

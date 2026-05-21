@@ -29,7 +29,7 @@ const BAR_AREA_HEIGHT = 140;
 
 const SimpleBarChart = memo(function SimpleBarChart({
   data,
-  color = "#2563EB",
+  color = "#005BFF",
 }: {
   data: WeeklyData[];
   color?: string;
@@ -278,7 +278,7 @@ export default function DashboardScreen() {
                 <Text style={styles.rankPoints}>{rankInfo.points} points</Text>
               </View>
               <Pressable style={styles.infoButton} onPress={handleOpenInfo}>
-                <Feather name="info" size={18} color="#2563EB" />
+                <Feather name="info" size={18} color="#005BFF" />
               </Pressable>
               {rankInfo.isMaxRank && (
                 <Feather name="check-circle" size={20} color="#10B981" />
@@ -319,7 +319,7 @@ export default function DashboardScreen() {
             >
               <View style={[styles.chartSlide, { width: chartSlideWidth }]}>
                 <View style={styles.chartHeader}>
-                  <Feather name="bar-chart-2" size={20} color="#2563EB" />
+                  <Feather name="bar-chart-2" size={20} color="#005BFF" />
                   <Text style={styles.chartTitle}>
                     Portes prospectées cette semaine
                   </Text>
@@ -369,7 +369,7 @@ export default function DashboardScreen() {
                 <Feather
                   name="bar-chart-2"
                   size={14}
-                  color={activeChartIndex === 0 ? "#2563EB" : "#94A3B8"}
+                  color={activeChartIndex === 0 ? "#005BFF" : "#94A3B8"}
                 />
                 <Text
                   style={[
@@ -414,7 +414,7 @@ export default function DashboardScreen() {
       >
         <BottomSheetView style={styles.sheetContainer}>
           <View style={styles.sheetHeader}>
-            <Feather name="info" size={20} color="#2563EB" />
+            <Feather name="info" size={20} color="#005BFF" />
             <Text style={styles.sheetTitle}>Calcul des points</Text>
           </View>
           <View style={styles.formulaGrid}>
@@ -438,9 +438,9 @@ export default function DashboardScreen() {
             </View>
             <View style={styles.formulaItem}>
               <View
-                style={[styles.formulaIcon, { backgroundColor: "#EFF6FF" }]}
+                style={[styles.formulaIcon, { backgroundColor: "#E5EEFF" }]}
               >
-                <Feather name="home" size={16} color="#3B82F6" />
+                <Feather name="home" size={16} color="#2F80FF" />
               </View>
               <Text style={styles.formulaItemLabel}>Immeuble visité</Text>
               <Text style={styles.formulaItemValue}>5 pts</Text>
@@ -592,8 +592,8 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFFFFF",
   },
   periodChipActive: {
-    borderColor: "#2563EB",
-    backgroundColor: "#2563EB",
+    borderColor: "#005BFF",
+    backgroundColor: "#005BFF",
   },
   periodChipText: {
     fontSize: 11,
@@ -664,7 +664,7 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: "#EFF6FF",
+    backgroundColor: "#E5EEFF",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -911,7 +911,7 @@ const styles = StyleSheet.create({
   formulaItemValue: {
     fontSize: 16,
     fontWeight: "700",
-    color: "#2563EB",
+    color: "#005BFF",
   },
   formulaNote: {
     fontSize: 13,

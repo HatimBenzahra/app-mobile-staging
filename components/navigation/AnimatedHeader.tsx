@@ -162,15 +162,15 @@ const styles = StyleSheet.create({
     width: 38,
     height: 38,
     borderRadius: 19,
-    backgroundColor: "#EFF6FF",
+    backgroundColor: "#E5EEFF",
     borderWidth: 1.5,
-    borderColor: "#DBEAFE",
+    borderColor: "#CCDEFF",
     alignItems: "center",
     justifyContent: "center",
   },
   profileInitials: {
     fontSize: 14,
     fontWeight: "700",
-    color: "#2563EB",
+    color: "#005BFF",
   },
 });

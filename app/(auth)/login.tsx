@@ -84,7 +84,7 @@ export default function LoginScreen() {
         <View style={styles.bootLogo}>
           <ProwinLogo size={64} />
         </View>
-        <ActivityIndicator size="small" color="#2563EB" style={{ marginTop: 24 }} />
+        <ActivityIndicator size="small" color="#005BFF" style={{ marginTop: 24 }} />
         <Text style={styles.bootText}>Connexion en cours…</Text>
       </SafeAreaView>
     );
@@ -324,13 +324,13 @@ const styles = StyleSheet.create({
   wordmarkBlue: {
     fontSize: 30,
     fontWeight: "800",
-    color: "#2563EB",
+    color: "#005BFF",
     letterSpacing: -0.5,
   },
   tagline: {
     fontSize: 12,
     fontWeight: "700",
-    color: "#2563EB",
+    color: "#005BFF",
     textTransform: "uppercase",
     letterSpacing: 1.5,
   },

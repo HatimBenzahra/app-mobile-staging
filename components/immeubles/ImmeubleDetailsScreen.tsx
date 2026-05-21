@@ -110,7 +110,7 @@ const ProgressCard = memo(function ProgressCard({
       <View style={styles.progressRowNew}>
         <View style={styles.progressLeftNew}>
           <View style={styles.progressIconNew}>
-            <Feather name="activity" size={14} color="#2563EB" />
+            <Feather name="activity" size={14} color="#005BFF" />
           </View>
           <View style={styles.progressTextsNew}>
             <Text style={styles.progressTitleNew}>Progression</Text>
@@ -1365,7 +1365,7 @@ function ImmeubleDetailsView({
               ? "#FFFFFF"
               : isDanger
                 ? "#B91C1C"
-                : "#1D4ED8";
+                : "#0049CC";
             return (
               <View
                 key={action.label}
@@ -1520,7 +1520,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   backButtonPressed: {
-    backgroundColor: "#EFF6FF",
+    backgroundColor: "#E5EEFF",
   },
   headerText: {
     flex: 1,
@@ -1539,10 +1539,10 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 14,
-    backgroundColor: "#2563EB",
+    backgroundColor: "#005BFF",
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: "#1D4ED8",
+    shadowColor: "#0049CC",
     shadowOpacity: 0.25,
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 6 },
@@ -1554,7 +1554,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: "#2563EB",
+    backgroundColor: "#005BFF",
   },
   floorPlanSectionList: {
     paddingBottom: 12,
@@ -1715,7 +1715,7 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 10,
-    backgroundColor: "#EFF6FF",
+    backgroundColor: "#E5EEFF",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -1738,7 +1738,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 999,
-    backgroundColor: "#2563EB",
+    backgroundColor: "#005BFF",
   },
   progressPercentTextNew: {
     fontSize: 13,
@@ -1755,7 +1755,7 @@ const styles = StyleSheet.create({
   progressBarFillNew: {
     height: "100%",
     borderRadius: 999,
-    backgroundColor: "#2563EB",
+    backgroundColor: "#005BFF",
   },
   progressHeader: {
     flexDirection: "row",
@@ -1782,12 +1782,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 999,
-    backgroundColor: "#EFF6FF",
+    backgroundColor: "#E5EEFF",
   },
   progressPercentText: {
     fontSize: 12,
     fontWeight: "700",
-    color: "#2563EB",
+    color: "#005BFF",
   },
   progressPercentTextTablet: {
     fontSize: 14,
@@ -1804,7 +1804,7 @@ const styles = StyleSheet.create({
   progressBarFill: {
     height: "100%",
     borderRadius: 999,
-    backgroundColor: "#2563EB",
+    backgroundColor: "#005BFF",
   },
   progressStatsRow: {
     flexDirection: "row",
@@ -1862,7 +1862,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#CBD5E1",
   },
   swipeDotActive: {
-    backgroundColor: "#2563EB",
+    backgroundColor: "#005BFF",
   },
   swipeHint: {
     textAlign: "center",
@@ -2017,8 +2017,8 @@ const styles = StyleSheet.create({
     marginTop: 12,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: "#DBEAFE",
-    backgroundColor: "#EFF6FF",
+    borderColor: "#CCDEFF",
+    backgroundColor: "#E5EEFF",
     paddingHorizontal: 12,
     paddingVertical: 10,
     flexDirection: "row",
@@ -2039,12 +2039,12 @@ const styles = StyleSheet.create({
   quickCommentTitle: {
     fontSize: 13,
     fontWeight: "700",
-    color: "#1E3A8A",
+    color: "#001B5E",
   },
   quickCommentSubtitle: {
     marginTop: 2,
     fontSize: 11,
-    color: "#3B82F6",
+    color: "#2F80FF",
   },
   statusIcon: {
     width: 34,
@@ -2147,7 +2147,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 12,
-    backgroundColor: "#EFF6FF",
+    backgroundColor: "#E5EEFF",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -2188,7 +2188,7 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: 32,
-    backgroundColor: "#EFF6FF",
+    backgroundColor: "#E5EEFF",
     alignItems: "center",
     justifyContent: "center",
     shadowColor: "#0F172A",
@@ -2233,10 +2233,10 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 18,
-    backgroundColor: "#2563EB",
+    backgroundColor: "#005BFF",
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: "#2563EB",
+    shadowColor: "#005BFF",
     shadowOpacity: 0.3,
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 4 },
@@ -2331,7 +2331,7 @@ const styles = StyleSheet.create({
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: "#2563EB",
+    backgroundColor: "#005BFF",
   },
   doorChipText: {
     fontSize: 11,
@@ -2367,8 +2367,8 @@ const styles = StyleSheet.create({
     borderColor: "#FDE68A",
   },
   absentOptionEvening: {
-    backgroundColor: "#EFF6FF",
-    borderColor: "#BFDBFE",
+    backgroundColor: "#E5EEFF",
+    borderColor: "#99BDFF",
   },
   absentOptionIcon: {
     width: 40,
@@ -2555,7 +2555,7 @@ const styles = StyleSheet.create({
   pickerTitle: {
     fontSize: 12,
     fontWeight: "600",
-    color: "#1E3A8A",
+    color: "#001B5E",
   },
   pickerValue: {
     marginTop: 2,
@@ -2710,7 +2710,7 @@ const styles = StyleSheet.create({
   sheetPrimary: {
     flex: 1,
     borderRadius: 14,
-    backgroundColor: "#2563EB",
+    backgroundColor: "#005BFF",
     paddingVertical: 12,
     alignItems: "center",
   },
@@ -2772,7 +2772,7 @@ const styles = StyleSheet.create({
   filterResetLabel: {
     fontSize: 14,
     fontWeight: "600",
-    color: "#2563EB",
+    color: "#005BFF",
   },
   filterSection: {
     paddingTop: 20,
@@ -2801,7 +2801,7 @@ const styles = StyleSheet.create({
   },
   filterRadioItemActive: {
     backgroundColor: "#F0F7FF",
-    borderColor: "#2563EB",
+    borderColor: "#005BFF",
   },
   filterRadioItemDisabled: {
     opacity: 0.5,
@@ -2825,14 +2825,14 @@ const styles = StyleSheet.create({
     borderColor: "#E0E0E0",
   },
   filterRadioCircleActive: {
-    borderColor: "#2563EB",
+    borderColor: "#005BFF",
     borderWidth: 2,
   },
   filterRadioDot: {
     width: 10,
     height: 10,
     borderRadius: 5,
-    backgroundColor: "#2563EB",
+    backgroundColor: "#005BFF",
   },
   filterRadioTextContainer: {
     flex: 1,
@@ -2845,7 +2845,7 @@ const styles = StyleSheet.create({
   },
   filterRadioLabelActive: {
     fontWeight: "600",
-    color: "#2563EB",
+    color: "#005BFF",
   },
   filterRadioDescription: {
     fontSize: 12,
@@ -2877,11 +2877,11 @@ const styles = StyleSheet.create({
     borderTopColor: "#F1F5F9",
   },
   filterApplyButton: {
-    backgroundColor: "#2563EB",
+    backgroundColor: "#005BFF",
     borderRadius: 16,
     paddingVertical: 16,
     alignItems: "center",
-    shadowColor: "#2563EB",
+    shadowColor: "#005BFF",
     shadowOpacity: 0.3,
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 4 },
@@ -2925,7 +2925,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   doorNumberBadge: {
-    backgroundColor: "#EFF6FF",
+    backgroundColor: "#E5EEFF",
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 12,
@@ -2933,7 +2933,7 @@ const styles = StyleSheet.create({
   doorNumberText: {
     fontSize: 18,
     fontWeight: "700",
-    color: "#2563EB",
+    color: "#005BFF",
   },
   doorFloorBadge: {
     flexDirection: "row",
@@ -2995,9 +2995,9 @@ const styles = StyleSheet.create({
     borderColor: "transparent",
   },
   floorTabActive: {
-    backgroundColor: "#2563EB",
-    borderColor: "#2563EB",
-    shadowColor: "#1D4ED8",
+    backgroundColor: "#005BFF",
+    borderColor: "#005BFF",
+    shadowColor: "#0049CC",
     shadowOpacity: 0.2,
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 4 },
@@ -3038,8 +3038,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 12,
-    backgroundColor: "#2563EB",
-    shadowColor: "#2563EB",
+    backgroundColor: "#005BFF",
+    shadowColor: "#005BFF",
     shadowOpacity: 0.25,
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 2 },
@@ -3140,7 +3140,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 12,
     padding: 14,
-    backgroundColor: "#EFF6FF",
+    backgroundColor: "#E5EEFF",
     borderRadius: 16,
     marginBottom: 16,
   },
@@ -3187,7 +3187,7 @@ const styles = StyleSheet.create({
     borderColor: "#E2E8F0",
   },
   floorPlanCurrentBadge: {
-    backgroundColor: "#EFF6FF",
+    backgroundColor: "#E5EEFF",
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 10,
@@ -3195,7 +3195,7 @@ const styles = StyleSheet.create({
   floorPlanCurrentNumber: {
     fontSize: 18,
     fontWeight: "700",
-    color: "#2563EB",
+    color: "#005BFF",
   },
   floorPlanCurrentInfo: {
     flex: 1,
@@ -3255,7 +3255,7 @@ const styles = StyleSheet.create({
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: "#2563EB",
+    backgroundColor: "#005BFF",
   },
   exitOverlay: {
     flex: 1,
@@ -3370,7 +3370,7 @@ const styles = StyleSheet.create({
     elevation: 6,
   },
   fabChipPrimary: {
-    borderColor: "#DBEAFE",
+    borderColor: "#CCDEFF",
     backgroundColor: "#FFFFFF",
   },
   fabChipHero: {
@@ -3392,7 +3392,7 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     backgroundColor: "#FFFFFF",
     borderWidth: 1,
-    borderColor: "#DBEAFE",
+    borderColor: "#CCDEFF",
     shadowColor: "#0F172A",
     shadowOpacity: 0.1,
     shadowRadius: 10,
@@ -3419,7 +3419,7 @@ const styles = StyleSheet.create({
   fabHintText: {
     fontSize: 12,
     fontWeight: "700",
-    color: "#1D4ED8",
+    color: "#0049CC",
   },
   fabHintTextDanger: {
     color: "#B91C1C",

@@ -71,7 +71,7 @@ const MenuItem = memo(function MenuItem({
           <Feather
             name={icon}
             size={20}
-            color={isActive ? "#2563EB" : "#64748B"}
+            color={isActive ? "#005BFF" : "#64748B"}
           />
         </View>
         <Text
@@ -239,7 +239,7 @@ export default function HamburgerMenuOverlay({
         <View style={styles.profileSection}>
           <View style={styles.avatarContainer}>
             <View style={styles.avatar}>
-              <Feather name="user" size={24} color="#2563EB" />
+              <Feather name="user" size={24} color="#005BFF" />
             </View>
             <View style={styles.onlineIndicator} />
           </View>
@@ -322,9 +322,9 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: "#EFF6FF",
+    backgroundColor: "#E5EEFF",
     borderWidth: 2,
-    borderColor: "#DBEAFE",
+    borderColor: "#CCDEFF",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -353,7 +353,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 6,
     marginTop: 5,
-    backgroundColor: "#EFF6FF",
+    backgroundColor: "#E5EEFF",
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 12,
@@ -363,12 +363,12 @@ const styles = StyleSheet.create({
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: "#2563EB",
+    backgroundColor: "#005BFF",
   },
   roleText: {
     fontSize: 12,
     fontWeight: "600",
-    color: "#2563EB",
+    color: "#005BFF",
   },
   closeButton: {
     width: 36,
@@ -409,7 +409,7 @@ const styles = StyleSheet.create({
     position: "relative",
   },
   menuItemActive: {
-    backgroundColor: "#EFF6FF",
+    backgroundColor: "#E5EEFF",
   },
   menuIconContainer: {
     width: 40,
@@ -421,7 +421,7 @@ const styles = StyleSheet.create({
     marginRight: 12,
   },
   menuIconContainerActive: {
-    backgroundColor: "#DBEAFE",
+    backgroundColor: "#CCDEFF",
   },
   menuItemText: {
     fontSize: 15,
@@ -430,14 +430,14 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   menuItemTextActive: {
-    color: "#2563EB",
+    color: "#005BFF",
     fontWeight: "700",
   },
   activeBar: {
     width: 4,
     height: 24,
     borderRadius: 999,
-    backgroundColor: "#2563EB",
+    backgroundColor: "#005BFF",
     position: "absolute",
     left: 0,
   },

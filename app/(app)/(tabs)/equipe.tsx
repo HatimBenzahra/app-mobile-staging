@@ -173,7 +173,7 @@ const PeriodFilterChip = memo(function PeriodFilterChip({
         <Feather
           name={option.icon}
           size={12}
-          color={selected ? "#1E3A8A" : "#2563EB"}
+          color={selected ? "#001B5E" : "#005BFF"}
         />
       </View>
       <Text
@@ -250,7 +250,7 @@ const TeamListItem = memo(function TeamListItem({
         </View>
         <View style={styles.statItem}>
           <View style={styles.statIconWrap}>
-            <Feather name="calendar" size={10} color="#2563EB" />
+            <Feather name="calendar" size={10} color="#005BFF" />
           </View>
           <Text style={styles.statValue}>
             {commercial.stats.rendezVousPris}
@@ -808,7 +808,7 @@ export default function EquipeScreen() {
             style={[styles.kpiCardSecondary, isTablet && styles.kpiCardTablet]}
           >
             <View style={styles.kpiIconSecondary}>
-              <Feather name="award" size={18} color="#2563EB" />
+              <Feather name="award" size={18} color="#005BFF" />
             </View>
             <Text style={styles.kpiValueSecondary}>
               {isScreenLoading ? "—" : teamTotals.contratsSignes}
@@ -820,7 +820,7 @@ export default function EquipeScreen() {
         <View style={[styles.kpiRow, styles.compactStackSpacing]}>
           <View style={[styles.kpiCardLight, isTablet && styles.kpiCardTablet]}>
             <View style={styles.kpiIconLight}>
-              <Feather name="calendar" size={18} color="#2563EB" />
+              <Feather name="calendar" size={18} color="#005BFF" />
             </View>
             <Text style={styles.kpiValueLight}>
               {isScreenLoading ? "—" : teamTotals.rendezVousPris}
@@ -851,7 +851,7 @@ export default function EquipeScreen() {
                 <View
                   style={[
                     styles.performanceLegendDot,
-                    { backgroundColor: "#2563EB" },
+                    { backgroundColor: "#005BFF" },
                   ]}
                 />
                 <Text style={styles.performanceLegendText}>RDV pris</Text>
@@ -888,11 +888,11 @@ export default function EquipeScreen() {
                   width={performanceChartWidth}
                   curved
                   thickness={2.5}
-                  color="#2563EB"
+                  color="#005BFF"
                   color2="#F59E0B"
                   areaChart
-                  startFillColor="rgba(37, 99, 235, 0.12)"
-                  endFillColor="rgba(37, 99, 235, 0)"
+                  startFillColor="rgba(0, 91, 255, 0.12)"
+                  endFillColor="rgba(0, 91, 255, 0)"
                   startOpacity={0.15}
                   endOpacity={0}
                   startFillColor2="rgba(245, 158, 11, 0.12)"
@@ -919,7 +919,7 @@ export default function EquipeScreen() {
                   isAnimated
                   animateOnDataChange
                   animationDuration={350}
-                  dataPointsColor1="#2563EB"
+                  dataPointsColor1="#005BFF"
                   dataPointsColor2="#F59E0B"
                   dataPointsRadius1={3}
                   dataPointsRadius2={3}
@@ -933,7 +933,7 @@ export default function EquipeScreen() {
         <View style={[styles.sectionCard, styles.sectionSpacing]}>
           <View style={styles.sectionHeader}>
             <View style={styles.sectionIcon}>
-              <Feather name="briefcase" size={18} color="#2563EB" />
+              <Feather name="briefcase" size={18} color="#005BFF" />
             </View>
             <View>
               <Text style={styles.sectionTitle}>Équipe commerciale</Text>
@@ -1018,14 +1018,14 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#EFF6FF",
+    backgroundColor: "#E5EEFF",
   },
   periodChipIconWrapActive: {
-    backgroundColor: "#DBEAFE",
+    backgroundColor: "#CCDEFF",
   },
   periodChipActive: {
-    borderColor: "#2563EB",
-    backgroundColor: "#2563EB",
+    borderColor: "#005BFF",
+    backgroundColor: "#005BFF",
   },
   periodChipText: {
     fontSize: 12,
@@ -1078,7 +1078,7 @@ const styles = StyleSheet.create({
     flex: 1,
     borderRadius: 18,
     padding: 16,
-    backgroundColor: "#2563EB",
+    backgroundColor: "#005BFF",
   },
   kpiCardSecondary: {
     flex: 1,
@@ -1111,7 +1111,7 @@ const styles = StyleSheet.create({
     width: 34,
     height: 34,
     borderRadius: 12,
-    backgroundColor: "#EFF6FF",
+    backgroundColor: "#E5EEFF",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -1132,7 +1132,7 @@ const styles = StyleSheet.create({
   kpiLabelPrimary: {
     marginTop: 4,
     fontSize: 13,
-    color: "#DBEAFE",
+    color: "#CCDEFF",
   },
   kpiValueSecondary: {
     marginTop: 10,
@@ -1244,7 +1244,7 @@ const styles = StyleSheet.create({
     width: 38,
     height: 38,
     borderRadius: 14,
-    backgroundColor: "#EFF6FF",
+    backgroundColor: "#E5EEFF",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -1287,7 +1287,7 @@ const styles = StyleSheet.create({
   listInitials: {
     fontSize: 12,
     fontWeight: "700",
-    color: "#2563EB",
+    color: "#005BFF",
   },
   listInfo: {
     flex: 1,
@@ -1312,12 +1312,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 999,
-    backgroundColor: "#EFF6FF",
+    backgroundColor: "#E5EEFF",
   },
   rankPillText: {
     fontSize: 11,
     fontWeight: "600",
-    color: "#2563EB",
+    color: "#005BFF",
   },
   pointsPill: {
     flexDirection: "row",

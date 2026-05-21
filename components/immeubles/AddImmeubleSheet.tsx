@@ -347,7 +347,7 @@ export default function AddImmeubleSheet({
                   onChangeText={(value) => handleChange("adresse", value)}
                 />
                 {loadingSuggestions ? (
-                  <ActivityIndicator size="small" color="#2563EB" />
+                  <ActivityIndicator size="small" color="#005BFF" />
                 ) : formData.adresse.length > 0 ? (
                   <Pressable
                     onPress={() => {
@@ -390,7 +390,7 @@ export default function AddImmeubleSheet({
                         onPress={() => selectAddress(suggestion)}
                       >
                         <View style={styles.suggestionIcon}>
-                          <Feather name="map-pin" size={14} color="#2563EB" />
+                          <Feather name="map-pin" size={14} color="#005BFF" />
                         </View>
                         <View style={styles.suggestionText}>
                           <Text
@@ -473,7 +473,7 @@ export default function AddImmeubleSheet({
 
               <View style={styles.summaryCard}>
                 <View style={styles.summaryIcon}>
-                  <Feather name="layers" size={16} color="#2563EB" />
+                  <Feather name="layers" size={16} color="#005BFF" />
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.summaryLabel}>Capacité estimée</Text>
@@ -490,7 +490,7 @@ export default function AddImmeubleSheet({
             <>
               <View style={styles.switchRow}>
                 <View style={styles.switchIcon}>
-                  <Feather name="chevrons-up" size={16} color="#2563EB" />
+                  <Feather name="chevrons-up" size={16} color="#005BFF" />
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.label}>Ascenseur</Text>
@@ -503,8 +503,8 @@ export default function AddImmeubleSheet({
                   onValueChange={(value) =>
                     handleChange("ascenseurPresent", value)
                   }
-                  trackColor={{ false: "#E2E8F0", true: "#BFDBFE" }}
-                  thumbColor={formData.ascenseurPresent ? "#2563EB" : "#FFFFFF"}
+                  trackColor={{ false: "#E2E8F0", true: "#99BDFF" }}
+                  thumbColor={formData.ascenseurPresent ? "#005BFF" : "#FFFFFF"}
                 />
               </View>
 
@@ -608,7 +608,7 @@ const styles = StyleSheet.create({
   eyebrow: {
     fontSize: 11,
     fontWeight: "700",
-    color: "#2563EB",
+    color: "#005BFF",
     letterSpacing: 1.2,
     textTransform: "uppercase",
   },
@@ -729,7 +729,7 @@ const styles = StyleSheet.create({
     width: 30,
     height: 30,
     borderRadius: 10,
-    backgroundColor: "#EFF6FF",
+    backgroundColor: "#E5EEFF",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -769,7 +769,7 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 12,
-    backgroundColor: "#EFF6FF",
+    backgroundColor: "#E5EEFF",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -812,7 +812,7 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 12,
-    backgroundColor: "#EFF6FF",
+    backgroundColor: "#E5EEFF",
     alignItems: "center",
     justifyContent: "center",
   },

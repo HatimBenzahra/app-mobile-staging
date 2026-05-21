@@ -44,7 +44,7 @@ export default function BottomTabs({ routes, index, onTabPress }: BottomTabsProp
     <View style={[styles.container, { paddingBottom: 10 + insets.bottom }]}>
       {routes.map((route, routeIndex) => {
         const isActive = index === routeIndex;
-        const color = isActive ? "#2563EB" : "#94A3B8";
+        const color = isActive ? "#005BFF" : "#94A3B8";
         const progress = tabAnims[routeIndex];
         const scale = progress.interpolate({
           inputRange: [0, 1],
@@ -122,7 +122,7 @@ const styles = StyleSheet.create({
     width: "60%",
     height: 3,
     borderRadius: 999,
-    backgroundColor: "#2563EB",
+    backgroundColor: "#005BFF",
     marginBottom: 2,
   },
   label: {

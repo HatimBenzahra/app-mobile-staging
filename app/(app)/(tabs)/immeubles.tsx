@@ -1,5 +1,6 @@
 import AddImmeubleSheet from "@/components/immeubles/AddImmeubleSheet";
 import ImmeubleDetailsView from "@/components/immeubles/ImmeubleDetailsScreen";
+import { StatTile } from "@/components/ui";
 import { useCreateImmeuble } from "@/hooks/api/use-create-immeuble";
 import { useWorkspaceProfile } from "@/hooks/api/use-workspace-profile";
 import { authService } from "@/services/auth";
@@ -38,12 +39,12 @@ const FILTER_CHIPS: {
   icon: keyof typeof Feather.glyphMap;
   color: string;
 }[] = [
-  { key: "all", label: "Tous", icon: "layers", color: "#2563EB" },
+  { key: "all", label: "Tous", icon: "layers", color: "#005BFF" },
   {
     key: "incomplete",
     label: "En cours",
     icon: "activity",
-    color: "#2563EB",
+    color: "#005BFF",
   },
   { key: "low", label: "0-35%", icon: "trending-down", color: "#EF4444" },
   { key: "mid", label: "35-70%", icon: "bar-chart-2", color: "#F59E0B" },
@@ -470,26 +471,17 @@ export default function ImmeublesScreen({
           ListHeaderComponent={
             <View style={styles.headerBlock}>
               <View style={styles.summaryRow}>
-                <View style={styles.summaryCardPrimary}>
-                  <View style={styles.summaryIconPrimary}>
-                    <Feather name="layers" size={16} color="#FFFFFF" />
-                  </View>
-                  <Text style={styles.summaryValue}>
-                    {immeublesEnCours.length}
-                  </Text>
-                  <Text style={styles.summaryLabel}>Immeubles a finir</Text>
-                </View>
-                <View style={styles.summaryCardSecondary}>
-                  <View style={styles.summaryIconSecondary}>
-                    <Feather name="grid" size={16} color="#2563EB" />
-                  </View>
-                  <Text style={styles.summaryValueSecondary}>
-                    {totalPortes}
-                  </Text>
-                  <Text style={styles.summaryLabelSecondary}>
-                    Portes totales
-                  </Text>
-                </View>
+                <StatTile
+                  icon="layers"
+                  label="Immeubles à finir"
+                  value={immeublesEnCours.length}
+                  emphasis="primary"
+                />
+                <StatTile
+                  icon="grid"
+                  label="Portes totales"
+                  value={totalPortes}
+                />
               </View>
 
               {loading && !profile && (
@@ -576,7 +568,7 @@ export default function ImmeublesScreen({
                     ]}
                   >
                     <View style={styles.searchIconWrap}>
-                      <Feather name="search" size={18} color="#2563EB" />
+                      <Feather name="search" size={18} color="#005BFF" />
                     </View>
                     <TextInput
                       ref={searchInputRef}
@@ -609,7 +601,7 @@ export default function ImmeublesScreen({
                       <Feather
                         name="sliders"
                         size={16}
-                        color={showFilters ? "#FFFFFF" : "#2563EB"}
+                        color={showFilters ? "#FFFFFF" : "#005BFF"}
                       />
                     </Pressable>
                   </View>
@@ -675,7 +667,7 @@ export default function ImmeublesScreen({
                       >
                         <View style={styles.cardHeader}>
                           <View style={styles.cardIcon}>
-                            <Feather name="home" size={18} color="#2563EB" />
+                            <Feather name="home" size={18} color="#005BFF" />
                           </View>
                           <Text style={styles.cardChip}>{cardLabel}</Text>
                         </View>
@@ -788,7 +780,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 14,
-    backgroundColor: "#EFF6FF",
+    backgroundColor: "#E5EEFF",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -809,7 +801,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
-    backgroundColor: "#F8FAFF",
+    backgroundColor: "#F4F8FF",
     borderRadius: 20,
     paddingHorizontal: 16,
     paddingVertical: 12,
@@ -827,7 +819,7 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 14,
-    backgroundColor: "#E0EDFF",
+    backgroundColor: "#CCDEFF",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -845,7 +837,7 @@ const styles = StyleSheet.create({
     flex: 1,
     borderRadius: 18,
     padding: 14,
-    backgroundColor: "#2563EB",
+    backgroundColor: "#005BFF",
   },
   summaryCardSecondary: {
     flex: 1,
@@ -867,7 +859,7 @@ const styles = StyleSheet.create({
     width: 30,
     height: 30,
     borderRadius: 10,
-    backgroundColor: "#EFF6FF",
+    backgroundColor: "#E5EEFF",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -880,7 +872,7 @@ const styles = StyleSheet.create({
   summaryLabel: {
     marginTop: 4,
     fontSize: 13,
-    color: "#DBEAFE",
+    color: "#CCDEFF",
   },
   summaryValueSecondary: {
     marginTop: 10,
@@ -913,8 +905,8 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFFFFF",
   },
   filterChipActive: {
-    backgroundColor: "#2563EB",
-    borderColor: "#2563EB",
+    backgroundColor: "#005BFF",
+    borderColor: "#005BFF",
   },
   filterChipText: {
     fontSize: 13,
@@ -1026,7 +1018,7 @@ const styles = StyleSheet.create({
     width: 38,
     height: 38,
     borderRadius: 14,
-    backgroundColor: "#EFF6FF",
+    backgroundColor: "#E5EEFF",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -1076,12 +1068,12 @@ const styles = StyleSheet.create({
   progressFill: {
     height: "100%",
     borderRadius: 999,
-    backgroundColor: "#2563EB",
+    backgroundColor: "#005BFF",
   },
   progressText: {
     fontSize: 13,
     fontWeight: "600",
-    color: "#2563EB",
+    color: "#005BFF",
   },
   fab: {
     position: "absolute",
@@ -1089,7 +1081,7 @@ const styles = StyleSheet.create({
     width: 52,
     height: 52,
     borderRadius: 26,
-    backgroundColor: "#2563EB",
+    backgroundColor: "#005BFF",
     alignItems: "center",
     justifyContent: "center",
     shadowColor: "#0F172A",
@@ -1109,7 +1101,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   searchBarFocused: {
-    borderColor: "#2563EB",
+    borderColor: "#005BFF",
     backgroundColor: "#FFFFFF",
   },
   clearButton: {
@@ -1124,12 +1116,12 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 14,
-    backgroundColor: "#EFF6FF",
+    backgroundColor: "#E5EEFF",
     alignItems: "center",
     justifyContent: "center",
   },
   filterButtonActive: {
-    backgroundColor: "#2563EB",
+    backgroundColor: "#005BFF",
   },
   cancelButton: {
     paddingHorizontal: 12,
@@ -1138,6 +1130,6 @@ const styles = StyleSheet.create({
   cancelText: {
     fontSize: 15,
     fontWeight: "600",
-    color: "#2563EB",
+    color: "#005BFF",
   },
 });

@@ -273,7 +273,7 @@ export default function AgendaScreen({
         <View style={styles.heroCard}>
           <View style={styles.heroRow}>
             <View style={styles.heroIconWrap}>
-              <Feather name="calendar" size={22} color="#2563EB" />
+              <Feather name="calendar" size={22} color="#005BFF" />
             </View>
             <View style={styles.heroTextWrap}>
               <Text style={styles.heroTitle}>Aujourd'hui</Text>
@@ -286,8 +286,8 @@ export default function AgendaScreen({
           <View style={styles.kpiCard}>
             <View style={styles.kpiHeader}>
               <Text style={styles.kpiLabel}>RDV</Text>
-              <View style={[styles.kpiIcon, { backgroundColor: "#EFF6FF" }]}>
-                <Feather name="clock" size={16} color="#2563EB" />
+              <View style={[styles.kpiIcon, { backgroundColor: "#E5EEFF" }]}>
+                <Feather name="clock" size={16} color="#005BFF" />
               </View>
             </View>
             <Text style={styles.kpiValue}>{todayRdvs.length}</Text>
@@ -381,7 +381,7 @@ export default function AgendaScreen({
                     >
                       <View style={styles.cardLeft}>
                         <View style={styles.timeBadge}>
-                          <Feather name="clock" size={12} color="#2563EB" />
+                          <Feather name="clock" size={12} color="#005BFF" />
                           <Text style={styles.timeText}>{formatTime(item.rdvTime)}</Text>
                         </View>
                       </View>
@@ -505,7 +505,7 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 16,
-    backgroundColor: "#EFF6FF",
+    backgroundColor: "#E5EEFF",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -612,8 +612,8 @@ const styles = StyleSheet.create({
     borderColor: "#E2E8F0",
   },
   toggleBtnActive: {
-    backgroundColor: "#2563EB",
-    borderColor: "#2563EB",
+    backgroundColor: "#005BFF",
+    borderColor: "#005BFF",
   },
   toggleText: {
     fontSize: 13,
@@ -684,7 +684,7 @@ const styles = StyleSheet.create({
   },
   cardRdv: {
     borderLeftWidth: 3,
-    borderLeftColor: "#2563EB",
+    borderLeftColor: "#005BFF",
   },
 
   cardLeft: {
@@ -695,7 +695,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
-    backgroundColor: "#EFF6FF",
+    backgroundColor: "#E5EEFF",
     paddingHorizontal: 8,
     paddingVertical: 5,
     borderRadius: 8,
@@ -703,7 +703,7 @@ const styles = StyleSheet.create({
   timeText: {
     fontSize: 12,
     fontWeight: "700",
-    color: "#2563EB",
+    color: "#005BFF",
   },
   repassageBadge: {
     width: 36,

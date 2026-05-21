@@ -393,7 +393,7 @@ export default function StatistiquesScreen({
 
   const pieData = useMemo(() => {
     const base = [
-      { label: "Contrats", value: filteredKpi.contrats, color: "#2563EB" },
+      { label: "Contrats", value: filteredKpi.contrats, color: "#005BFF" },
       { label: "RDV", value: filteredKpi.rdv, color: "#10B981" },
       { label: "Refus", value: filteredKpi.refus, color: "#F59E0B" },
       { label: "Absents", value: filteredKpi.absents, color: "#EF4444" },
@@ -605,7 +605,7 @@ export default function StatistiquesScreen({
             <View style={styles.kpiHeader}>
               <Text style={styles.kpiLabel}>Immeubles</Text>
               <View style={styles.kpiIcon}>
-                <Feather name="home" size={18} color="#2563EB" />
+                <Feather name="home" size={18} color="#005BFF" />
               </View>
             </View>
             <Text style={styles.kpiValue}>
@@ -617,7 +617,7 @@ export default function StatistiquesScreen({
             <View style={styles.kpiHeader}>
               <Text style={styles.kpiLabel}>Portes</Text>
               <View style={styles.kpiIcon}>
-                <Feather name="grid" size={18} color="#2563EB" />
+                <Feather name="grid" size={18} color="#005BFF" />
               </View>
             </View>
             <Text style={styles.kpiValue}>
@@ -629,7 +629,7 @@ export default function StatistiquesScreen({
             <View style={styles.kpiHeader}>
               <Text style={styles.kpiLabel}>RDV pris</Text>
               <View style={styles.kpiIcon}>
-                <Feather name="calendar" size={18} color="#2563EB" />
+                <Feather name="calendar" size={18} color="#005BFF" />
               </View>
             </View>
             <Text style={styles.kpiValue}>{isLoading ? "--" : filteredKpi.rdv}</Text>
@@ -639,7 +639,7 @@ export default function StatistiquesScreen({
             <View style={styles.kpiHeader}>
               <Text style={styles.kpiLabel}>Contrats</Text>
               <View style={styles.kpiIcon}>
-                <Feather name="award" size={18} color="#2563EB" />
+                <Feather name="award" size={18} color="#005BFF" />
               </View>
             </View>
             <Text style={styles.kpiValue}>{isLoading ? "--" : filteredKpi.contrats}</Text>
@@ -649,7 +649,7 @@ export default function StatistiquesScreen({
             <View style={styles.kpiHeader}>
               <Text style={styles.kpiLabel}>Refus</Text>
               <View style={styles.kpiIcon}>
-                <Feather name="x-circle" size={18} color="#2563EB" />
+                <Feather name="x-circle" size={18} color="#005BFF" />
               </View>
             </View>
             <Text style={styles.kpiValue}>{isLoading ? "--" : filteredKpi.refus}</Text>
@@ -659,7 +659,7 @@ export default function StatistiquesScreen({
             <View style={styles.kpiHeader}>
               <Text style={styles.kpiLabel}>Absents</Text>
               <View style={styles.kpiIcon}>
-                <Feather name="user-x" size={18} color="#2563EB" />
+                <Feather name="user-x" size={18} color="#005BFF" />
               </View>
             </View>
             <Text style={styles.kpiValue}>{isLoading ? "--" : filteredKpi.absents}</Text>
@@ -674,7 +674,7 @@ export default function StatistiquesScreen({
             <Text style={styles.chartHeaderTitle}>Activité / jour</Text>
             <View style={styles.chartLegendRow}>
               <View style={styles.chartLegendItem}>
-                <View style={[styles.chartLegendDot, { backgroundColor: "#2563EB" }]} />
+                <View style={[styles.chartLegendDot, { backgroundColor: "#005BFF" }]} />
                 <Text style={styles.chartLegendText}>Portes</Text>
               </View>
               <View style={styles.chartLegendItem}>
@@ -697,12 +697,12 @@ export default function StatistiquesScreen({
               width={chartWidth}
               curved
               thickness={2.5}
-              color="#2563EB"
+              color="#005BFF"
               color2="#10B981"
               color3="#F59E0B"
               areaChart
-              startFillColor="rgba(37, 99, 235, 0.12)"
-              endFillColor="rgba(37, 99, 235, 0)"
+              startFillColor="rgba(0, 91, 255, 0.12)"
+              endFillColor="rgba(0, 91, 255, 0)"
               startOpacity={0.15}
               endOpacity={0}
               startFillColor2="rgba(16, 185, 129, 0.12)"
@@ -733,7 +733,7 @@ export default function StatistiquesScreen({
               spacing={chartSpacing}
               initialSpacing={12}
               endSpacing={12}
-              dataPointsColor1="#2563EB"
+              dataPointsColor1="#005BFF"
               dataPointsColor2="#10B981"
               dataPointsColor3="#F59E0B"
               dataPointsRadius1={3}
@@ -797,15 +797,15 @@ export default function StatistiquesScreen({
           </View>
           <View style={styles.weekNav}>
             <Pressable onPress={() => setWeekOffset((w) => w - 1)} style={styles.weekNavBtn}>
-              <Feather name="chevron-left" size={18} color="#2563EB" />
+              <Feather name="chevron-left" size={18} color="#005BFF" />
             </Pressable>
             {weekOffset !== 0 && (
               <Pressable onPress={() => { setWeekOffset(0); setSelectedDay(todayKey); }} style={styles.weekNavBtn}>
-                <Feather name="rotate-ccw" size={14} color="#2563EB" />
+                <Feather name="rotate-ccw" size={14} color="#005BFF" />
               </Pressable>
             )}
             <Pressable onPress={() => setWeekOffset((w) => w + 1)} style={styles.weekNavBtn}>
-              <Feather name="chevron-right" size={18} color="#2563EB" />
+              <Feather name="chevron-right" size={18} color="#005BFF" />
             </Pressable>
           </View>
         </View>
@@ -857,7 +857,7 @@ export default function StatistiquesScreen({
               >
                 <View style={styles.rdvTimeCol}>
                   <View style={styles.rdvTimeBadge}>
-                    <Feather name="clock" size={11} color="#2563EB" />
+                    <Feather name="clock" size={11} color="#005BFF" />
                     <Text style={styles.rdvTimeText}>{item.rdvTime || "--:--"}</Text>
                   </View>
                 </View>
@@ -937,7 +937,7 @@ const styles = StyleSheet.create({
     width: 34,
     height: 34,
     borderRadius: 12,
-    backgroundColor: "#EFF6FF",
+    backgroundColor: "#E5EEFF",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -986,7 +986,7 @@ const styles = StyleSheet.create({
     width: 38,
     height: 38,
     borderRadius: 14,
-    backgroundColor: "#EFF6FF",
+    backgroundColor: "#E5EEFF",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -1160,7 +1160,7 @@ const styles = StyleSheet.create({
     color: "#94A3B8",
   },
   segmentTextActive: {
-    color: "#2563EB",
+    color: "#005BFF",
   },
   overviewDivider: {
     height: 1,
@@ -1251,7 +1251,7 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 10,
-    backgroundColor: "#EFF6FF",
+    backgroundColor: "#E5EEFF",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -1269,12 +1269,12 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   dayPillActive: {
-    backgroundColor: "#2563EB",
+    backgroundColor: "#005BFF",
   },
   dayPillToday: {
-    backgroundColor: "#EFF6FF",
+    backgroundColor: "#E5EEFF",
     borderWidth: 1,
-    borderColor: "#BFDBFE",
+    borderColor: "#99BDFF",
   },
   dayPillLabel: {
     fontSize: 10,
@@ -1297,7 +1297,7 @@ const styles = StyleSheet.create({
     width: 5,
     height: 5,
     borderRadius: 3,
-    backgroundColor: "#2563EB",
+    backgroundColor: "#005BFF",
   },
   dayPillDotActive: {
     backgroundColor: "#FFFFFF",
@@ -1337,7 +1337,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
-    backgroundColor: "#EFF6FF",
+    backgroundColor: "#E5EEFF",
     paddingHorizontal: 8,
     paddingVertical: 5,
     borderRadius: 8,
@@ -1345,7 +1345,7 @@ const styles = StyleSheet.create({
   rdvTimeText: {
     fontSize: 12,
     fontWeight: "700",
-    color: "#2563EB",
+    color: "#005BFF",
   },
   rdvInfoCol: {
     flex: 1,

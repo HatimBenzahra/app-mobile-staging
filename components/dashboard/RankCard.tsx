@@ -1,4 +1,6 @@
-﻿import { StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
+import { colors, fontSize, fontWeight, radius, spacing } from "@/constants/theme";
+import { Card, ProgressBar } from "@/components/ui";
 import type { Rank } from "@/utils/business/ranks";
 
 type RankCardProps = {
@@ -17,11 +19,13 @@ export default function RankCard({
   pointsNeeded,
 }: RankCardProps) {
   return (
-    <View style={styles.card}>
+    <Card variant="outlined">
       <View style={styles.headerRow}>
         <Text style={styles.title}>Rang</Text>
         <View style={[styles.pointsBadge, { borderColor: rank.accent }]}>
-          <Text style={[styles.pointsText, { color: rank.accent }]}>{points} pts</Text>
+          <Text style={[styles.pointsText, { color: rank.accent }]}>
+            {points} pts
+          </Text>
         </View>
       </View>
 
@@ -33,56 +37,55 @@ export default function RankCard({
       {nextRank ? (
         <View style={styles.progressBlock}>
           <View style={styles.progressHeader}>
-            <Text style={styles.progressLabel}>Prochain rang : {nextRank.name}</Text>
+            <Text style={styles.progressLabel}>
+              Prochain rang : {nextRank.name}
+            </Text>
             <Text style={styles.progressValue}>{pointsNeeded} pts</Text>
           </View>
-          <View style={styles.progressBar}>
-            <View style={[styles.progressFill, { width: `${progressPercent}%`, backgroundColor: rank.accent }]} />
-          </View>
-          <Text style={styles.progressCaption}>{Math.round(progressPercent)}% complete</Text>
+          <ProgressBar
+            value={progressPercent}
+            color={rank.accent}
+            style={styles.progressBar}
+          />
+          <Text style={styles.progressCaption}>
+            {Math.round(progressPercent)}% complete
+          </Text>
         </View>
       ) : (
         <View style={styles.maxRank}>
           <Text style={styles.maxRankText}>Rang maximum atteint</Text>
         </View>
       )}
-    </View>
+    </Card>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 18,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-  },
   headerRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
   },
   title: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: "#0F172A",
+    fontSize: fontSize.base - 1,
+    fontWeight: fontWeight.semibold,
+    color: colors.text,
   },
   pointsBadge: {
     borderWidth: 1,
-    borderRadius: 999,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
+    borderRadius: radius.pill,
+    paddingHorizontal: spacing.md - 2,
+    paddingVertical: spacing.xs,
   },
   pointsText: {
-    fontSize: 12,
-    fontWeight: "700",
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.bold,
   },
   rankRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
-    marginTop: 12,
+    gap: spacing.sm,
+    marginTop: spacing.md,
   },
   rankBadge: {
     width: 16,
@@ -90,51 +93,43 @@ const styles = StyleSheet.create({
     borderRadius: 5,
   },
   rankText: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: "#0F172A",
+    fontSize: fontSize.lg,
+    fontWeight: fontWeight.bold,
+    color: colors.text,
   },
   progressBlock: {
-    marginTop: 12,
+    marginTop: spacing.md,
   },
   progressHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
   },
   progressLabel: {
-    fontSize: 12,
-    color: "#475569",
+    fontSize: fontSize.sm,
+    color: colors.textStrong,
   },
   progressValue: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: "#0F172A",
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.semibold,
+    color: colors.text,
   },
   progressBar: {
-    marginTop: 8,
-    height: 8,
-    borderRadius: 999,
-    backgroundColor: "#E2E8F0",
-    overflow: "hidden",
-  },
-  progressFill: {
-    height: "100%",
-    borderRadius: 999,
+    marginTop: spacing.sm,
   },
   progressCaption: {
-    marginTop: 6,
-    fontSize: 11,
-    color: "#94A3B8",
+    marginTop: spacing.xs + 2,
+    fontSize: fontSize.xs,
+    color: colors.textSubtle,
   },
   maxRank: {
-    marginTop: 12,
-    padding: 10,
-    borderRadius: 12,
-    backgroundColor: "#ECFDF3",
+    marginTop: spacing.md,
+    padding: spacing.sm + 2,
+    borderRadius: radius.md,
+    backgroundColor: colors.successSoft,
   },
   maxRankText: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: "#16A34A",
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.semibold,
+    color: colors.successText,
   },
 });

@@ -80,7 +80,7 @@ const ProfileSheet = forwardRef<BottomSheetModal, ProfileSheetProps>(
               {profile?.prenom} {profile?.nom}
             </Text>
             <View style={styles.roleBadge}>
-              <Feather name={role === "manager" ? "briefcase" : "user"} size={12} color="#2563EB" />
+              <Feather name={role === "manager" ? "briefcase" : "user"} size={12} color="#005BFF" />
               <Text style={styles.roleText}>{roleLabel}</Text>
             </View>
           </View>
@@ -202,9 +202,9 @@ const styles = StyleSheet.create({
     width: 88,
     height: 88,
     borderRadius: 44,
-    backgroundColor: "#EFF6FF",
+    backgroundColor: "#E5EEFF",
     borderWidth: 3,
-    borderColor: "#DBEAFE",
+    borderColor: "#CCDEFF",
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 16,
@@ -212,7 +212,7 @@ const styles = StyleSheet.create({
   avatarText: {
     fontSize: 32,
     fontWeight: "700",
-    color: "#2563EB",
+    color: "#005BFF",
   },
   fullName: {
     fontSize: 24,
@@ -224,7 +224,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    backgroundColor: "#EFF6FF",
+    backgroundColor: "#E5EEFF",
     paddingHorizontal: 14,
     paddingVertical: 6,
     borderRadius: 20,
@@ -232,7 +232,7 @@ const styles = StyleSheet.create({
   roleText: {
     fontSize: 13,
     fontWeight: "600",
-    color: "#2563EB",
+    color: "#005BFF",
   },
   section: {
     marginBottom: 24,

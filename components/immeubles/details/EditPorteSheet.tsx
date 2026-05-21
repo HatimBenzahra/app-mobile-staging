@@ -104,7 +104,7 @@ function EditPorteSheet({
         : "award";
 
   const heroIconColor = isRdv
-    ? "#1D4ED8"
+    ? "#0049CC"
     : isArgumente || isCommentOnly
       ? "#B45309"
       : "#047857";
@@ -206,7 +206,7 @@ function EditPorteSheet({
                 <View
                   style={[styles.sheetSectionIcon, styles.sheetSectionIconBlue]}
                 >
-                  <Feather name="calendar" size={14} color="#1D4ED8" />
+                  <Feather name="calendar" size={14} color="#0049CC" />
                 </View>
                 <View style={styles.sheetSectionText}>
                   <Text style={styles.sheetSectionTitle}>Quand</Text>
@@ -222,7 +222,7 @@ function EditPorteSheet({
                     onPress={openDatePicker}
                   >
                     <View style={styles.pickerIcon}>
-                      <Feather name="calendar" size={16} color="#1D4ED8" />
+                      <Feather name="calendar" size={16} color="#0049CC" />
                     </View>
                     <View style={styles.pickerText}>
                       <Text style={styles.pickerTitle}>Date</Text>
@@ -237,7 +237,7 @@ function EditPorteSheet({
                     onPress={openTimePicker}
                   >
                     <View style={styles.pickerIcon}>
-                      <Feather name="clock" size={16} color="#1D4ED8" />
+                      <Feather name="clock" size={16} color="#0049CC" />
                     </View>
                     <View style={styles.pickerText}>
                       <Text style={styles.pickerTitle}>Heure</Text>
@@ -343,7 +343,7 @@ function EditPorteSheet({
                 <Feather
                   name="message-square"
                   size={14}
-                  color={isArgumente ? "#B45309" : "#2563EB"}
+                  color={isArgumente ? "#B45309" : "#005BFF"}
                 />
               </View>
               <View style={styles.sheetSectionText}>
