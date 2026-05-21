@@ -411,7 +411,7 @@ function ReadyView({
             accessibilityLabel="Démarrer la prospection de cette porte"
           >
             <View style={styles.startBtnIcon}>
-              <Feather name="play" size={18} color="#FFFFFF" />
+              <Feather name="arrow-right" size={18} color="#FFFFFF" />
             </View>
             <Text style={styles.startBtnText}>Prospection</Text>
           </Pressable>
@@ -467,7 +467,7 @@ function ActiveView({
       if (isSaving) return true;
       Alert.alert(
         "Annuler ce passage ?",
-        "Ce passage sera ignoré et aucun statut ne sera enregistré pour cette porte.",
+        "Ce passage sera ignoré et aucun statut ne sera sauvegardé pour cette porte.",
         [
           { text: "Continuer la prospection", style: "cancel" },
           {
@@ -529,7 +529,7 @@ function ActiveView({
   const handleAbort = useCallback(() => {
     Alert.alert(
       "Annuler ce passage ?",
-      "Ce passage sera ignoré et aucun statut ne sera enregistré pour cette porte.",
+      "Ce passage sera ignoré et aucun statut ne sera sauvegardé pour cette porte.",
       [
         { text: "Continuer la prospection", style: "cancel" },
         {

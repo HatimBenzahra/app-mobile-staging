@@ -327,11 +327,12 @@ export default function ImmeublesScreen({
   const handleOpenImmeuble = useCallback(
     (immeubleId: number) => {
       onHeaderVisibilityChange?.(false);
-      onHamburgerVisibilityChange?.(false);
+      // Keep the navigation rail visible in details so the layout doesn't
+      // reflow when entering an immeuble.
       onSwipeLockChange?.(true);
       setSelectedImmeubleId(immeubleId);
     },
-    [onHamburgerVisibilityChange, onHeaderVisibilityChange, onSwipeLockChange],
+    [onHeaderVisibilityChange, onSwipeLockChange],
   );
 
   useEffect(() => {
@@ -378,7 +379,6 @@ export default function ImmeublesScreen({
     ]).start(() => {
       setSelectedImmeubleId(null);
       onSwipeLockChange?.(false);
-      onHamburgerVisibilityChange?.(true);
       onHeaderVisibilityChange?.(true);
       setIsExitingDetails(false);
       if (detailsDirty) {
@@ -423,18 +423,24 @@ export default function ImmeublesScreen({
   if (isInitialLoading) {
     return (
       <View style={styles.container}>
-        <View style={styles.skeletonHeader}>
-          <View style={styles.skeletonTitle} />
-          <View style={styles.skeletonSubtitle} />
+        <View style={styles.skeletonContent}>
           <View style={styles.skeletonSummaryRow}>
             <View style={styles.skeletonSummaryCard} />
             <View style={styles.skeletonSummaryCard} />
           </View>
-          <View style={styles.skeletonSearch} />
-        </View>
-        <View style={styles.skeletonList}>
-          {Array.from({ length: 5 }).map((_, index) => (
-            <View key={index} style={styles.skeletonCard} />
+          <View style={styles.skeletonControls}>
+            <View style={styles.skeletonFiltersRow}>
+              {Array.from({ length: 4 }).map((_, idx) => (
+                <View key={idx} style={styles.skeletonChip} />
+              ))}
+            </View>
+            <View style={styles.skeletonSearch} />
+          </View>
+          {Array.from({ length: 3 }).map((_, rowIdx) => (
+            <View key={rowIdx} style={styles.skeletonCardRow}>
+              <View style={styles.skeletonCard} />
+              <View style={styles.skeletonCard} />
+            </View>
           ))}
         </View>
       </View>
@@ -937,30 +943,35 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: "#94A3B8",
   },
-  skeletonHeader: {
-    paddingHorizontal: 16,
-    paddingTop: 16,
-    gap: 10,
-  },
-  skeletonTitle: {
-    width: "45%",
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: "#E5E7EB",
-  },
-  skeletonSubtitle: {
-    width: "60%",
-    height: 14,
-    borderRadius: 8,
-    backgroundColor: "#E5E7EB",
+  skeletonContent: {
+    padding: 18,
+    paddingBottom: 24,
+    gap: 14,
   },
   skeletonSummaryRow: {
     flexDirection: "row",
-    gap: 10,
+    gap: 12,
+    marginBottom: 12,
   },
   skeletonSummaryCard: {
     flex: 1,
-    height: 64,
+    height: 84,
+    borderRadius: 18,
+    backgroundColor: "#E5E7EB",
+  },
+  skeletonControls: {
+    gap: 12,
+    marginBottom: 4,
+  },
+  skeletonFiltersRow: {
+    flexDirection: "row",
+    gap: 8,
+    flexWrap: "wrap",
+  },
+  skeletonChip: {
+    height: 34,
+    flexBasis: "23%",
+    flexGrow: 1,
     borderRadius: 999,
     backgroundColor: "#E5E7EB",
   },
@@ -969,14 +980,15 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     backgroundColor: "#E5E7EB",
   },
-  skeletonList: {
-    paddingHorizontal: 16,
-    paddingTop: 16,
-    gap: 12,
+  skeletonCardRow: {
+    flexDirection: "row",
+    gap: 16,
+    marginBottom: 16,
   },
   skeletonCard: {
+    flex: 1,
     height: 160,
-    borderRadius: 18,
+    borderRadius: 22,
     backgroundColor: "#E5E7EB",
   },
   row: {

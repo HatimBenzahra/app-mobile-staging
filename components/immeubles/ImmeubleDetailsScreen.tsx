@@ -179,7 +179,6 @@ function ImmeubleDetailsView({
   const toastTranslate = useRef(new Animated.Value(-12)).current;
   const toastTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const contentOpacity = useRef(new Animated.Value(0)).current;
-  const contentTranslate = useRef(new Animated.Value(12)).current;
   const floorPlanScale = useRef(new Animated.Value(1)).current;
   const floorPlanPulse = useRef(new Animated.Value(0)).current;
   const [isReady, setIsReady] = useState(false);
@@ -280,14 +279,12 @@ function ImmeubleDetailsView({
       if (nextPortes.length > 0) {
         setIsReady(true);
         contentOpacity.setValue(1);
-        contentTranslate.setValue(0);
       } else {
         setIsReady(false);
         contentOpacity.setValue(0);
-        contentTranslate.setValue(12);
       }
     }
-  }, [immeuble, onDirtyChange, contentOpacity, contentTranslate]);
+  }, [immeuble, onDirtyChange, contentOpacity]);
 
   useEffect(() => {
     return () => {
@@ -301,21 +298,14 @@ function ImmeubleDetailsView({
     if (isReady) return;
     const timeoutId = setTimeout(() => {
       setIsReady(true);
-      Animated.parallel([
-        Animated.timing(contentOpacity, {
-          toValue: 1,
-          duration: 140,
-          useNativeDriver: true,
-        }),
-        Animated.timing(contentTranslate, {
-          toValue: 0,
-          duration: 140,
-          useNativeDriver: true,
-        }),
-      ]).start();
+      Animated.timing(contentOpacity, {
+        toValue: 1,
+        duration: 180,
+        useNativeDriver: true,
+      }).start();
     }, 60);
     return () => clearTimeout(timeoutId);
-  }, [contentOpacity, contentTranslate, isReady]);
+  }, [contentOpacity, isReady]);
 
   // G�rer l'ouverture de la bottom sheet du plan rapide
   useEffect(() => {
@@ -920,8 +910,8 @@ function ImmeubleDetailsView({
     () => [
       {
         label: "Nouvelle prospection",
-        subLabel: "Porte + audio",
-        icon: "mic",
+        subLabel: "Démarrer une porte",
+        icon: "plus-circle",
         tone: "hero",
         onPress: openAddPorte,
       },
@@ -1053,19 +1043,29 @@ function ImmeubleDetailsView({
 
       {!isReady ? (
         <View style={styles.skeletonWrap}>
-          <View style={styles.skeletonCard} />
-          <View style={styles.skeletonCardTall} />
-          <View style={styles.skeletonCardTall} />
+          <View style={styles.skeletonProgress} />
+          <View style={styles.skeletonStatusRow}>
+            <View style={styles.skeletonStatusLabel} />
+            <View style={styles.skeletonStatusButton} />
+          </View>
+          <View style={styles.skeletonJourney} />
+          <View style={styles.skeletonCarto} />
+          <View style={styles.skeletonSectionHeader} />
+          <View style={styles.skeletonTileRow}>
+            <View style={styles.skeletonTile} />
+            <View style={styles.skeletonTile} />
+          </View>
+          <View style={styles.skeletonTileRow}>
+            <View style={styles.skeletonTile} />
+            <View style={styles.skeletonTile} />
+          </View>
         </View>
       ) : (
         <>
           <Animated.View
             style={[
               styles.contentAnimated,
-              {
-                opacity: contentOpacity,
-                transform: [{ translateY: contentTranslate }],
-              },
+              { opacity: contentOpacity },
             ]}
           >
             <ScrollView contentContainerStyle={styles.content}>
@@ -1193,9 +1193,9 @@ function ImmeubleDetailsView({
         }
         description={
           deleteFloor !== null
-            ? "Toutes les portes de cet étage seront supprimées. L'audio et l'historique seront définitivement perdus."
+            ? "Toutes les portes de cet étage seront supprimées. L'historique sera définitivement perdu."
             : deleteTarget
-              ? "L'audio et l'historique de cette porte seront définitivement perdus."
+              ? "L'historique de cette porte sera définitivement perdu."
               : undefined
         }
         icon="trash-2"
@@ -1518,19 +1518,59 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   skeletonWrap: {
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    gap: 12,
+    padding: 16,
+    paddingBottom: 100,
+    gap: 16,
   },
-  skeletonCard: {
-    height: 84,
-    borderRadius: 16,
-    backgroundColor: "#E2E8F0",
+  skeletonProgress: {
+    height: 78,
+    borderRadius: 18,
+    backgroundColor: "#E5E7EB",
   },
-  skeletonCardTall: {
-    height: 180,
+  skeletonStatusRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 2,
+    marginTop: 2,
+  },
+  skeletonStatusLabel: {
+    width: 120,
+    height: 18,
+    borderRadius: 8,
+    backgroundColor: "#E5E7EB",
+  },
+  skeletonStatusButton: {
+    width: 96,
+    height: 36,
+    borderRadius: 999,
+    backgroundColor: "#E5E7EB",
+  },
+  skeletonJourney: {
+    height: 108,
+    borderRadius: 22,
+    backgroundColor: "#1F2937",
+    opacity: 0.18,
+  },
+  skeletonCarto: {
+    height: 152,
+    borderRadius: 22,
+    backgroundColor: "#E5E7EB",
+  },
+  skeletonSectionHeader: {
+    height: 70,
+    borderRadius: 18,
+    backgroundColor: "#E5E7EB",
+  },
+  skeletonTileRow: {
+    flexDirection: "row",
+    gap: 10,
+  },
+  skeletonTile: {
+    flex: 1,
+    height: 96,
     borderRadius: 16,
-    backgroundColor: "#E2E8F0",
+    backgroundColor: "#E5E7EB",
   },
   toastOverlay: {
     position: "absolute",

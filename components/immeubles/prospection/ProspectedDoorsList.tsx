@@ -76,7 +76,7 @@ function ProspectedDoorsListImpl({
         <View style={[styles.emptyCard, isTablet && styles.emptyCardTablet]}>
           <View style={styles.emptyIconBox}>
             <Feather
-              name={hasFilters ? "filter" : "mic"}
+              name={hasFilters ? "filter" : "home"}
               size={22}
               color="#0F172A"
             />
@@ -87,7 +87,7 @@ function ProspectedDoorsListImpl({
           <Text style={styles.emptyText}>
             {hasFilters
               ? "Aucun résultat avec ce filtre. Essaie un autre statut."
-              : "Tape le bouton « + » pour démarrer ta première porte. L'audio sera synchronisé sur la conversation."}
+              : "Tape le bouton « + » pour ajouter ta première porte et démarrer la prospection."}
           </Text>
           {!hasFilters ? (
             <View style={styles.emptyHintPill}>
