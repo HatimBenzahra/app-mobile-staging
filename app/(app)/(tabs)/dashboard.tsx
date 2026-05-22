@@ -2,7 +2,7 @@ import { useWorkspaceProfile } from "@/hooks/api/use-workspace-profile";
 import { authService } from "@/services/auth";
 import type { Commercial, Manager } from "@/types/api";
 import { calculateRank, RANKS } from "@/utils/business/ranks";
-import { Card, IconBadge, PressableCard } from "@/components/ui";
+import { Card, ErrorState, IconBadge, PressableCard } from "@/components/ui";
 import { colors } from "@/constants/theme";
 import { Feather } from "@expo/vector-icons";
 import { BottomSheetModal, BottomSheetView } from "@gorhom/bottom-sheet";
@@ -12,6 +12,7 @@ import {
   Easing,
   type LayoutChangeEvent,
   Pressable,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -88,7 +89,17 @@ export default function DashboardScreen() {
     void loadIdentity();
   }, []);
 
-  const { data: profile, loading } = useWorkspaceProfile(userId, role);
+  const { data: profile, loading, error, refetch } = useWorkspaceProfile(userId, role);
+
+  const [refreshing, setRefreshing] = useState(false);
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await refetch();
+    } finally {
+      setRefreshing(false);
+    }
+  }, [refetch]);
 
   const isManager = role === "manager";
   const stats = useMemo(() => {
@@ -266,9 +277,28 @@ export default function DashboardScreen() {
       <ScrollView
         style={styles.container}
         contentContainerStyle={styles.contentContainer}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={colors.primary}
+            colors={[colors.primary]}
+            progressBackgroundColor={colors.surface}
+          />
+        }
       >
+        {error && !profile ? (
+          <View style={{ paddingVertical: 40 }}>
+            <ErrorState
+              title="Impossible de charger les données"
+              message={error}
+              onRetry={() => { void refetch(); }}
+            />
+          </View>
+        ) : (
         <Animated.View style={{ opacity: contentOpacity }}>
           {/* Rank Card - Compact */}
+
           <Card variant="elevated" padding="lg">
             {/* Rank Header */}
             <View style={styles.rankHeader}>
@@ -404,6 +434,7 @@ export default function DashboardScreen() {
             </View>
           </Card>
         </Animated.View>
+        )}
       </ScrollView>
 
       {/* Info Bottom Sheet */}

@@ -1,6 +1,6 @@
 import AddImmeubleSheet from "@/components/immeubles/AddImmeubleSheet";
 import ImmeubleDetailsView from "@/components/immeubles/ImmeubleDetailsScreen";
-import { Card, Chip, PressableCard, StatTile } from "@/components/ui";
+import { Card, Chip, ErrorState, PressableCard, StatTile } from "@/components/ui";
 import { useCreateImmeuble } from "@/hooks/api/use-create-immeuble";
 import { useWorkspaceProfile } from "@/hooks/api/use-workspace-profile";
 import { colors, progressColors } from "@/constants/theme";
@@ -12,6 +12,7 @@ import {
   Animated,
   FlatList,
   Pressable,
+  RefreshControl,
   StyleSheet,
   Text,
   TextInput,
@@ -403,6 +404,16 @@ export default function ImmeublesScreen({
     void refetch();
   }, [refetch]);
 
+  const [refreshing, setRefreshing] = useState(false);
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await refetch();
+    } finally {
+      setRefreshing(false);
+    }
+  }, [refetch]);
+
   if (selectedImmeuble) {
     return (
       <Animated.View
@@ -469,6 +480,15 @@ export default function ImmeublesScreen({
           getItemLayout={getItemLayout}
           contentContainerStyle={styles.content}
           stickyHeaderIndices={[1]}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor={colors.primary}
+              colors={[colors.primary]}
+              progressBackgroundColor={colors.surface}
+            />
+          }
           ListHeaderComponent={
             <View style={styles.headerBlock}>
               <View style={styles.summaryRow}>
@@ -488,7 +508,15 @@ export default function ImmeublesScreen({
               {loading && !profile && (
                 <Text style={styles.helper}>Chargement...</Text>
               )}
-              {error && <Text style={styles.error}>{error}</Text>}
+              {error && !profile && (
+                <View style={{ paddingVertical: 40 }}>
+                  <ErrorState
+                    title="Impossible de charger les données"
+                    message={error}
+                    onRetry={() => { void refetch(); }}
+                  />
+                </View>
+              )}
             </View>
           }
           ListEmptyComponent={

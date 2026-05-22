@@ -1,7 +1,7 @@
 {
-  "tool_name": "Read",
-  "tool_input_preview": "{\"file_path\":\"/Users/hatimbenzahra/Desktop/PRO_WIN/prowin/staging/app-mobile/components/ui\"}",
-  "error": "EISDIR: illegal operation on a directory, read '/Users/hatimbenzahra/Desktop/PRO_WIN/prowin/staging/app-mobile/components/ui'",
-  "timestamp": "2026-05-21T18:16:52.314Z",
+  "tool_name": "Bash",
+  "tool_input_preview": "{\"command\":\"npx tsc --noEmit 2>&1\",\"timeout\":120000,\"description\":\"Run TypeScript type check\"}",
+  "error": "Exit code 2\ncomponents/immeubles/AddPorteSheet.tsx(98,9): error TS7053: Element implicitly has an 'any' type because expression of type '\"numero\" | \"nomPersonnalise\" | \"etage\"' can't be used to index type '{ etage?: string | undefined; numero?: string | undefined; }'.\n  Property 'nomPersonnalise' does not exist on type '{ etage?: string | undefined; numero?: string | undefined; }'.",
+  "timestamp": "2026-05-22T07:24:18.248Z",
   "retry_count": 1
 }

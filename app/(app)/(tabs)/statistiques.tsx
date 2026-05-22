@@ -3,7 +3,7 @@ import { useWorkspaceProfile } from "@/hooks/api/use-workspace-profile";
 import { authService } from "@/services/auth";
 import { dataSyncService } from "@/services/sync/data-sync.service";
 import type { TimelinePoint } from "@/types/api";
-import { Card, Chip, PressableCard, StatTile } from "@/components/ui";
+import { Card, Chip, ErrorState, PressableCard, StatTile } from "@/components/ui";
 import { colors } from "@/constants/theme";
 import { Feather } from "@expo/vector-icons";
 import { useIsFocused } from "@react-navigation/native";
@@ -12,6 +12,7 @@ import {
   Animated,
   Easing,
   Pressable,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -251,6 +252,19 @@ export default function StatistiquesScreen({
     void workspaceState.refetch();
     void refetchTimeline();
   }, [commercialId, isFocused, workspaceState, refetchTimeline]);
+
+  const [refreshing, setRefreshing] = useState(false);
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await Promise.all([
+        workspaceState.refetch(),
+        refetchTimeline(),
+      ]);
+    } finally {
+      setRefreshing(false);
+    }
+  }, [workspaceState, refetchTimeline]);
 
   const filteredKpi = useMemo(() => {
     const immeubles = workspaceState.data?.immeubles ?? [];
@@ -579,7 +593,25 @@ export default function StatistiquesScreen({
         styles.content,
         { paddingBottom: insets.bottom + 24 },
       ]}
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={onRefresh}
+          tintColor={colors.primary}
+          colors={[colors.primary]}
+          progressBackgroundColor={colors.surface}
+        />
+      }
     >
+      {workspaceState.error && !workspaceState.data ? (
+        <View style={{ paddingVertical: 40 }}>
+          <ErrorState
+            title="Impossible de charger les données"
+            message={workspaceState.error}
+            onRetry={() => { void onRefresh(); }}
+          />
+        </View>
+      ) : (
       <Animated.View style={{ opacity: contentOpacity }}>
       <Card variant="elevated" padding="lg" style={styles.overviewCardGap}>
         <View style={styles.overviewHeader}>
@@ -879,6 +911,7 @@ export default function StatistiquesScreen({
 
 
       </Animated.View>
+      )}
     </ScrollView>
   );
 }

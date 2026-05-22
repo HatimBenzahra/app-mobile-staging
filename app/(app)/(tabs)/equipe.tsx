@@ -20,6 +20,7 @@ import {
   Animated,
   Easing,
   Pressable,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -28,7 +29,7 @@ import {
 } from "react-native";
 import { LineChart } from "react-native-gifted-charts";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Card, IconBadge, Chip } from "@/components/ui";
+import { Card, ErrorState, IconBadge, Chip } from "@/components/ui";
 import { colors, podium, progressColors } from "@/constants/theme";
 
 type PeriodKey = "7d" | "30d" | "all";
@@ -304,8 +305,8 @@ export default function EquipeScreen() {
     };
   }, []);
 
-  const { data: profile, loading } = useWorkspaceProfile(userId, role);
-  const { data: allCommercials, loading: allCommercialsLoading } =
+  const { data: profile, loading, refetch: refetchProfile } = useWorkspaceProfile(userId, role);
+  const { data: allCommercials, loading: allCommercialsLoading, refetch: refetchCommercials } =
     useCommercials();
 
   const managerProfile = useMemo(
@@ -353,7 +354,7 @@ export default function EquipeScreen() {
     }, {});
   }, [teamCommercialIds]);
 
-  const { data: teamCommercialDetails, loading: teamCommercialDetailsLoading } =
+  const { data: teamCommercialDetails, loading: teamCommercialDetailsLoading, refetch: refetchTeamDetails } =
     useApiCall<Record<number, Commercial>>(
       fetchTeamCommercialDetails,
       [teamCommercialDetailsCacheKey],
@@ -382,7 +383,7 @@ export default function EquipeScreen() {
     };
   }, [period, periodDays]);
 
-  const { data: teamTimeline, loading: teamTimelineLoading } =
+  const { data: teamTimeline, loading: teamTimelineLoading, refetch: refetchTimeline } =
     useTeamPerformanceTimeline(
       teamCommercialIds,
       timelineStartDate,
@@ -393,6 +394,21 @@ export default function EquipeScreen() {
     allCommercialsLoading ||
     teamTimelineLoading ||
     teamCommercialDetailsLoading;
+
+  const [refreshing, setRefreshing] = useState(false);
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await Promise.all([
+        refetchProfile(),
+        refetchCommercials(),
+        refetchTeamDetails(),
+        refetchTimeline(),
+      ]);
+    } finally {
+      setRefreshing(false);
+    }
+  }, [refetchProfile, refetchCommercials, refetchTeamDetails, refetchTimeline]);
 
   const periodStartKey = useMemo(() => {
     const days = getPeriodDays(period);
@@ -780,7 +796,25 @@ export default function EquipeScreen() {
         styles.content,
         { paddingBottom: insets.bottom + 24 },
       ]}
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={onRefresh}
+          tintColor={colors.primary}
+          colors={[colors.primary]}
+          progressBackgroundColor={colors.surface}
+        />
+      }
     >
+      {!profile && !loading ? (
+        <View style={{ paddingVertical: 40 }}>
+          <ErrorState
+            title="Impossible de charger les données"
+            message="Une erreur est survenue lors du chargement."
+            onRetry={() => { void onRefresh(); }}
+          />
+        </View>
+      ) : (
       <Animated.View style={{ opacity: contentOpacity }}>
         <View style={styles.periodRow}>
           {PERIOD_OPTIONS.map((option) => (
@@ -973,6 +1007,7 @@ export default function EquipeScreen() {
           )}
         </Card>
       </Animated.View>
+      )}
     </ScrollView>
   );
 }

@@ -2,18 +2,19 @@ import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Feather } from "@expo/vector-icons";
 import { useIsFocused } from "@react-navigation/native";
 import {
+  Animated,
   FlatList,
+  RefreshControl,
   StyleSheet,
   Text,
   View,
-  Animated,
 } from "react-native";
 import { authService } from "@/services/auth";
 import { useWorkspaceProfile } from "@/hooks/api/use-workspace-profile";
 import type { Immeuble, StatusHistorique } from "@/types/api";
 import { api } from "@/services/api";
 import { dataSyncService } from "@/services/sync/data-sync.service";
-import { Card, PressableCard, Chip, type ChipTone } from "@/components/ui";
+import { Card, ErrorState, PressableCard, Chip, type ChipTone } from "@/components/ui";
 import { colors } from "@/constants/theme";
 
 const FILTERS = [
@@ -332,7 +333,7 @@ export default function HistoriqueScreen() {
     return next;
   }, [cardAnimsRef]);
 
-  const { data: profile, loading, error } = useWorkspaceProfile(userId, role);
+  const { data: profile, loading, error, refetch } = useWorkspaceProfile(userId, role);
 
   const immeubles = useMemo(() => (profile?.immeubles || []) as Immeuble[], [profile]);
 
@@ -364,6 +365,17 @@ export default function HistoriqueScreen() {
       loadedHistoryIdsRef.current.delete(immeubleId);
     }
   }, []);
+
+  const [refreshing, setRefreshing] = useState(false);
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      loadedHistoryIdsRef.current.clear();
+      await refetch();
+    } finally {
+      setRefreshing(false);
+    }
+  }, [refetch]);
 
   useEffect(() => {
     if (!loading) {
@@ -586,10 +598,18 @@ export default function HistoriqueScreen() {
         {historyLoading && !loading && (
           <Text style={styles.helper}>Chargement historique...</Text>
         )}
-        {error && <Text style={styles.error}>{error}</Text>}
+        {error && !profile && (
+          <View style={{ paddingVertical: 40 }}>
+            <ErrorState
+              title="Impossible de charger les données"
+              message={error}
+              onRetry={() => { void onRefresh(); }}
+            />
+          </View>
+        )}
       </View>
     ),
-    [error, filter, handleFilterPress, historyLoading, loading],
+    [error, filter, handleFilterPress, historyLoading, loading, onRefresh, profile],
   );
 
   const listEmpty = useMemo(
@@ -652,6 +672,15 @@ export default function HistoriqueScreen() {
         ItemSeparatorComponent={renderSeparator}
         renderItem={renderImmeubleItem}
         ListFooterComponent={null}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={colors.primary}
+            colors={[colors.primary]}
+            progressBackgroundColor={colors.surface}
+          />
+        }
       />
     </View>
   );

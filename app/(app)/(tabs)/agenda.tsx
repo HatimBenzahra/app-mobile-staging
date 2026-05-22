@@ -3,7 +3,7 @@ import { useWorkspaceProfile } from "@/hooks/api/use-workspace-profile";
 import { authService } from "@/services/auth";
 import { dataSyncService } from "@/services/sync/data-sync.service";
 import type { Immeuble } from "@/types/api";
-import { Card, Chip, PressableCard, StatTile } from "@/components/ui";
+import { Card, Chip, ErrorState, PressableCard, StatTile } from "@/components/ui";
 import { colors } from "@/constants/theme";
 import { Feather } from "@expo/vector-icons";
 import { useIsFocused } from "@react-navigation/native";
@@ -12,6 +12,7 @@ import {
   Animated,
   Easing,
   Pressable,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -131,6 +132,20 @@ export default function AgendaScreen({
     void rdvToday.refetch();
     void modified.refetch();
   }, [isFocused, modified, rdvToday, workspaceState]);
+
+  const [refreshing, setRefreshing] = useState(false);
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await Promise.all([
+        workspaceState.refetch(),
+        rdvToday.refetch(),
+        modified.refetch(),
+      ]);
+    } finally {
+      setRefreshing(false);
+    }
+  }, [workspaceState, rdvToday, modified]);
 
   const todayKey = useMemo(() => new Date().toISOString().slice(0, 10), []);
 
@@ -263,6 +278,9 @@ export default function AgendaScreen({
 
   const activeItems = activeSection === "rdv" ? todayRdvs : repassageItems;
 
+  const agendaError = workspaceState.error ?? rdvToday.error ?? modified.error;
+  const agendaData = workspaceState.data ?? rdvToday.data ?? modified.data;
+
   return (
     <ScrollView
       style={styles.container}
@@ -270,7 +288,25 @@ export default function AgendaScreen({
         styles.content,
         { paddingBottom: insets.bottom + 24 },
       ]}
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={onRefresh}
+          tintColor={colors.primary}
+          colors={[colors.primary]}
+          progressBackgroundColor={colors.surface}
+        />
+      }
     >
+      {agendaError && !agendaData ? (
+        <View style={{ paddingVertical: 40 }}>
+          <ErrorState
+            title="Impossible de charger les données"
+            message={agendaError}
+            onRetry={() => { void onRefresh(); }}
+          />
+        </View>
+      ) : (
       <Animated.View style={{ opacity: contentOpacity, gap: 24 }}>
         {/* Hero card */}
         <Card variant="elevated" padding="md">
@@ -477,6 +513,7 @@ export default function AgendaScreen({
           )}
         </Card>
       </Animated.View>
+      )}
     </ScrollView>
   );
 }

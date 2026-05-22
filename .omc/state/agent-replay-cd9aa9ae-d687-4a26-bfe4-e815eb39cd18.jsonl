@@ -42,3 +42,7 @@
 {"t":0,"agent":"a265f39","agent_type":"unknown","event":"agent_stop","success":true}
 {"t":0,"agent":"ae4d16d","agent_type":"unknown","event":"agent_stop","success":true}
 {"t":0,"agent":"a81c406","agent_type":"unknown","event":"agent_stop","success":true}
+{"t":0,"agent":"a25c876","agent_type":"unknown","event":"agent_stop","success":true}
+{"t":0,"agent":"abfab0d","agent_type":"executor","event":"agent_start","parent_mode":"none"}
+{"t":0,"agent":"abfab0d","agent_type":"executor","event":"agent_stop","success":true,"duration_ms":333942}
+{"t":0,"agent":"a7b4af5","agent_type":"unknown","event":"agent_stop","success":true}
