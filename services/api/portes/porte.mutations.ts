@@ -19,9 +19,11 @@ export const UPDATE_PORTE = `
   }
 `;
 
+// V2 : utilise l'endpoint capped (check nbPortesParEtage côté backend).
+// L'ancien endpoint `createPorte` reste dispo pour les anciens mobiles.
 export const CREATE_PORTE = `
-  mutation CreatePorte($createPorteInput: CreatePorteInput!) {
-    createPorte(createPorteInput: $createPorteInput) {
+  mutation CreatePorteCapped($createPorteInput: CreatePorteInput!) {
+    createPorteCapped(createPorteInput: $createPorteInput) {
       id
       numero
       nomPersonnalise

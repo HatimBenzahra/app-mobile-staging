@@ -48,11 +48,12 @@ import type {
   SaveStatusInput,
 } from "@/hooks/prospection/use-prospection-session";
 import type { Porte } from "@/types/api";
-import { colors } from "@/constants/theme";
+import { colors, fontSize, spacing } from "@/constants/theme";
 
 type ProspectionSessionOverlayProps = {
   session: ProspectionSessionApi;
   nbEtages?: number;
+  nbPortesParEtage?: number;
   portes?: Porte[];
 };
 
@@ -72,6 +73,7 @@ function getNowTime() {
 export default function ProspectionSessionOverlay({
   session,
   nbEtages = 1,
+  nbPortesParEtage,
   portes = [],
 }: ProspectionSessionOverlayProps) {
   const { state } = session;
@@ -113,6 +115,7 @@ export default function ProspectionSessionOverlay({
               insetsTop={insets.top}
               insetsBottom={insets.bottom}
               nbEtages={nbEtages}
+              nbPortesParEtage={nbPortesParEtage}
               portes={portes}
             />
           ) : null}
@@ -168,11 +171,24 @@ export default function ProspectionSessionOverlay({
 
 function nextPorteNumero(etage: number, portes: Porte[]): number {
   const onFloor = portes.filter((p) => p.etage === etage);
-  if (onFloor.length === 0) return 100;
+
+  // Priorité : reprendre le plus petit slot NON_VISITE existant (cas où
+  // l'immeuble a déjà des portes pré-créées par l'ancien backend).
+  const nonVisiteNums = onFloor
+    .filter((p) => p.statut === "NON_VISITE")
+    .map((p) => Number.parseInt(String(p.numero ?? ""), 10))
+    .filter((n) => !Number.isNaN(n));
+  if (nonVisiteNums.length > 0) {
+    return Math.min(...nonVisiteNums);
+  }
+
+  // Sinon : continuer la séquence ou démarrer la base de l'étage.
+  const base = etage * 100;
+  if (onFloor.length === 0) return base;
   const nums = onFloor
     .map((p) => Number.parseInt(String(p.numero ?? ""), 10))
     .filter((n) => !Number.isNaN(n));
-  if (nums.length === 0) return 100;
+  if (nums.length === 0) return base;
   return Math.max(...nums) + 1;
 }
 
@@ -183,6 +199,7 @@ function FloorCard({
   selected,
   onPress,
   isTablet,
+  locked,
 }: {
   etage: number;
   done: number;
@@ -190,6 +207,7 @@ function FloorCard({
   selected: boolean;
   onPress: () => void;
   isTablet: boolean;
+  locked?: boolean;
 }) {
   const ratio = total === 0 ? 0 : done / total;
   const isComplete = total > 0 && ratio === 1;
@@ -198,10 +216,12 @@ function FloorCard({
   return (
     <Pressable
       onPress={onPress}
+      disabled={locked}
       style={[
         styles.floorCard,
         isTablet && styles.floorCardTablet,
         selected && styles.floorCardSelected,
+        locked && { opacity: 0.4, backgroundColor: colors.surfaceMuted },
       ]}
       accessibilityRole="button"
       accessibilityLabel={`Étage ${etage}`}
@@ -216,7 +236,9 @@ function FloorCard({
         >
           {etage}
         </Text>
-        {isComplete ? (
+        {locked ? (
+          <Feather name="lock" size={14} color={colors.textSubtle} />
+        ) : isComplete ? (
           <View style={styles.floorCardCheck}>
             <Feather name="check" size={9} color="#FFFFFF" />
           </View>
@@ -302,6 +324,7 @@ function NamingView({
   insetsTop,
   insetsBottom,
   nbEtages,
+  nbPortesParEtage,
   portes,
 }: {
   session: ProspectionSessionApi;
@@ -309,6 +332,7 @@ function NamingView({
   insetsTop: number;
   insetsBottom: number;
   nbEtages: number;
+  nbPortesParEtage?: number;
   portes: Porte[];
 }) {
   const state = session.state;
@@ -329,14 +353,25 @@ function NamingView({
 
   const totalEtages = Math.max(1, nbEtages || 1);
   const floors = useMemo(() => {
-    const arr: { etage: number; done: number; total: number }[] = [];
+    const arr: { etage: number; done: number; total: number; locked: boolean }[] = [];
+    let activeFound = false;
     for (let i = totalEtages; i >= 1; i -= 1) {
       const onFloor = portes.filter((p) => p.etage === i);
       const done = onFloor.filter((p) => p.statut !== "NON_VISITE").length;
-      arr.push({ etage: i, done, total: onFloor.length });
+      const nonVisiteCount = onFloor.length - done;
+      const expectedTotal = nbPortesParEtage ?? onFloor.length;
+      const hasRemainingWork =
+        nonVisiteCount > 0 || onFloor.length < expectedTotal;
+      let locked = false;
+      if (!activeFound && hasRemainingWork) {
+        activeFound = true;
+      } else if (activeFound) {
+        locked = true;
+      }
+      arr.push({ etage: i, done, total: onFloor.length, locked });
     }
     return arr;
-  }, [portes, totalEtages]);
+  }, [portes, totalEtages, nbPortesParEtage]);
 
   // Only "non-final" portes can be re-prospected. Refus / Contrat signé /
   // Argumenté are considered closed and won't show in the picker — the
@@ -364,6 +399,21 @@ function NamingView({
       );
   }, [portes, selectedEtage]);
 
+  // Capacité = nb de portes RÉELLEMENT prospectées (statut ≠ NON_VISITE).
+  // Les NON_VISITE sont des slots vides en attente — elles ne saturent pas.
+  const prospectedOnSelectedFloorCount = useMemo(() => {
+    if (selectedEtage === null) return 0;
+    return portes.filter(
+      (p) => p.etage === selectedEtage && p.statut !== "NON_VISITE",
+    ).length;
+  }, [portes, selectedEtage]);
+
+  const isFloorAtCapacity = useMemo(() => {
+    if (selectedEtage === null) return false;
+    if (!nbPortesParEtage || nbPortesParEtage <= 0) return false;
+    return prospectedOnSelectedFloorCount >= nbPortesParEtage;
+  }, [nbPortesParEtage, prospectedOnSelectedFloorCount, selectedEtage]);
+
   const suggestedNum =
     selectedEtage !== null ? nextPorteNumero(selectedEtage, portes) : null;
   const [customNum, setCustomNum] = useState<number | null>(null);
@@ -378,12 +428,14 @@ function NamingView({
 
   const handleSelectFloor = useCallback(
     (etage: number) => {
+      const floor = floors.find((f) => f.etage === etage);
+      if (floor?.locked) return;
       Haptics.select();
       setSelectedEtage(etage);
       setCustomNum(null);
       setStep("porte");
     },
-    [],
+    [floors],
   );
 
   const handleBackToFloor = useCallback(() => {
@@ -393,6 +445,10 @@ function NamingView({
 
   const handleCreateNew = useCallback(async () => {
     if (selectedEtage === null || effectiveNum <= 0) return;
+    if (isFloorAtCapacity) {
+      setError(`Étage complet (${nbPortesParEtage} portes maximum).`);
+      return;
+    }
     if (duplicatePorte) {
       Haptics.light();
       session.beginFromExisting(duplicatePorte);
@@ -403,8 +459,14 @@ function NamingView({
       etage: selectedEtage,
       numero: String(effectiveNum),
     });
-    if (!res.ok) setError("Création impossible. Réessaie.");
-  }, [duplicatePorte, effectiveNum, selectedEtage, session]);
+    if (!res.ok) {
+      setError(
+        "message" in res && res.message
+          ? res.message
+          : "Création impossible. Réessaie.",
+      );
+    }
+  }, [duplicatePorte, effectiveNum, isFloorAtCapacity, nbPortesParEtage, selectedEtage, session]);
 
   const handleExistingTap = useCallback(
     (porte: Porte) => {
@@ -498,6 +560,7 @@ function NamingView({
                     selected={selectedEtage === floor.etage}
                     onPress={() => handleSelectFloor(floor.etage)}
                     isTablet={isTablet}
+                    locked={floor.locked}
                   />
                 </View>
               ))}
@@ -630,10 +693,10 @@ function NamingView({
                 style={({ pressed }) => [
                   styles.cta,
                   pressed && styles.ctaPressed,
-                  isCreating && styles.ctaDisabled,
+                  (isCreating || isFloorAtCapacity) && styles.ctaDisabled,
                 ]}
                 onPress={handleCreateNew}
-                disabled={isCreating}
+                disabled={isCreating || isFloorAtCapacity}
               >
                 <Text style={styles.ctaText}>
                   {isCreating
@@ -646,6 +709,11 @@ function NamingView({
                   <Feather name="arrow-right" size={18} color={colors.textOnPrimary} />
                 ) : null}
               </Pressable>
+              {isFloorAtCapacity ? (
+                <Text style={styles.capacityNotice}>
+                  L'étage est complet ({nbPortesParEtage} portes). Termine ou supprime des portes existantes.
+                </Text>
+              ) : null}
             </View>
           </Animated.View>
         )}
@@ -1732,5 +1800,11 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: colors.textSubtle,
     fontWeight: "600",
+  },
+  capacityNotice: {
+    marginTop: spacing.sm,
+    fontSize: fontSize.sm,
+    color: colors.textMuted,
+    textAlign: "center",
   },
 });

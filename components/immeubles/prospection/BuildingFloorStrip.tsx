@@ -14,6 +14,7 @@ import {
   STATUS_DISPLAY,
   getDisplayStatusKey,
 } from "@/components/immeubles/prospection/status-display";
+import { useToast } from "@/components/ui";
 import type { Porte } from "@/types/api";
 
 type FloorSummary = {
@@ -21,6 +22,8 @@ type FloorSummary = {
   total: number;
   done: number;
   portes: Porte[];
+  locked: boolean;
+  active: boolean;
 };
 
 type BuildingFloorStripProps = {
@@ -28,26 +31,53 @@ type BuildingFloorStripProps = {
   activeEtage?: number | null;
   onFloorTap?: (etage: number) => void;
   isTablet?: boolean;
+  nbEtages?: number;
+  nbPortesParEtage?: number;
 };
 
-function summarize(portes: Porte[]): FloorSummary[] {
+function summarize(
+  portes: Porte[],
+  nbEtages?: number,
+  nbPortesParEtage?: number,
+): FloorSummary[] {
   const map = new Map<number, Porte[]>();
   for (const porte of portes) {
     const list = map.get(porte.etage);
     if (list) list.push(porte);
     else map.set(porte.etage, [porte]);
   }
-  return Array.from(map.entries())
-    .map(([etage, items]) => {
-      const sorted = [...items].sort((a, b) =>
-        String(a.numero).localeCompare(String(b.numero), "fr", {
-          numeric: true,
-        }),
-      );
-      const done = sorted.filter((p) => p.statut !== "NON_VISITE").length;
-      return { etage, total: sorted.length, done, portes: sorted };
-    })
-    .sort((a, b) => b.etage - a.etage);
+
+  const etageRange =
+    nbEtages && nbEtages > 0
+      ? Array.from({ length: nbEtages }, (_, i) => nbEtages - i)
+      : Array.from(map.keys()).sort((a, b) => b - a);
+
+  const etagesArray: FloorSummary[] = etageRange.map((etage) => {
+    const items = map.get(etage) ?? [];
+    const sorted = [...items].sort((a, b) =>
+      String(a.numero).localeCompare(String(b.numero), "fr", { numeric: true }),
+    );
+    const done = sorted.filter((p) => p.statut !== "NON_VISITE").length;
+    const total =
+      nbPortesParEtage && nbPortesParEtage > 0
+        ? nbPortesParEtage
+        : sorted.length;
+    return { etage, total, done, portes: sorted, locked: false, active: false };
+  });
+
+  // Descending pass: first floor with remaining work is active, those below are locked.
+  let activeFound = false;
+  return etagesArray.map((summary) => {
+    const hasRemainingWork = summary.done < summary.total;
+    if (!activeFound && hasRemainingWork) {
+      activeFound = true;
+      return { ...summary, locked: false, active: true };
+    }
+    if (activeFound) {
+      return { ...summary, locked: true, active: false };
+    }
+    return { ...summary, locked: false, active: false };
+  });
 }
 
 function FloorCard({
@@ -64,6 +94,7 @@ function FloorCard({
   const ratio = summary.total === 0 ? 0 : summary.done / summary.total;
   const isComplete = ratio === 1;
   const isEmpty = summary.done === 0;
+  const isLocked = summary.locked;
 
   return (
     <Pressable
@@ -72,9 +103,11 @@ function FloorCard({
         styles.card,
         isTablet && styles.cardTablet,
         active && styles.cardActive,
+        summary.active && styles.cardCurrentActive,
+        isLocked && styles.cardLocked,
       ]}
       accessibilityRole="button"
-      accessibilityLabel={`Étage ${summary.etage}, ${summary.done} sur ${summary.total} portes prospectées`}
+      accessibilityLabel={`Étage ${summary.etage}, ${summary.done} sur ${summary.total} portes prospectées${isLocked ? ", verrouillé" : ""}`}
     >
       <View style={styles.cardHeader}>
         <Text
@@ -82,11 +115,14 @@ function FloorCard({
             styles.etageNumber,
             active && styles.etageNumberActive,
             isTablet && styles.etageNumberTablet,
+            isLocked && styles.etageNumberLocked,
           ]}
         >
           {summary.etage}
         </Text>
-        {isComplete ? (
+        {isLocked ? (
+          <Feather name="lock" size={14} color={colors.textSubtle} />
+        ) : isComplete ? (
           <View style={styles.completeBadge}>
             <Feather name="check" size={9} color={colors.textOnPrimary} />
           </View>
@@ -121,6 +157,7 @@ function FloorCard({
           styles.countText,
           active && styles.countTextActive,
           isEmpty && styles.countTextEmpty,
+          isLocked && styles.countTextLocked,
         ]}
       >
         {summary.done}/{summary.total}
@@ -134,8 +171,15 @@ function BuildingFloorStripImpl({
   activeEtage = null,
   onFloorTap,
   isTablet = false,
+  nbEtages,
+  nbPortesParEtage,
 }: BuildingFloorStripProps) {
-  const floors = useMemo(() => summarize(allPortes), [allPortes]);
+  const toast = useToast();
+
+  const floors = useMemo(
+    () => summarize(allPortes, nbEtages, nbPortesParEtage),
+    [allPortes, nbEtages, nbPortesParEtage],
+  );
 
   if (floors.length === 0) return null;
 
@@ -143,6 +187,9 @@ function BuildingFloorStripImpl({
   const totalAll = floors.reduce((acc, f) => acc + f.total, 0);
   const overallPct =
     totalAll === 0 ? 0 : Math.round((totalDone / totalAll) * 100);
+
+  const activeFloor = floors.find((f) => f.active);
+  const activeEtageNum = activeFloor?.etage ?? null;
 
   return (
     <View style={[styles.wrap, isTablet && styles.wrapTablet]}>
@@ -174,7 +221,18 @@ function BuildingFloorStripImpl({
             key={floor.etage}
             summary={floor}
             active={activeEtage === floor.etage}
-            onPress={() => onFloorTap?.(floor.etage)}
+            onPress={() => {
+              if (floor.locked) {
+                toast.show({
+                  message: activeEtageNum
+                    ? `Termine d'abord l'étage ${activeEtageNum}.`
+                    : "Étage verrouillé.",
+                  variant: "info",
+                });
+                return;
+              }
+              onFloorTap?.(floor.etage);
+            }}
             isTablet={isTablet}
           />
         ))}
@@ -268,6 +326,14 @@ const styles = StyleSheet.create({
     backgroundColor: colors.text,
     borderColor: colors.text,
   },
+  cardCurrentActive: {
+    borderWidth: 2,
+    borderColor: colors.primary,
+  },
+  cardLocked: {
+    opacity: 0.4,
+    backgroundColor: colors.surfaceMuted,
+  },
   cardHeader: {
     flexDirection: "row",
     alignItems: "center",
@@ -285,6 +351,9 @@ const styles = StyleSheet.create({
   },
   etageNumberActive: {
     color: colors.textOnPrimary,
+  },
+  etageNumberLocked: {
+    color: colors.textSubtle,
   },
   completeBadge: {
     width: 14,
@@ -320,6 +389,9 @@ const styles = StyleSheet.create({
     color: colors.textOnPrimary,
   },
   countTextEmpty: {
+    color: colors.textSubtle,
+  },
+  countTextLocked: {
     color: colors.textSubtle,
   },
 });

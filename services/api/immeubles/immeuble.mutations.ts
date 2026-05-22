@@ -1,6 +1,8 @@
+// V2 : nouvel endpoint qui ne pré-crée pas les portes. Les anciens mobiles
+// continuent d'appeler `createImmeuble` (qui reste dispo backend-side).
 export const CREATE_IMMEUBLE = `
-  mutation CreateImmeuble($createImmeubleInput: CreateImmeubleInput!) {
-    createImmeuble(createImmeubleInput: $createImmeubleInput) {
+  mutation CreateImmeubleEmpty($createImmeubleInput: CreateImmeubleInput!) {
+    createImmeubleEmpty(createImmeubleInput: $createImmeubleInput) {
       id
       adresse
       nbEtages
@@ -15,9 +17,10 @@ export const CREATE_IMMEUBLE = `
   }
 `;
 
+// V2 : nouvel endpoint qui ne pré-crée pas les portes du nouvel étage.
 export const ADD_ETAGE_TO_IMMEUBLE = `
-  mutation AddEtageToImmeuble($id: Int!) {
-    addEtageToImmeuble(id: $id) {
+  mutation AddEtageEmpty($immeubleId: Int!) {
+    addEtageEmpty(immeubleId: $immeubleId) {
       id
       adresse
       nbEtages
@@ -39,9 +42,10 @@ export const REMOVE_ETAGE_FROM_IMMEUBLE = `
   }
 `;
 
+// V2 : endpoint capped avec check nbPortesParEtage.
 export const ADD_PORTE_TO_ETAGE = `
-  mutation AddPorteToEtage($immeubleId: Int!, $etage: Int!) {
-    addPorteToEtage(immeubleId: $immeubleId, etage: $etage) {
+  mutation AddPorteToEtageCapped($immeubleId: Int!, $etage: Int!) {
+    addPorteToEtageCapped(immeubleId: $immeubleId, etage: $etage) {
       id
       adresse
       nbEtages

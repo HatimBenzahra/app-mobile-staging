@@ -7,7 +7,9 @@ export function useCreatePorte() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const create = async (input: CreatePorteInput): Promise<Porte | null> => {
+  const create = async (
+    input: CreatePorteInput,
+  ): Promise<{ porte: Porte | null; error?: string }> => {
     try {
       setLoading(true);
       setError(null);
@@ -16,10 +18,11 @@ export function useCreatePorte() {
         immeubleId: input.immeubleId,
         porteId: result.id,
       });
-      return result;
+      return { porte: result };
     } catch (err: any) {
-      setError(err?.message || "Erreur creation porte");
-      return null;
+      const message = err?.message || "Erreur creation porte";
+      setError(message);
+      return { porte: null, error: message };
     } finally {
       setLoading(false);
     }

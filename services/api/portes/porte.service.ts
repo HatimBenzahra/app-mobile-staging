@@ -39,10 +39,10 @@ const STATUS_HISTORIQUE_BY_IMMEUBLE = `
 export const porteApi = {
   async create(input: CreatePorteInput): Promise<Porte> {
     const response = await gql<
-      { createPorte: Porte },
+      { createPorteCapped: Porte },
       { createPorteInput: CreatePorteInput }
     >(CREATE_PORTE, { createPorteInput: input });
-    return response.createPorte;
+    return response.createPorteCapped;
   },
 
   async update(input: UpdatePorteInput): Promise<Porte> {

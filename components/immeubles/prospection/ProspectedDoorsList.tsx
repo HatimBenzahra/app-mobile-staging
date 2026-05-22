@@ -14,6 +14,8 @@ type ProspectedDoorsListProps = {
   onPorteTap: (porte: Porte) => void;
   isTablet?: boolean;
   hasFilters?: boolean;
+  nbEtages?: number;
+  nbPortesParEtage?: number;
 };
 
 function groupByEtage(portes: Porte[]): Array<{ etage: number; portes: Porte[] }> {
@@ -28,30 +30,34 @@ function groupByEtage(portes: Porte[]): Array<{ etage: number; portes: Porte[] }
     .sort((a, b) => b.etage - a.etage);
 }
 
-function countByEtage(portes: Porte[]): Map<number, number> {
-  const map = new Map<number, number>();
-  for (const porte of portes) {
-    map.set(porte.etage, (map.get(porte.etage) ?? 0) + 1);
-  }
-  return map;
-}
-
 function ProspectedDoorsListImpl({
   portes,
   allPortes,
   onPorteTap,
   isTablet = false,
   hasFilters = false,
+  nbEtages,
+  nbPortesParEtage,
 }: ProspectedDoorsListProps) {
   const sections = useMemo(() => groupByEtage(portes), [portes]);
-  const totalsPerFloor = useMemo(
-    () => countByEtage(allPortes ?? portes),
-    [allPortes, portes],
-  );
+  const totalsPerFloor = useMemo(() => {
+    const m = new Map<number, number>();
+    const portesArr = allPortes ?? portes;
+    for (const p of portesArr) {
+      m.set(p.etage, (m.get(p.etage) ?? 0) + 1);
+    }
+    if (nbPortesParEtage && nbPortesParEtage > 0 && nbEtages && nbEtages > 0) {
+      for (let i = 1; i <= nbEtages; i += 1) {
+        m.set(i, nbPortesParEtage);
+      }
+    }
+    return m;
+  }, [allPortes, portes, nbEtages, nbPortesParEtage]);
   const stripPortes = allPortes ?? portes;
   const [focusedEtage, setFocusedEtage] = useState<number | null>(null);
 
-  const hasAnyBuildingData = stripPortes.length > 0;
+  const hasAnyBuildingData =
+    stripPortes.length > 0 || (nbEtages !== undefined && nbEtages > 0);
   const isEmpty = sections.length === 0;
 
   return (
@@ -70,6 +76,8 @@ function ProspectedDoorsListImpl({
             setFocusedEtage((prev) => (prev === etage ? null : etage))
           }
           isTablet={isTablet}
+          nbEtages={nbEtages}
+          nbPortesParEtage={nbPortesParEtage}
         />
       ) : null}
 

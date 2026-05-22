@@ -254,8 +254,14 @@
   "hotPaths": [
     {
       "path": "components/immeubles/ImmeubleDetailsScreen.tsx",
-      "accessCount": 150,
-      "lastAccessed": 1779440723719,
+      "accessCount": 164,
+      "lastAccessed": 1779460008760,
+      "type": "file"
+    },
+    {
+      "path": "components/immeubles/prospection/ProspectionSessionOverlay.tsx",
+      "accessCount": 55,
+      "lastAccessed": 1779458647978,
       "type": "file"
     },
     {
@@ -280,12 +286,6 @@
       "path": "components/ProfileSheet.tsx",
       "accessCount": 35,
       "lastAccessed": 1779388957102,
-      "type": "file"
-    },
-    {
-      "path": "components/immeubles/prospection/ProspectionSessionOverlay.tsx",
-      "accessCount": 27,
-      "lastAccessed": 1779439622429,
       "type": "file"
     },
     {
@@ -325,6 +325,12 @@
       "type": "file"
     },
     {
+      "path": "components/immeubles/prospection/BuildingFloorStrip.tsx",
+      "accessCount": 17,
+      "lastAccessed": 1779459563172,
+      "type": "file"
+    },
+    {
       "path": "components/immeubles/PorteDetailSheet.tsx",
       "accessCount": 16,
       "lastAccessed": 1779387324606,
@@ -349,6 +355,12 @@
       "type": "file"
     },
     {
+      "path": "components/immeubles/prospection/ProspectedDoorsList.tsx",
+      "accessCount": 14,
+      "lastAccessed": 1779459226303,
+      "type": "file"
+    },
+    {
       "path": "components/ui/index.ts",
       "accessCount": 13,
       "lastAccessed": 1779436671111,
@@ -364,12 +376,6 @@
       "path": "components/ui/Chip.tsx",
       "accessCount": 10,
       "lastAccessed": 1779387423081,
-      "type": "file"
-    },
-    {
-      "path": "components/immeubles/prospection/BuildingFloorStrip.tsx",
-      "accessCount": 10,
-      "lastAccessed": 1779388726943,
       "type": "file"
     },
     {
@@ -412,12 +418,6 @@
       "path": "components/ui/StatTile.tsx",
       "accessCount": 8,
       "lastAccessed": 1779436675605,
-      "type": "file"
-    },
-    {
-      "path": "components/immeubles/prospection/ProspectedDoorsList.tsx",
-      "accessCount": 7,
-      "lastAccessed": 1779388699623,
       "type": "file"
     },
     {

@@ -11,26 +11,26 @@ import {
 export const immeubleApi = {
   async create(input: CreateImmeubleInput): Promise<Immeuble> {
     const response = await gql<
-      { createImmeuble: Immeuble },
+      { createImmeubleEmpty: Immeuble },
       { createImmeubleInput: CreateImmeubleInput }
     >(CREATE_IMMEUBLE, { createImmeubleInput: input });
-    return response.createImmeuble;
+    return response.createImmeubleEmpty;
   },
 
   async addEtageToImmeuble(id: number): Promise<Immeuble> {
-    const response = await gql<{ addEtageToImmeuble: Immeuble }, { id: number }>(
-      ADD_ETAGE_TO_IMMEUBLE,
-      { id },
-    );
-    return response.addEtageToImmeuble;
+    const response = await gql<
+      { addEtageEmpty: Immeuble },
+      { immeubleId: number }
+    >(ADD_ETAGE_TO_IMMEUBLE, { immeubleId: id });
+    return response.addEtageEmpty;
   },
 
   async addPorteToEtage(immeubleId: number, etage: number): Promise<Immeuble> {
     const response = await gql<
-      { addPorteToEtage: Immeuble },
+      { addPorteToEtageCapped: Immeuble },
       { immeubleId: number; etage: number }
     >(ADD_PORTE_TO_ETAGE, { immeubleId, etage });
-    return response.addPorteToEtage;
+    return response.addPorteToEtageCapped;
   },
 
   async removeEtageFromImmeuble(id: number): Promise<Immeuble> {

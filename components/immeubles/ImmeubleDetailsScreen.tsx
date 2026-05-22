@@ -621,6 +621,11 @@ function ImmeubleDetailsView({
     [portesState],
   );
 
+  const realPortes = useMemo(
+    () => portesState.filter((p) => p.id > 0),
+    [portesState],
+  );
+
   // Only prospected doors are exposed in the UI. The legacy pre-generation
   // (statut = NON_VISITE) is hidden — doors enter the list only after the
   // commercial finishes a prospection session via the FAB overlay.
@@ -687,7 +692,9 @@ function ImmeubleDetailsView({
       }
     }
 
-    const total = sortedPortes.length;
+    const theoreticalTotal =
+      (immeuble.nbEtages ?? 0) * (immeuble.nbPortesParEtage ?? 0);
+    const total = theoreticalTotal > 0 ? theoreticalTotal : sortedPortes.length;
     return {
       progress: {
         total,
@@ -697,7 +704,7 @@ function ImmeubleDetailsView({
       floors: Array.from(floorSet).sort((a, b) => b - a),
       statusCounts: counts,
     };
-  }, [sortedPortes]);
+  }, [sortedPortes, immeuble.nbEtages, immeuble.nbPortesParEtage]);
 
   const portesParEtage = useMemo(() => {
     if (!showFloorPlan) return [] as [number, Porte[]][];
@@ -778,9 +785,30 @@ function ImmeubleDetailsView({
 
   const openAddPorte = useCallback(() => {
     if (prospectionSession.isLocked) return;
-    const etage = displayNbEtages || 1;
-    prospectionSession.open(etage);
-  }, [displayNbEtages, prospectionSession]);
+    // Trouve l'étage actif : le plus haut avec encore du travail (portes
+    // NON_VISITE ou capacité non remplie). Si tout est terminé, on retombe
+    // sur l'étage le plus haut.
+    const cap = immeuble.nbPortesParEtage ?? 0;
+    const total = displayNbEtages || 1;
+    let target = total;
+    for (let e = total; e >= 1; e -= 1) {
+      const onFloor = realPortes.filter((p) => p.etage === e);
+      const nonVisite = onFloor.filter((p) => p.statut === "NON_VISITE").length;
+      const expectedTotal = cap > 0 ? cap : onFloor.length;
+      const hasRemainingWork =
+        nonVisite > 0 || onFloor.length < expectedTotal;
+      if (hasRemainingWork) {
+        target = e;
+        break;
+      }
+    }
+    prospectionSession.open(target);
+  }, [
+    displayNbEtages,
+    immeuble.nbPortesParEtage,
+    prospectionSession,
+    realPortes,
+  ]);
 
   const handleAddEtage = useCallback(async () => {
     if (addingEtage) return;
@@ -1152,6 +1180,8 @@ function ImmeubleDetailsView({
                 onPorteTap={handlePorteTap}
                 isTablet={isTablet}
                 hasFilters={statusFilters.length > 0}
+                nbEtages={immeuble.nbEtages}
+                nbPortesParEtage={immeuble.nbPortesParEtage}
               />
             </ScrollView>
           </Animated.View>
@@ -1222,7 +1252,8 @@ function ImmeubleDetailsView({
       <ProspectionSessionOverlay
         session={prospectionSession}
         nbEtages={displayNbEtages}
-        portes={portesState}
+        nbPortesParEtage={immeuble.nbPortesParEtage}
+        portes={realPortes}
       />
 
       <ConfirmActionOverlay

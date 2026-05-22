@@ -109,7 +109,7 @@ export function useProspectionSession({
         nomPersonnalise: (params.nomPersonnalise ?? "").trim(),
       });
 
-      const porte = await createPorte({
+      const { porte, error } = await createPorte({
         immeubleId,
         etage,
         numero,
@@ -124,7 +124,11 @@ export function useProspectionSession({
           numero,
           nomPersonnalise: (params.nomPersonnalise ?? "").trim(),
         });
-        return { ok: false as const, reason: "create_failed" };
+        return {
+          ok: false as const,
+          reason: "create_failed",
+          message: error ?? "Création impossible",
+        };
       }
 
       onPorteCreated?.(porte);
