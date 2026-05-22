@@ -220,3 +220,4 @@ export type UpdatePorteInput = {
   commentaire?: SchemaUpdatePorteInput['commentaire'];
   derniereVisite?: SchemaUpdatePorteInput['derniereVisite'];
 };
+

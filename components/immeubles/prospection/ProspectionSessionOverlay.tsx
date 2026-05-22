@@ -1,6 +1,7 @@
 import { Feather } from "@expo/vector-icons";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
+  ActivityIndicator,
   Alert,
   BackHandler,
   KeyboardAvoidingView,
@@ -124,6 +125,26 @@ export default function ProspectionSessionOverlay({
               insetsTop={insets.top}
               insetsBottom={insets.bottom}
             />
+          ) : null}
+
+          {state.phase === "STARTING" ? (
+            <Animated.View
+              key="starting"
+              entering={FadeIn.duration(180)}
+              exiting={FadeOut.duration(140)}
+              style={[
+                styles.viewRoot,
+                isTablet ? styles.viewRootTablet : { paddingTop: insets.top + 8 },
+              ]}
+            >
+              <View style={styles.startingContainer}>
+                <ActivityIndicator size="large" color={colors.primary} />
+                <Text style={styles.startingTitle}>Préparation du chrono…</Text>
+                <Text style={styles.startingHint}>
+                  Démarrage du micro pour ce passage. Ne sors pas de l'écran.
+                </Text>
+              </View>
+            </Animated.View>
           ) : null}
 
           {state.phase === "ACTIVE" || state.phase === "SAVING" ? (
@@ -1613,6 +1634,26 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     height: 3,
+  },
+  // ── Starting (loading) ──────────────────────────────────────────
+  startingContainer: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 16,
+    padding: 32,
+  },
+  startingTitle: {
+    fontSize: 18,
+    fontWeight: "700" as const,
+    color: colors.text,
+    textAlign: "center",
+  },
+  startingHint: {
+    fontSize: 13,
+    color: colors.textMuted,
+    textAlign: "center",
+    lineHeight: 19,
   },
   // ── New porte (stepper) ─────────────────────────────────────────
   newPorteCard: {

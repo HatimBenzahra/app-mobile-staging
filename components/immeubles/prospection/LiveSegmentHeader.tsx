@@ -46,7 +46,10 @@ function LiveSegmentHeaderImpl({
         </Text>
       </View>
       <View style={styles.chrono}>
-        <Feather name="clock" size={13} color={colors.text} />
+        <View style={styles.chronoLabelRow}>
+          <Feather name="clock" size={11} color={colors.textMuted} />
+          <Text style={styles.chronoLabel}>Chrono</Text>
+        </View>
         <Text style={styles.chronoText}>{formatChrono(elapsedMs)}</Text>
       </View>
     </View>
@@ -89,15 +92,27 @@ const styles = StyleSheet.create({
     letterSpacing: -0.4,
   },
   chrono: {
-    flexDirection: "row",
+    flexDirection: "column",
     alignItems: "center",
-    gap: 8,
+    gap: 2,
     paddingHorizontal: 14,
     paddingVertical: 10,
     borderRadius: 14,
     backgroundColor: colors.surfaceMuted,
     borderWidth: 1,
     borderColor: colors.border,
+  },
+  chronoLabelRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  chronoLabel: {
+    color: colors.textMuted,
+    fontSize: 10,
+    fontWeight: "700" as const,
+    letterSpacing: 0.8,
+    textTransform: "uppercase" as const,
   },
   chronoText: {
     color: colors.text,

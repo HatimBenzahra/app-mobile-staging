@@ -18,6 +18,7 @@ import FloorPlanSheet from "@/components/immeubles/details/FloorPlanSheet";
 import StatusFilterSheet from "@/components/immeubles/details/StatusFilterSheet";
 import { useAddEtageToImmeuble } from "@/hooks/api/use-add-etage-to-immeuble";
 import { useRemoveEtageFromImmeuble } from "@/hooks/api/use-remove-etage-from-immeuble";
+import { useLastPorteRecordingDuration } from "@/hooks/api/use-recording-segments-by-porte";
 import { useRemovePorte } from "@/hooks/api/use-remove-porte";
 import { useUpdatePorte } from "@/hooks/api/use-update-porte";
 import { useRecording } from "@/hooks/audio/use-recording";
@@ -189,7 +190,7 @@ function ImmeubleDetailsView({
   const progressAnimationRef = useRef<Animated.CompositeAnimation | null>(null);
   const lastProgressTargetRef = useRef(0);
   const pendingFloorPlanDoorIdRef = useRef<number | null>(null);
-  const { markDoorStart, markDoorEnd } = useRecording({
+  const { markDoorStart, markDoorEnd, isRecording: isRecAudioActive } = useRecording({
     // Per-porte capture mode: useRecording does not auto-start on mount;
     // markDoorStart (called by useProspectionSession.startActive) opens a
     // fresh local recording for the porte, markDoorEnd stops + uploads
@@ -199,8 +200,8 @@ function ImmeubleDetailsView({
     immeubleId: immeuble.id,
   });
   const sessionRecordingBindings = useMemo(
-    () => ({ markDoorStart, markDoorEnd }),
-    [markDoorStart, markDoorEnd],
+    () => ({ markDoorStart, markDoorEnd, isRecording: isRecAudioActive }),
+    [markDoorStart, markDoorEnd, isRecAudioActive],
   );
   const handleSessionPorteCreated = useCallback((porte: Porte) => {
     setPortesState((prev) =>
@@ -211,6 +212,18 @@ function ImmeubleDetailsView({
     {},
   );
   const [detailPorte, setDetailPorte] = useState<Porte | null>(null);
+  const { data: detailPorteDurationSec } = useLastPorteRecordingDuration(
+    detailPorte?.id ?? null,
+  );
+  const detailPorteDurationMs = useMemo(() => {
+    if (!detailPorte) return null;
+    const local = porteDurations[detailPorte.id];
+    if (local && local > 0) return local;
+    if (detailPorteDurationSec && detailPorteDurationSec > 0) {
+      return Math.round(detailPorteDurationSec * 1000);
+    }
+    return null;
+  }, [detailPorte, porteDurations, detailPorteDurationSec]);
   const handleSessionPorteSaved = useCallback(
     (porte: Porte, durationMs: number) => {
       setPortesState((prev) =>
@@ -1267,7 +1280,7 @@ function ImmeubleDetailsView({
       <PorteDetailSheet
         porte={detailPorte}
         open={!!detailPorte}
-        durationMs={detailPorte ? porteDurations[detailPorte.id] : null}
+        durationMs={detailPorteDurationMs}
         onClose={() => setDetailPorte(null)}
         onResume={handleDetailResume}
         onEdit={handleDetailEdit}

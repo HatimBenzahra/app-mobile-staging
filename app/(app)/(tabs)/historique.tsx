@@ -3,10 +3,12 @@ import { Feather } from "@expo/vector-icons";
 import { useIsFocused } from "@react-navigation/native";
 import {
   Animated,
-  FlatList,
+  Pressable,
   RefreshControl,
+  SectionList,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from "react-native";
 import { authService } from "@/services/auth";
@@ -15,7 +17,7 @@ import type { Immeuble, StatusHistorique } from "@/types/api";
 import { api } from "@/services/api";
 import { dataSyncService } from "@/services/sync/data-sync.service";
 import { Card, ErrorState, PressableCard, Chip, type ChipTone } from "@/components/ui";
-import { colors } from "@/constants/theme";
+import { colors, spacing, radius, fontSize, fontWeight } from "@/constants/theme";
 
 const FILTERS = [
   { key: "all", label: "Tous", icon: "layers" },
@@ -298,6 +300,7 @@ export default function HistoriqueScreen() {
   const [userId, setUserId] = useState<number | null>(null);
   const [role, setRole] = useState<string | null>(null);
   const [filter, setFilter] = useState("all");
+  const [query, setQuery] = useState("");
   const [historyMap, setHistoryMap] = useState<Record<number, StatusHistorique[]>>({});
   const [historyLoading, setHistoryLoading] = useState(false);
   const [expandedImmeubleId, setExpandedImmeubleId] = useState<number | null>(null);
@@ -348,13 +351,50 @@ export default function HistoriqueScreen() {
   const filteredImmeubles = useMemo(() => {
     const now = Date.now();
     const rangeMs = FILTER_TO_MS[filter] ?? Number.POSITIVE_INFINITY;
+    const q = query.trim().toLowerCase();
     return sortedImmeubles.filter((imm) => {
       const lastModified = imm.updatedAt ? new Date(imm.updatedAt).getTime() : 0;
-      return now - lastModified < rangeMs;
+      if (now - lastModified >= rangeMs) return false;
+      if (!q) return true;
+      if (imm.adresse?.toLowerCase().includes(q)) return true;
+      return (imm.portes ?? []).some((p) =>
+        p.nomPersonnalise?.toLowerCase().includes(q),
+      );
     });
-  }, [sortedImmeubles, filter]);
+  }, [sortedImmeubles, filter, query]);
 
   const visibleImmeubles = filteredImmeubles;
+
+  type Bucket = { key: string; title: string; data: Immeuble[] };
+
+  const sections = useMemo<Bucket[]>(() => {
+    const now = new Date();
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    const startOfYesterday = startOfToday - 86400000;
+    const dayOfWeek = now.getDay(); // 0=Sun
+    const daysFromMonday = (dayOfWeek + 6) % 7;
+    const startOfWeek = startOfToday - daysFromMonday * 86400000;
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+
+    const buckets: Bucket[] = [
+      { key: "today", title: "Aujourd'hui", data: [] },
+      { key: "yesterday", title: "Hier", data: [] },
+      { key: "week", title: "Cette semaine", data: [] },
+      { key: "month", title: "Ce mois", data: [] },
+      { key: "older", title: "Plus ancien", data: [] },
+    ];
+
+    for (const imm of filteredImmeubles) {
+      const t = imm.updatedAt ? new Date(imm.updatedAt).getTime() : 0;
+      if (t >= startOfToday) buckets[0].data.push(imm);
+      else if (t >= startOfYesterday) buckets[1].data.push(imm);
+      else if (t >= startOfWeek) buckets[2].data.push(imm);
+      else if (t >= startOfMonth) buckets[3].data.push(imm);
+      else buckets[4].data.push(imm);
+    }
+
+    return buckets.filter((b) => b.data.length > 0);
+  }, [filteredImmeubles]);
 
   const refreshHistoryForImmeuble = useCallback(async (immeubleId: number) => {
     try {
@@ -575,9 +615,34 @@ export default function HistoriqueScreen() {
     ],
   );
 
+  const totalCount = useMemo(
+    () => sections.reduce((sum, s) => sum + s.data.length, 0),
+    [sections],
+  );
+
   const listHeader = useMemo(
     () => (
       <View style={styles.headerBlock}>
+        <View style={styles.searchBar}>
+          <Feather name="search" size={16} color={colors.textMuted} />
+          <TextInput
+            style={styles.searchInput}
+            value={query}
+            onChangeText={setQuery}
+            placeholder="Rechercher par adresse ou nom..."
+            placeholderTextColor={colors.textSubtle}
+          />
+          {query.length > 0 ? (
+            <Pressable onPress={() => setQuery("")} hitSlop={8}>
+              <Feather name="x" size={16} color={colors.textMuted} />
+            </Pressable>
+          ) : null}
+        </View>
+
+        <Text style={styles.resultCount}>
+          {totalCount} immeuble{totalCount > 1 ? "s" : ""}{query ? ` trouvé${totalCount > 1 ? "s" : ""}` : ""}
+        </Text>
+
         <View style={styles.filtersRow}>
           {FILTERS.map((item) => {
             const selected = item.key === filter;
@@ -609,7 +674,7 @@ export default function HistoriqueScreen() {
         )}
       </View>
     ),
-    [error, filter, handleFilterPress, historyLoading, loading, onRefresh, profile],
+    [error, filter, handleFilterPress, historyLoading, loading, onRefresh, profile, query, setQuery, totalCount],
   );
 
   const listEmpty = useMemo(
@@ -617,10 +682,19 @@ export default function HistoriqueScreen() {
       !loading && !error ? (
         <Card variant="filled" padding="lg" style={styles.emptyCardInner}>
           <Feather name="home" size={32} color={colors.textSubtle} />
-          <Text style={styles.emptyText}>Aucun immeuble pour cette periode</Text>
+          {query.length > 0 ? (
+            <>
+              <Text style={styles.emptyText}>Aucun immeuble pour cette recherche</Text>
+              <Pressable onPress={() => setQuery("")} style={styles.clearSearchBtn}>
+                <Text style={styles.clearSearchText}>Effacer la recherche</Text>
+              </Pressable>
+            </>
+          ) : (
+            <Text style={styles.emptyText}>Aucun immeuble pour cette periode</Text>
+          )}
         </Card>
       ) : null,
-    [error, loading],
+    [error, loading, query, setQuery],
   );
 
   if (loading) {
@@ -658,8 +732,8 @@ export default function HistoriqueScreen() {
 
   return (
     <View style={styles.container}>
-      <FlatList
-        data={visibleImmeubles}
+      <SectionList
+        sections={sections}
         keyExtractor={(item) => String(item.id)}
         initialNumToRender={6}
         maxToRenderPerBatch={8}
@@ -671,6 +745,9 @@ export default function HistoriqueScreen() {
         ListEmptyComponent={listEmpty}
         ItemSeparatorComponent={renderSeparator}
         renderItem={renderImmeubleItem}
+        renderSectionHeader={({ section }) => (
+          <Text style={styles.sectionHeader}>{section.title}</Text>
+        )}
         ListFooterComponent={null}
         refreshControl={
           <RefreshControl
@@ -870,5 +947,44 @@ const styles = StyleSheet.create({
   },
   itemSeparator: {
     height: 10,
+  },
+  searchBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    backgroundColor: colors.surfaceMuted,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm + 2,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: fontSize.base,
+    color: colors.text,
+  },
+  resultCount: {
+    fontSize: fontSize.sm,
+    color: colors.textMuted,
+    marginTop: spacing.xs,
+  },
+  sectionHeader: {
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.semibold,
+    color: colors.textMuted,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+    marginTop: spacing.lg,
+    marginBottom: spacing.sm,
+    paddingHorizontal: spacing.lg,
+  },
+  clearSearchBtn: {
+    marginTop: spacing.xs,
+  },
+  clearSearchText: {
+    fontSize: fontSize.sm,
+    color: colors.primary,
+    fontWeight: fontWeight.medium,
   },
 });

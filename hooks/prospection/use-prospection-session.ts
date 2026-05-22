@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { useCreatePorte } from "@/hooks/api/use-create-porte";
 import { useUpdatePorte } from "@/hooks/api/use-update-porte";
@@ -9,6 +9,7 @@ export type SessionPhase =
   | "NAMING"
   | "CREATING"
   | "READY"
+  | "STARTING"
   | "ACTIVE"
   | "SAVING";
 
@@ -17,6 +18,7 @@ export type SessionState =
   | { phase: "NAMING"; etage: number; numero: string; nomPersonnalise: string }
   | { phase: "CREATING"; etage: number; numero: string; nomPersonnalise: string }
   | { phase: "READY"; porte: Porte; createdNow: boolean }
+  | { phase: "STARTING"; porte: Porte; createdNow: boolean }
   | { phase: "ACTIVE"; porte: Porte; startedAt: number; createdNow: boolean }
   | {
       phase: "SAVING";
@@ -38,6 +40,7 @@ export type SaveStatusInput = {
 type RecordingBindings = {
   markDoorStart: (porte: { id: number; numero: string; etage: number }) => void;
   markDoorEnd: (porteId: number, statut?: string) => void;
+  isRecording: boolean;
 };
 
 type UseProspectionSessionOptions = {
@@ -81,7 +84,11 @@ export function useProspectionSession({
 
   const cancel = useCallback(() => {
     const current = stateRef.current;
-    if (current.phase === "ACTIVE" || current.phase === "SAVING") {
+    if (
+      current.phase === "ACTIVE" ||
+      current.phase === "SAVING" ||
+      current.phase === "STARTING"
+    ) {
       recording.markDoorEnd(current.porte.id);
     }
     setState({ phase: "IDLE" });
@@ -140,16 +147,15 @@ export function useProspectionSession({
       etage: current.porte.etage,
     });
     setState({
-      phase: "ACTIVE",
+      phase: "STARTING",
       porte: current.porte,
-      startedAt: Date.now(),
       createdNow: current.createdNow,
     });
   }, [recording]);
 
   const abortActive = useCallback(() => {
     const current = stateRef.current;
-    if (current.phase !== "ACTIVE") return;
+    if (current.phase !== "ACTIVE" && current.phase !== "STARTING") return;
     recording.markDoorEnd(current.porte.id);
     setState({ phase: "IDLE" });
   }, [recording]);
@@ -199,7 +205,21 @@ export function useProspectionSession({
     [recording, updatePorte, onPorteSaved],
   );
 
-  const isLocked = state.phase === "ACTIVE" || state.phase === "SAVING";
+  useEffect(() => {
+    if (state.phase !== "STARTING") return;
+    if (!recording.isRecording) return;
+    setState({
+      phase: "ACTIVE",
+      porte: state.porte,
+      startedAt: Date.now(),
+      createdNow: state.createdNow,
+    });
+  }, [recording.isRecording, state]);
+
+  const isLocked =
+    state.phase === "ACTIVE" ||
+    state.phase === "SAVING" ||
+    state.phase === "STARTING";
   const isVisible = state.phase !== "IDLE";
 
   return useMemo(

@@ -254,8 +254,8 @@
   "hotPaths": [
     {
       "path": "components/immeubles/ImmeubleDetailsScreen.tsx",
-      "accessCount": 140,
-      "lastAccessed": 1779389023284,
+      "accessCount": 150,
+      "lastAccessed": 1779440723719,
       "type": "file"
     },
     {
@@ -283,15 +283,21 @@
       "type": "file"
     },
     {
-      "path": "components/immeubles/ConfirmActionOverlay.tsx",
-      "accessCount": 23,
-      "lastAccessed": 1779389006040,
+      "path": "components/immeubles/prospection/ProspectionSessionOverlay.tsx",
+      "accessCount": 27,
+      "lastAccessed": 1779439622429,
       "type": "file"
     },
     {
-      "path": "components/immeubles/prospection/ProspectionSessionOverlay.tsx",
+      "path": "app/(app)/(tabs)/historique.tsx",
+      "accessCount": 26,
+      "lastAccessed": 1779438436173,
+      "type": "file"
+    },
+    {
+      "path": "components/immeubles/ConfirmActionOverlay.tsx",
       "accessCount": 23,
-      "lastAccessed": 1779389326508,
+      "lastAccessed": 1779389006040,
       "type": "file"
     },
     {
@@ -307,15 +313,15 @@
       "type": "file"
     },
     {
-      "path": "app/(app)/(tabs)/equipe.tsx",
-      "accessCount": 17,
-      "lastAccessed": 1779434652116,
+      "path": "constants/theme.ts",
+      "accessCount": 18,
+      "lastAccessed": 1779438353230,
       "type": "file"
     },
     {
-      "path": "constants/theme.ts",
+      "path": "app/(app)/(tabs)/equipe.tsx",
       "accessCount": 17,
-      "lastAccessed": 1779436681407,
+      "lastAccessed": 1779434652116,
       "type": "file"
     },
     {
@@ -328,12 +334,6 @@
       "path": "components/immeubles/details/EditPorteSheet.tsx",
       "accessCount": 16,
       "lastAccessed": 1779389175214,
-      "type": "file"
-    },
-    {
-      "path": "app/(app)/(tabs)/historique.tsx",
-      "accessCount": 16,
-      "lastAccessed": 1779434579688,
       "type": "file"
     },
     {
@@ -352,6 +352,12 @@
       "path": "components/ui/index.ts",
       "accessCount": 13,
       "lastAccessed": 1779436671111,
+      "type": "file"
+    },
+    {
+      "path": "components/immeubles/prospection/LiveSegmentHeader.tsx",
+      "accessCount": 12,
+      "lastAccessed": 1779439633279,
       "type": "file"
     },
     {
@@ -382,12 +388,6 @@
       "path": "components/immeubles/prospection/PorteTile.tsx",
       "accessCount": 8,
       "lastAccessed": 1779388390321,
-      "type": "file"
-    },
-    {
-      "path": "components/immeubles/prospection/LiveSegmentHeader.tsx",
-      "accessCount": 8,
-      "lastAccessed": 1779389077323,
       "type": "file"
     },
     {
