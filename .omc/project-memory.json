@@ -259,6 +259,12 @@
       "type": "file"
     },
     {
+      "path": "app/(app)/(tabs)/dashboard.tsx",
+      "accessCount": 50,
+      "lastAccessed": 1779437791881,
+      "type": "file"
+    },
+    {
       "path": "app/(app)/(tabs)/immeubles.tsx",
       "accessCount": 41,
       "lastAccessed": 1779434471862,
@@ -274,12 +280,6 @@
       "path": "components/ProfileSheet.tsx",
       "accessCount": 35,
       "lastAccessed": 1779388957102,
-      "type": "file"
-    },
-    {
-      "path": "app/(app)/(tabs)/dashboard.tsx",
-      "accessCount": 26,
-      "lastAccessed": 1779434396204,
       "type": "file"
     },
     {
@@ -302,14 +302,20 @@
     },
     {
       "path": "components/immeubles/AddImmeubleSheet.tsx",
-      "accessCount": 17,
-      "lastAccessed": 1779387312879,
+      "accessCount": 19,
+      "lastAccessed": 1779437201696,
       "type": "file"
     },
     {
       "path": "app/(app)/(tabs)/equipe.tsx",
       "accessCount": 17,
       "lastAccessed": 1779434652116,
+      "type": "file"
+    },
+    {
+      "path": "constants/theme.ts",
+      "accessCount": 17,
+      "lastAccessed": 1779436681407,
       "type": "file"
     },
     {
@@ -331,9 +337,9 @@
       "type": "file"
     },
     {
-      "path": "constants/theme.ts",
-      "accessCount": 15,
-      "lastAccessed": 1779387412791,
+      "path": "app/(app)/(tabs)/statistiques.tsx",
+      "accessCount": 16,
+      "lastAccessed": 1779436869634,
       "type": "file"
     },
     {
@@ -344,14 +350,8 @@
     },
     {
       "path": "components/ui/index.ts",
-      "accessCount": 11,
-      "lastAccessed": 1779434285222,
-      "type": "file"
-    },
-    {
-      "path": "app/(app)/(tabs)/statistiques.tsx",
-      "accessCount": 11,
-      "lastAccessed": 1779434510032,
+      "accessCount": 13,
+      "lastAccessed": 1779436671111,
       "type": "file"
     },
     {
@@ -403,15 +403,15 @@
       "type": "file"
     },
     {
-      "path": "components/ui/StatTile.tsx",
-      "accessCount": 7,
-      "lastAccessed": 1779386495703,
+      "path": "components/ui/IconBadge.tsx",
+      "accessCount": 8,
+      "lastAccessed": 1779436660004,
       "type": "file"
     },
     {
-      "path": "components/ui/IconBadge.tsx",
-      "accessCount": 7,
-      "lastAccessed": 1779387451736,
+      "path": "components/ui/StatTile.tsx",
+      "accessCount": 8,
+      "lastAccessed": 1779436675605,
       "type": "file"
     },
     {
@@ -439,6 +439,12 @@
       "type": "file"
     },
     {
+      "path": "utils/stats/aggregations.ts",
+      "accessCount": 4,
+      "lastAccessed": 1779436664284,
+      "type": "file"
+    },
+    {
       "path": "components/immeubles/prospection/ProspectionJourney.tsx",
       "accessCount": 3,
       "lastAccessed": 1779388962913,
@@ -448,6 +454,24 @@
       "path": "components/immeubles/details/FloorPlanSheet.tsx",
       "accessCount": 3,
       "lastAccessed": 1779388983398,
+      "type": "file"
+    },
+    {
+      "path": "utils/stats/index.ts",
+      "accessCount": 3,
+      "lastAccessed": 1779436663764,
+      "type": "file"
+    },
+    {
+      "path": "utils/stats/records.ts",
+      "accessCount": 3,
+      "lastAccessed": 1779436671062,
+      "type": "file"
+    },
+    {
+      "path": "utils/stats/insights.ts",
+      "accessCount": 3,
+      "lastAccessed": 1779436671163,
       "type": "file"
     },
     {
@@ -487,6 +511,24 @@
       "type": "file"
     },
     {
+      "path": "components/ui/DeltaBadge.tsx",
+      "accessCount": 2,
+      "lastAccessed": 1779436660438,
+      "type": "file"
+    },
+    {
+      "path": "utils/stats/period.ts",
+      "accessCount": 2,
+      "lastAccessed": 1779436664828,
+      "type": "file"
+    },
+    {
+      "path": "components/ui/Toast.tsx",
+      "accessCount": 2,
+      "lastAccessed": 1779436677660,
+      "type": "file"
+    },
+    {
       "path": "components/ui/ProgressBar.tsx",
       "accessCount": 1,
       "lastAccessed": 1779385687677,
@@ -502,12 +544,6 @@
       "path": "hooks/api/use-api-call.ts",
       "accessCount": 1,
       "lastAccessed": 1779434226117,
-      "type": "file"
-    },
-    {
-      "path": "components/ui/Toast.tsx",
-      "accessCount": 1,
-      "lastAccessed": 1779434271171,
       "type": "file"
     },
     {

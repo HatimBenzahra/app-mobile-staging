@@ -3,8 +3,33 @@ import { useWorkspaceProfile } from "@/hooks/api/use-workspace-profile";
 import { authService } from "@/services/auth";
 import { dataSyncService } from "@/services/sync/data-sync.service";
 import type { TimelinePoint } from "@/types/api";
-import { Card, Chip, ErrorState, PressableCard, StatTile } from "@/components/ui";
-import { colors } from "@/constants/theme";
+import {
+  Card,
+  Chip,
+  ErrorState,
+  Funnel,
+  IconBadge,
+  PeriodSelector,
+  PressableCard,
+  StatTile,
+  useToast,
+} from "@/components/ui";
+import { colors, fontSize, fontWeight, radius, spacing } from "@/constants/theme";
+import {
+  buildConversionFunnel,
+  buildStatusDistribution,
+  computeDelta,
+  filterTimelineByPeriod,
+  findBestDay,
+  findBestWeek,
+  formatRange,
+  getPeriodRange,
+  getPreviousPeriodRange,
+  groupByDayOfWeek,
+  sumTimeline,
+  type StatsPeriod,
+  type PeriodRange,
+} from "@/utils/stats";
 import { Feather } from "@expo/vector-icons";
 import { useIsFocused } from "@react-navigation/native";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -19,17 +44,34 @@ import {
   View,
   useWindowDimensions,
 } from "react-native";
-import { LineChart } from "react-native-gifted-charts";
+import { BarChart, LineChart } from "react-native-gifted-charts";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Pie, PolarChart } from "victory-native";
 
 const DAY_LABELS_SHORT = ["Dim", "Lun", "Mar", "Mer", "Jeu", "Ven", "Sam"];
 
-const PERIOD_OPTIONS: { days: number; label: string }[] = [
-  { days: 7, label: "7 j" },
-  { days: 30, label: "30 j" },
-  { days: 90, label: "90 j" },
+const MONTH_NAMES = [
+  "janvier",
+  "fevrier",
+  "mars",
+  "avril",
+  "mai",
+  "juin",
+  "juillet",
+  "aout",
+  "septembre",
+  "octobre",
+  "novembre",
+  "decembre",
 ];
+
+const TONE_COLORS: Record<string, string> = {
+  primary: colors.primary,
+  success: colors.success,
+  danger: colors.danger,
+  warning: colors.warning,
+  info: colors.info,
+  neutral: colors.textSubtle,
+};
 
 type RdvItem = {
   porteId: number;
@@ -48,21 +90,6 @@ type StatistiquesScreenProps = {
   onNavigateToImmeuble?: (immeubleId: number) => void;
 };
 
-const MONTH_NAMES = [
-  "janvier",
-  "fevrier",
-  "mars",
-  "avril",
-  "mai",
-  "juin",
-  "juillet",
-  "aout",
-  "septembre",
-  "octobre",
-  "novembre",
-  "decembre",
-];
-
 export default function StatistiquesScreen({
   onNavigateToImmeuble,
 }: StatistiquesScreenProps = {}) {
@@ -70,9 +97,15 @@ export default function StatistiquesScreen({
   const { width, height: screenHeight } = useWindowDimensions();
   const isLandscape = width > screenHeight;
   const isFocused = useIsFocused();
+  const toast = useToast();
+
   const [userId, setUserId] = useState<number | null>(null);
   const [role, setRole] = useState<string | null>(null);
-  const [periodDays, setPeriodDays] = useState(7);
+
+  const [period, setPeriod] = useState<StatsPeriod>("week");
+  const [customRange] = useState<PeriodRange | undefined>();
+  const [teamView, setTeamView] = useState<"mine" | "team">("mine");
+
   const [chartKey, setChartKey] = useState(0);
   const contentOpacity = useRef(new Animated.Value(0)).current;
   const skeletonPulse = useRef(new Animated.Value(0)).current;
@@ -94,8 +127,11 @@ export default function StatistiquesScreen({
     };
   }, []);
 
+  const isManager = role === "manager";
   const commercialId = role === "commercial" ? userId : null;
+
   const todayKey = useMemo(() => new Date().toISOString().slice(0, 10), []);
+
   const maxDays = 90;
   const { startDate, endDate } = useMemo(() => {
     const end = new Date(`${todayKey}T23:59:59.999Z`);
@@ -103,17 +139,13 @@ export default function StatistiquesScreen({
     start.setDate(start.getDate() - (maxDays - 1));
     return { startDate: start.toISOString(), endDate: end.toISOString() };
   }, [todayKey]);
-  const startKey = useMemo(() => {
-    const end = new Date(`${todayKey}T12:00:00`);
-    const start = new Date(end);
-    start.setDate(start.getDate() - (periodDays - 1));
-    return start.toISOString().slice(0, 10);
-  }, [todayKey, periodDays]);
+
   const {
     data: timelineData,
     loading: timelineLoading,
     refetch: refetchTimeline,
   } = useCommercialTimeline(commercialId, startDate, endDate);
+
   const workspaceState = useWorkspaceProfile(userId, role);
 
   const [weekOffset, setWeekOffset] = useState(0);
@@ -208,27 +240,19 @@ export default function StatistiquesScreen({
       ) {
         return;
       }
-
-      if (!commercialId) {
-        return;
-      }
-
+      if (!commercialId) return;
       if (isFocused) {
         void workspaceState.refetch();
         void refetchTimeline();
         return;
       }
-
       shouldRefetchOnFocusRef.current = true;
     });
-
     return unsubscribe;
   }, [commercialId, isFocused, workspaceState, refetchTimeline]);
 
   useEffect(() => {
-    if (commercialId) {
-      return;
-    }
+    if (commercialId) return;
     shouldRefetchOnFocusRef.current = false;
   }, [commercialId]);
 
@@ -237,17 +261,10 @@ export default function StatistiquesScreen({
       wasFocusedRef.current = false;
       return;
     }
-    if (wasFocusedRef.current) {
-      return;
-    }
-
+    if (wasFocusedRef.current) return;
     wasFocusedRef.current = true;
     setChartKey((prev) => prev + 1);
-
-    if (!commercialId || !shouldRefetchOnFocusRef.current) {
-      return;
-    }
-
+    if (!commercialId || !shouldRefetchOnFocusRef.current) return;
     shouldRefetchOnFocusRef.current = false;
     void workspaceState.refetch();
     void refetchTimeline();
@@ -257,48 +274,11 @@ export default function StatistiquesScreen({
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     try {
-      await Promise.all([
-        workspaceState.refetch(),
-        refetchTimeline(),
-      ]);
+      await Promise.all([workspaceState.refetch(), refetchTimeline()]);
     } finally {
       setRefreshing(false);
     }
   }, [workspaceState, refetchTimeline]);
-
-  const filteredKpi = useMemo(() => {
-    const immeubles = workspaceState.data?.immeubles ?? [];
-    let portes = 0;
-    let rdvCount = 0;
-    let contratsCount = 0;
-    let refusCount = 0;
-    let absentsCount = 0;
-    const immeublesSet = new Set<number>();
-
-    for (const imm of immeubles) {
-      for (const porte of imm.portes ?? []) {
-        const st = typeof porte.statut === "string" ? porte.statut : "";
-        if (st === "NON_VISITE") continue;
-        const dv = porte.derniereVisite?.slice(0, 10);
-        if (!dv || dv < startKey || dv > todayKey) continue;
-        portes += 1;
-        immeublesSet.add(imm.id);
-        if (st === "RENDEZ_VOUS_PRIS") rdvCount += 1;
-        if (st === "CONTRAT_SIGNE") contratsCount += 1;
-        if (st === "REFUS") refusCount += 1;
-        if (st === "ABSENT") absentsCount += 1;
-      }
-    }
-
-    return {
-      portes,
-      immeubles: immeublesSet.size,
-      rdv: rdvCount,
-      contrats: contratsCount,
-      refus: refusCount,
-      absents: absentsCount,
-    };
-  }, [workspaceState.data, startKey, todayKey]);
 
   const isLoading = workspaceState.loading || timelineLoading;
 
@@ -307,7 +287,6 @@ export default function StatistiquesScreen({
       skeletonPulse.setValue(0);
       return;
     }
-
     const pulse = Animated.loop(
       Animated.sequence([
         Animated.timing(skeletonPulse, {
@@ -323,215 +302,14 @@ export default function StatistiquesScreen({
       ]),
     );
     pulse.start();
-    return () => {
-      pulse.stop();
-    };
+    return () => pulse.stop();
   }, [isLoading, skeletonPulse]);
-
-  const { realRdvByDay, realContratsByDay } = useMemo(() => {
-    const rdvMap = new Map<string, number>();
-    const contratsMap = new Map<string, number>();
-    const immeubles = workspaceState.data?.immeubles ?? [];
-    for (const imm of immeubles) {
-      for (const porte of imm.portes ?? []) {
-        const st = typeof porte.statut === "string" ? porte.statut : "";
-        const dateKey = porte.derniereVisite?.slice(0, 10);
-        if (!dateKey) continue;
-        if (st === "RENDEZ_VOUS_PRIS") {
-          rdvMap.set(dateKey, (rdvMap.get(dateKey) ?? 0) + 1);
-        }
-        if (st === "CONTRAT_SIGNE") {
-          contratsMap.set(dateKey, (contratsMap.get(dateKey) ?? 0) + 1);
-        }
-      }
-    }
-    return { realRdvByDay: rdvMap, realContratsByDay: contratsMap };
-  }, [workspaceState.data]);
-
-  const timelineBuckets = useMemo(() => {
-    const end = new Date(`${todayKey}T00:00:00.000Z`);
-    const start = new Date(end);
-    start.setDate(start.getDate() - (periodDays - 1));
-
-    const byDay = new Map<string, TimelinePoint>();
-    (timelineData || []).forEach((point) => {
-      const key = point.date.slice(0, 10);
-      byDay.set(key, point);
-    });
-
-    const daily = Array.from({ length: periodDays }).map((_, index) => {
-      const d = new Date(start);
-      d.setDate(start.getDate() + index);
-      const key = d.toISOString().slice(0, 10);
-      const point = byDay.get(key);
-      return {
-        date: key,
-        rdvPris: realRdvByDay.get(key) ?? (point?.rdvPris || 0),
-        portes: point?.portesProspectees || 0,
-        contrats: realContratsByDay.get(key) ?? (point?.contratsSignes || 0),
-      };
-    });
-
-    if (periodDays <= 30) return daily;
-
-    const weekSize = 7;
-    const weeks: typeof daily = [];
-    for (let i = 0; i < daily.length; i += weekSize) {
-      const chunk = daily.slice(i, i + weekSize);
-      const sum = { portes: 0, rdvPris: 0, contrats: 0 };
-      for (const d of chunk) {
-        sum.portes += d.portes;
-        sum.rdvPris += d.rdvPris;
-        sum.contrats += d.contrats;
-      }
-      weeks.push({
-        date: chunk[Math.floor(chunk.length / 2)].date,
-        portes: sum.portes,
-        rdvPris: sum.rdvPris,
-        contrats: sum.contrats,
-      });
-    }
-    return weeks;
-  }, [timelineData, todayKey, periodDays, realRdvByDay, realContratsByDay]);
-
-  const contentWidth = width - (isLandscape ? 120 : 40);
-  const chartWidth = isLandscape ? Math.min(contentWidth - 40, 900) : Math.min(contentWidth, 520);
-  const chartHeight = isLandscape ? 220 : 180;
-  const pieSize = isLandscape ? 180 : 160;
-  const pieRenderSize = Math.min(isLandscape ? contentWidth * 0.25 : contentWidth * 0.4, pieSize);
-  const formatDayLabel = useCallback((dateKey: string, withMonth = false) => {
-    const date = new Date(`${dateKey}T00:00:00`);
-    const day = String(date.getDate()).padStart(2, "0");
-    if (!withMonth) return day;
-    const month = MONTH_NAMES[date.getMonth()] ?? "";
-    return `${day} ${month}`;
-  }, []);
-
-  const pieData = useMemo((): { label: string; value: number; color: string }[] => {
-    const base = [
-      { label: "Contrats", value: filteredKpi.contrats, color: colors.primary },
-      { label: "RDV", value: filteredKpi.rdv, color: colors.success },
-      { label: "Refus", value: filteredKpi.refus, color: colors.warning },
-      { label: "Absents", value: filteredKpi.absents, color: colors.danger },
-    ];
-    const total = base.reduce((sum, item) => sum + item.value, 0);
-    if (total === 0) {
-      return [{ label: "Aucune", value: 1, color: colors.border }];
-    }
-    return base;
-  }, [filteredKpi]);
-
-  const hasPieData = useMemo(
-    () => pieData.some((item) => item.label !== "Aucune"),
-    [pieData],
-  );
-
-  const pieTotal = useMemo(
-    () => (hasPieData ? pieData.reduce((sum, item) => sum + item.value, 0) : 0),
-    [pieData, hasPieData],
-  );
-
-  const piePercentages = useMemo(() => {
-    return pieData.map((item) => ({
-      ...item,
-      percent: pieTotal ? Math.round((item.value / pieTotal) * 100) : 0,
-    }));
-  }, [pieData, pieTotal]);
-
-  const axisLabels = useMemo(() => {
-    if (!timelineBuckets.length) return [];
-    const total = timelineBuckets.length;
-    const dayLetters = ["D", "L", "M", "M", "J", "V", "S"];
-
-    if (periodDays <= 7) {
-      return timelineBuckets.map((item) => {
-        const day = new Date(`${item.date}T00:00:00`).getDay();
-        return dayLetters[day];
-      });
-    }
-
-    if (periodDays <= 30) {
-      return timelineBuckets.map((item, i) => {
-        if (i === 0 || i === total - 1 || i % 5 === 0) {
-          const d = new Date(`${item.date}T00:00:00`);
-          return `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}`;
-        }
-        return "";
-      });
-    }
-
-    return timelineBuckets.map((item) => {
-      const d = new Date(`${item.date}T00:00:00`);
-      return `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}`;
-    });
-  }, [timelineBuckets, periodDays]);
-
-  const chartDomain = useMemo(() => {
-    const maxVal = Math.max(
-      1,
-      timelineBuckets.reduce(
-        (m, item) => Math.max(m, item.portes, item.rdvPris, item.contrats),
-        0,
-      ),
-    );
-    const exponent = Math.floor(Math.log10(maxVal));
-    const base = maxVal / Math.pow(10, exponent);
-    const stepBase = base <= 1 ? 1 : base <= 2 ? 2 : base <= 5 ? 5 : 10;
-    const step = stepBase * Math.pow(10, exponent);
-    const roundedMax = Math.max(step * 2, Math.ceil(maxVal / step) * step);
-    const yStep = Math.max(1, Math.round(roundedMax / 2));
-    return {
-      max: roundedMax,
-      step: yStep,
-      labels: [0, yStep, roundedMax].map((v) => String(v)),
-    };
-  }, [timelineBuckets]);
-
-  const rangeLabel = useMemo(() => {
-    if (!timelineBuckets.length) return "—";
-    const start = formatDayLabel(timelineBuckets[0].date, true);
-    const end = formatDayLabel(
-      timelineBuckets[timelineBuckets.length - 1].date,
-      true,
-    );
-    return `${start} - ${end}`;
-  }, [formatDayLabel, timelineBuckets]);
-
-  const { portesChartData, rdvChartData, contratsChartData } = useMemo(() => {
-    const portes: { value: number; label: string }[] = [];
-    const rdvPoints: { value: number }[] = [];
-    const contratsPoints: { value: number }[] = [];
-
-    for (let index = 0; index < timelineBuckets.length; index += 1) {
-      const item = timelineBuckets[index];
-      const label = axisLabels[index] ?? "";
-      portes.push({ value: item.portes, label });
-      rdvPoints.push({ value: item.rdvPris });
-      contratsPoints.push({ value: item.contrats });
-    }
-
-    return {
-      portesChartData: portes,
-      rdvChartData: rdvPoints,
-      contratsChartData: contratsPoints,
-    };
-  }, [axisLabels, timelineBuckets]);
-
-  const chartSpacing = useMemo(
-    () =>
-      Math.max(
-        isLandscape ? 16 : 28,
-        Math.floor((chartWidth - 80) / Math.max(1, portesChartData.length - 1)),
-      ),
-    [chartWidth, portesChartData.length, isLandscape],
-  );
 
   useEffect(() => {
     if (isLoading) {
       contentOpacity.setValue(0);
       return;
     }
-
     Animated.timing(contentOpacity, {
       toValue: 1,
       duration: 220,
@@ -540,6 +318,183 @@ export default function StatistiquesScreen({
       isInteraction: false,
     }).start();
   }, [contentOpacity, isLoading]);
+
+  const allTimeline: TimelinePoint[] = useMemo(
+    () => timelineData ?? [],
+    [timelineData],
+  );
+
+  const currentRange = useMemo(
+    () => getPeriodRange(period, customRange),
+    [period, customRange],
+  );
+
+  const previousRange = useMemo(
+    () => getPreviousPeriodRange(period, customRange),
+    [period, customRange],
+  );
+
+  const currentPoints = useMemo(
+    () => filterTimelineByPeriod(allTimeline, currentRange),
+    [allTimeline, currentRange],
+  );
+
+  const previousPoints = useMemo(
+    () => filterTimelineByPeriod(allTimeline, previousRange),
+    [allTimeline, previousRange],
+  );
+
+  const totals = useMemo(() => sumTimeline(currentPoints), [currentPoints]);
+  const prevTotals = useMemo(() => sumTimeline(previousPoints), [previousPoints]);
+
+  const immeublesDerivedFromWorkspace = useMemo(() => {
+    const immeubles = workspaceState.data?.immeubles ?? [];
+    const rangeFrom = currentRange.from.toISOString().slice(0, 10);
+    const rangeTo = currentRange.to.toISOString().slice(0, 10);
+    const set = new Set<number>();
+    for (const imm of immeubles) {
+      for (const porte of imm.portes ?? []) {
+        const dv = porte.derniereVisite?.slice(0, 10);
+        if (dv && dv >= rangeFrom && dv <= rangeTo) {
+          set.add(imm.id);
+        }
+      }
+    }
+    return set.size;
+  }, [workspaceState.data, currentRange]);
+
+  const prevImmeublesCount = useMemo(() => {
+    const immeubles = workspaceState.data?.immeubles ?? [];
+    const rangeFrom = previousRange.from.toISOString().slice(0, 10);
+    const rangeTo = previousRange.to.toISOString().slice(0, 10);
+    const set = new Set<number>();
+    for (const imm of immeubles) {
+      for (const porte of imm.portes ?? []) {
+        const dv = porte.derniereVisite?.slice(0, 10);
+        if (dv && dv >= rangeFrom && dv <= rangeTo) {
+          set.add(imm.id);
+        }
+      }
+    }
+    return set.size;
+  }, [workspaceState.data, previousRange]);
+
+  const contentWidth = width - (isLandscape ? 120 : 40);
+  const chartWidth = isLandscape
+    ? Math.min(contentWidth - 40, 900)
+    : Math.min(contentWidth, 520);
+  const chartHeight = isLandscape ? 220 : 180;
+
+  const evolutionPoints = useMemo(() => {
+    const pts = currentPoints.slice(-30);
+    return pts;
+  }, [currentPoints]);
+
+  const { evoPortes, evoRdv, evoContrats } = useMemo(() => {
+    const portesData: { value: number; label: string }[] = [];
+    const rdvData: { value: number }[] = [];
+    const contratsData: { value: number }[] = [];
+    for (const p of evolutionPoints) {
+      const d = new Date(p.date);
+      const label = `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}`;
+      portesData.push({ value: p.portesProspectees ?? 0, label });
+      rdvData.push({ value: p.rdvPris ?? 0 });
+      contratsData.push({ value: p.contratsSignes ?? 0 });
+    }
+    return { evoPortes: portesData, evoRdv: rdvData, evoContrats: contratsData };
+  }, [evolutionPoints]);
+
+  const evoMaxValue = useMemo(() => {
+    const maxVal = Math.max(
+      1,
+      evolutionPoints.reduce(
+        (m, p) =>
+          Math.max(
+            m,
+            p.portesProspectees ?? 0,
+            p.rdvPris ?? 0,
+            p.contratsSignes ?? 0,
+          ),
+        0,
+      ),
+    );
+    return Math.ceil(maxVal * 1.2);
+  }, [evolutionPoints]);
+
+  const evoSpacing = useMemo(
+    () =>
+      Math.max(
+        isLandscape ? 16 : 24,
+        Math.floor((chartWidth - 80) / Math.max(1, evoPortes.length - 1)),
+      ),
+    [chartWidth, evoPortes.length, isLandscape],
+  );
+
+  const statusDistribution = useMemo(
+    () => buildStatusDistribution(totals),
+    [totals],
+  );
+
+  const pieTotal = useMemo(
+    () => statusDistribution.reduce((s, d) => s + d.value, 0),
+    [statusDistribution],
+  );
+
+  const funnelSteps = useMemo(
+    () => buildConversionFunnel(totals),
+    [totals],
+  );
+
+  const dowBuckets = useMemo(
+    () => groupByDayOfWeek(currentPoints),
+    [currentPoints],
+  );
+
+  const barData = useMemo(
+    () =>
+      dowBuckets.map((b) => ({
+        value: b.portes,
+        label: b.label,
+        frontColor: colors.primary,
+      })),
+    [dowBuckets],
+  );
+
+  const barMax = useMemo(
+    () => Math.max(1, ...dowBuckets.map((b) => b.portes)),
+    [dowBuckets],
+  );
+
+  const bestDay = useMemo(
+    () => findBestDay(allTimeline, "portesProspectees"),
+    [allTimeline],
+  );
+
+  const bestWeek = useMemo(
+    () => findBestWeek(allTimeline, "contratsSignes"),
+    [allTimeline],
+  );
+
+  const bestDow = useMemo(() => {
+    const best = dowBuckets.reduce(
+      (best, b) => (b.portes > best.portes ? b : best),
+      dowBuckets[0] ?? { label: "", portes: 0 },
+    );
+    return best.portes > 0 ? best : null;
+  }, [dowBuckets]);
+
+  const maxConversionDay = useMemo(() => {
+    let max = 0;
+    for (const p of currentPoints) {
+      const portes = p.portesProspectees ?? 0;
+      const contrats = p.contratsSignes ?? 0;
+      if (portes > 0) {
+        const rate = (contrats / portes) * 100;
+        if (rate > max) max = rate;
+      }
+    }
+    return max > 0 ? max : null;
+  }, [currentPoints]);
 
   if (isLoading) {
     const skeletonOpacity = skeletonPulse.interpolate({
@@ -567,7 +522,6 @@ export default function StatistiquesScreen({
             </Animated.View>
           ))}
         </View>
-
         {Array.from({ length: 5 }).map((_, index) => (
           <Animated.View
             key={`section-skeleton-${index}`}
@@ -612,305 +566,388 @@ export default function StatistiquesScreen({
           />
         </View>
       ) : (
-      <Animated.View style={{ opacity: contentOpacity }}>
-      <Card variant="elevated" padding="lg" style={styles.overviewCardGap}>
-        <View style={styles.overviewHeader}>
-          <View>
-            <Text style={styles.overviewTitle}>Vue d'ensemble</Text>
-            <Text style={styles.overviewSubtitle}>{rangeLabel}</Text>
+        <Animated.View style={[styles.animatedContent, { opacity: contentOpacity }]}>
+
+          {isManager ? (
+            <View style={styles.teamToggleRow}>
+              <Chip
+                label="Mes stats"
+                selected={teamView === "mine"}
+                tone="neutral"
+                onPress={() => setTeamView("mine")}
+              />
+              <Chip
+                label="Équipe"
+                icon="users"
+                selected={teamView === "team"}
+                tone="neutral"
+                onPress={() => {
+                  setTeamView("team");
+                  toast.show({ message: "Vue équipe bientôt disponible", variant: "info" });
+                }}
+              />
+            </View>
+          ) : null}
+
+          <View style={styles.periodSelectorWrap}>
+            <PeriodSelector
+              value={period}
+              onChange={(p) => {
+                setPeriod(p);
+                setChartKey((k) => k + 1);
+              }}
+              onRequestCustom={() => {
+                toast.show({ message: "Sélection personnalisée bientôt", variant: "info" });
+              }}
+            />
+            <Text style={styles.rangeLabel}>{formatRange(currentRange)}</Text>
           </View>
-          <View style={styles.segmentedControl}>
-            {PERIOD_OPTIONS.map((opt) => (
-              <Pressable
-                key={opt.days}
-                style={[styles.segmentBtn, periodDays === opt.days && styles.segmentBtnActive]}
-                onPress={() => { setPeriodDays(opt.days); setChartKey((k) => k + 1); }}
-              >
-                <Text style={[styles.segmentText, periodDays === opt.days && styles.segmentTextActive]}>
-                  {opt.label}
-                </Text>
-              </Pressable>
-            ))}
+
+          <View style={styles.kpiGrid}>
+            <StatTile
+              icon="home"
+              label="Immeubles"
+              value={immeublesDerivedFromWorkspace}
+              emphasis="default"
+              hint={computeDelta(immeublesDerivedFromWorkspace, prevImmeublesCount).formatted}
+              style={styles.kpiTile}
+            />
+            <StatTile
+              icon="grid"
+              label="Portes"
+              value={totals.portesProspectees}
+              emphasis="default"
+              hint={computeDelta(totals.portesProspectees, prevTotals.portesProspectees).formatted}
+              style={styles.kpiTile}
+            />
+            <StatTile
+              icon="calendar"
+              label="RDV pris"
+              value={totals.rdvPris}
+              emphasis="default"
+              hint={computeDelta(totals.rdvPris, prevTotals.rdvPris).formatted}
+              style={styles.kpiTile}
+            />
+            <StatTile
+              icon="award"
+              label="Contrats"
+              value={totals.contratsSignes}
+              emphasis="default"
+              iconTone="success"
+              hint={computeDelta(totals.contratsSignes, prevTotals.contratsSignes).formatted}
+              style={styles.kpiTile}
+            />
+            <StatTile
+              icon="x-circle"
+              label="Refus"
+              value={totals.refus}
+              emphasis="default"
+              iconTone="danger"
+              hint={computeDelta(totals.refus, prevTotals.refus).formatted}
+              style={styles.kpiTile}
+            />
+            <StatTile
+              icon="user-x"
+              label="Absents"
+              value={totals.absents}
+              emphasis="default"
+              iconTone="warning"
+              hint={computeDelta(totals.absents, prevTotals.absents).formatted}
+              style={styles.kpiTile}
+            />
           </View>
-        </View>
 
-        <View style={styles.kpiGrid}>
-          <StatTile
-            icon="home"
-            label="Immeubles"
-            value={isLoading ? "--" : filteredKpi.immeubles}
-            emphasis="default"
-            hint="Prospectés"
-            style={styles.kpiTile}
-          />
-          <StatTile
-            icon="grid"
-            label="Portes"
-            value={isLoading ? "--" : filteredKpi.portes}
-            emphasis="default"
-            hint="Prospectées"
-            style={styles.kpiTile}
-          />
-          <StatTile
-            icon="calendar"
-            label="RDV pris"
-            value={isLoading ? "--" : filteredKpi.rdv}
-            emphasis="default"
-            hint="Rendez-vous"
-            style={styles.kpiTile}
-          />
-          <StatTile
-            icon="award"
-            label="Contrats"
-            value={isLoading ? "--" : filteredKpi.contrats}
-            emphasis="default"
-            iconTone="success"
-            hint="Signés"
-            style={styles.kpiTile}
-          />
-          <StatTile
-            icon="x-circle"
-            label="Refus"
-            value={isLoading ? "--" : filteredKpi.refus}
-            emphasis="default"
-            iconTone="danger"
-            hint="Interactions"
-            style={styles.kpiTile}
-          />
-          <StatTile
-            icon="user-x"
-            label="Absents"
-            value={isLoading ? "--" : filteredKpi.absents}
-            emphasis="default"
-            iconTone="warning"
-            hint="Non rencontrés"
-            style={styles.kpiTile}
-          />
-        </View>
-
-        <View style={styles.overviewDivider} />
-
-        <View style={styles.chartSection}>
-          <View style={styles.chartHeaderRow}>
-            <Text style={styles.chartHeaderTitle}>Activité / jour</Text>
+          <Text style={styles.sectionTitle}>Évolution</Text>
+          <Card variant="elevated" padding="md" style={styles.sectionCardGap}>
             <View style={styles.chartLegendRow}>
               <View style={styles.chartLegendItem}>
                 <View style={[styles.chartLegendDot, { backgroundColor: colors.primary }]} />
                 <Text style={styles.chartLegendText}>Portes</Text>
               </View>
               <View style={styles.chartLegendItem}>
-                <View style={[styles.chartLegendDot, { backgroundColor: colors.success }]} />
+                <View style={[styles.chartLegendDot, { backgroundColor: colors.info }]} />
                 <Text style={styles.chartLegendText}>RDV</Text>
               </View>
               <View style={styles.chartLegendItem}>
-                <View style={[styles.chartLegendDot, { backgroundColor: colors.warning }]} />
+                <View style={[styles.chartLegendDot, { backgroundColor: colors.success }]} />
                 <Text style={styles.chartLegendText}>Contrats</Text>
               </View>
             </View>
-          </View>
-          <View style={styles.giftedChartWrap}>
-            <LineChart
-              key={`activity-chart-${chartKey}`}
-              data={portesChartData}
-              data2={rdvChartData}
-              data3={contratsChartData}
-              height={chartHeight}
-              width={chartWidth}
-              curved
-              thickness={2.5}
-              color={colors.primary}
-              color2={colors.success}
-              color3={colors.warning}
-              areaChart
-              startFillColor="rgba(0, 91, 255, 0.12)"
-              endFillColor="rgba(0, 91, 255, 0)"
-              startOpacity={0.15}
-              endOpacity={0}
-              startFillColor2="rgba(16, 185, 129, 0.12)"
-              endFillColor2="rgba(16, 185, 129, 0)"
-              startOpacity2={0.15}
-              endOpacity2={0}
-              startFillColor3="rgba(245, 158, 11, 0.12)"
-              endFillColor3="rgba(245, 158, 11, 0)"
-              startOpacity3={0.15}
-              endOpacity3={0}
-              maxValue={chartDomain.max}
-              noOfSections={2}
-              stepValue={chartDomain.step}
-              yAxisLabelWidth={32}
-              yAxisTextStyle={styles.yAxisLabel}
-              yAxisColor="transparent"
-              yAxisThickness={0}
-              xAxisColor={colors.border}
-              xAxisThickness={1}
-              hideRules
-              rulesColor="transparent"
-              yAxisLabelTexts={chartDomain.labels}
-              xAxisLabelTextStyle={styles.axisLabel}
-              showYAxisIndices={false}
-              isAnimated
-              animateOnDataChange
-              animationDuration={350}
-              spacing={chartSpacing}
-              initialSpacing={12}
-              endSpacing={12}
-              dataPointsColor1={colors.primary}
-              dataPointsColor2={colors.success}
-              dataPointsColor3={colors.warning}
-              dataPointsRadius1={3}
-              dataPointsRadius2={3}
-              dataPointsRadius3={3}
-            />
-          </View>
-        </View>
-
-        <View style={styles.overviewDivider} />
-
-        <View style={styles.pieSection}>
-          <Text style={styles.pieSectionTitle}>Répartition</Text>
-          <View style={styles.pieRow}>
-            <View style={styles.pieChartWrap}>
-              <View
-                style={[
-                  styles.chartSurface,
-                  { width: pieRenderSize, height: pieRenderSize },
-                ]}
-              >
-                <PolarChart
-                  data={pieData}
-                  labelKey="label"
-                  valueKey="value"
-                  colorKey="color"
-                  containerStyle={{ width: pieRenderSize, height: pieRenderSize }}
-                  canvasStyle={{ width: pieRenderSize, height: pieRenderSize }}
-                >
-                  <Pie.Chart innerRadius={pieRenderSize * 0.36} size={pieRenderSize} />
-                </PolarChart>
+            {evoPortes.length === 0 ? (
+              <View style={styles.noDataBox}>
+                <Text style={styles.noDataText}>Pas assez de données</Text>
               </View>
-              {hasPieData && (
-                <View style={styles.pieCenterLabel}>
-                  <Text style={styles.pieCenterValue}>{pieTotal}</Text>
-                  <Text style={styles.pieCenterHint}>portes</Text>
-                </View>
-              )}
+            ) : (
+              <View style={styles.giftedChartWrap}>
+                <LineChart
+                  key={`evo-chart-${chartKey}`}
+                  data={evoPortes}
+                  data2={evoRdv}
+                  data3={evoContrats}
+                  height={chartHeight}
+                  width={chartWidth}
+                  curved
+                  thickness={2.5}
+                  color1={colors.primary}
+                  color2={colors.info}
+                  color3={colors.success}
+                  areaChart
+                  startFillColor={colors.primaryAlpha12}
+                  endFillColor={colors.primaryAlpha0}
+                  startOpacity={0.15}
+                  endOpacity={0}
+                  startFillColor2={colors.infoSoft}
+                  endFillColor2={colors.infoSoft}
+                  startOpacity2={0.15}
+                  endOpacity2={0}
+                  startFillColor3={colors.successSoft}
+                  endFillColor3={colors.successSoft}
+                  startOpacity3={0.15}
+                  endOpacity3={0}
+                  maxValue={evoMaxValue}
+                  noOfSections={3}
+                  yAxisLabelWidth={32}
+                  yAxisTextStyle={styles.yAxisLabel}
+                  yAxisColor="transparent"
+                  yAxisThickness={0}
+                  xAxisColor={colors.border}
+                  xAxisThickness={1}
+                  hideRules
+                  rulesColor="transparent"
+                  xAxisLabelTextStyle={styles.axisLabel}
+                  showYAxisIndices={false}
+                  isAnimated
+                  animateOnDataChange
+                  animationDuration={350}
+                  spacing={evoSpacing}
+                  initialSpacing={12}
+                  endSpacing={12}
+                  dataPointsColor1={colors.primary}
+                  dataPointsColor2={colors.info}
+                  dataPointsColor3={colors.success}
+                  dataPointsRadius1={3}
+                  dataPointsRadius2={3}
+                  dataPointsRadius3={3}
+                />
+              </View>
+            )}
+          </Card>
+
+          <Text style={styles.sectionTitle}>Répartition statuts</Text>
+          <Card variant="elevated" padding="md" style={styles.sectionCardGap}>
+            {statusDistribution.length === 0 ? (
+              <View style={styles.noDataBox}>
+                <Text style={styles.noDataText}>Aucune donnée sur cette période</Text>
+              </View>
+            ) : (
+              <View style={styles.distRow}>
+                {statusDistribution.map((item) => {
+                  const pct = pieTotal > 0 ? Math.round((item.value / pieTotal) * 100) : 0;
+                  const color = TONE_COLORS[item.toneKey] ?? colors.textSubtle;
+                  return (
+                    <View key={item.label} style={styles.distItem}>
+                      <View style={styles.distBarTrack}>
+                        <View
+                          style={[
+                            styles.distBarFill,
+                            { width: `${pct}%`, backgroundColor: color },
+                          ]}
+                        />
+                      </View>
+                      <View style={styles.distLabelRow}>
+                        <View style={[styles.distDot, { backgroundColor: color }]} />
+                        <Text style={styles.distLabel} numberOfLines={1}>
+                          {item.label}
+                        </Text>
+                        <Text style={styles.distValue}>{item.value}</Text>
+                        <Text style={styles.distPct}>{pct}%</Text>
+                      </View>
+                    </View>
+                  );
+                })}
+              </View>
+            )}
+          </Card>
+
+          <Text style={styles.sectionTitle}>Funnel de conversion</Text>
+          <Card variant="outlined" padding="md" style={styles.sectionCardGap}>
+            <Funnel steps={funnelSteps} />
+          </Card>
+
+          <Text style={styles.sectionTitle}>Activité par jour</Text>
+          <Card variant="elevated" padding="md" style={styles.sectionCardGap}>
+            {dowBuckets.every((b) => b.portes === 0) ? (
+              <View style={styles.noDataBox}>
+                <Text style={styles.noDataText}>Aucune activité sur cette période</Text>
+              </View>
+            ) : (
+              <View style={styles.giftedChartWrap}>
+                <BarChart
+                  key={`bar-chart-${chartKey}`}
+                  data={barData}
+                  height={chartHeight}
+                  width={chartWidth}
+                  maxValue={Math.ceil(barMax * 1.2)}
+                  noOfSections={3}
+                  barWidth={Math.max(18, Math.floor((chartWidth - 80) / 7 - 8))}
+                  spacing={Math.floor((chartWidth - 80) / 7 - Math.max(18, Math.floor((chartWidth - 80) / 7 - 8)))}
+                  initialSpacing={12}
+                  endSpacing={12}
+                  frontColor={colors.primary}
+                  yAxisTextStyle={styles.yAxisLabel}
+                  yAxisColor="transparent"
+                  yAxisThickness={0}
+                  xAxisColor={colors.border}
+                  xAxisThickness={1}
+                  hideRules
+                  xAxisLabelTextStyle={styles.axisLabel}
+                  isAnimated
+                  animationDuration={350}
+                  roundedTop
+                />
+              </View>
+            )}
+          </Card>
+
+          <Text style={styles.sectionTitle}>Records</Text>
+          <View style={styles.recordsGrid}>
+            {bestDay ? (
+              <Card variant="outlined" padding="md" style={styles.recordCard}>
+                <IconBadge icon="trending-up" tone="primary" size="md" />
+                <Text style={styles.recordLabel}>Meilleur jour</Text>
+                <Text style={styles.recordValue}>{bestDay.value} portes</Text>
+                <Text style={styles.recordSub}>le {bestDay.label}</Text>
+              </Card>
+            ) : null}
+
+            {bestWeek ? (
+              <Card variant="outlined" padding="md" style={styles.recordCard}>
+                <IconBadge icon="calendar" tone="success" size="md" />
+                <Text style={styles.recordLabel}>Meilleure semaine</Text>
+                <Text style={styles.recordValue}>{bestWeek.value} contrats</Text>
+                <Text style={styles.recordSub}>{bestWeek.label}</Text>
+              </Card>
+            ) : null}
+
+            {maxConversionDay !== null ? (
+              <Card variant="outlined" padding="md" style={styles.recordCard}>
+                <IconBadge icon="target" tone="warning" size="md" />
+                <Text style={styles.recordLabel}>Meilleur taux</Text>
+                <Text style={styles.recordValue}>{Math.round(maxConversionDay)}%</Text>
+                <Text style={styles.recordSub}>conversion max/jour</Text>
+              </Card>
+            ) : null}
+
+            {bestDow ? (
+              <Card variant="outlined" padding="md" style={styles.recordCard}>
+                <IconBadge icon="star" tone="info" size="md" />
+                <Text style={styles.recordLabel}>Meilleur jour</Text>
+                <Text style={styles.recordValue}>{bestDow.label}</Text>
+                <Text style={styles.recordSub}>{bestDow.portes} portes moy.</Text>
+              </Card>
+            ) : null}
+          </View>
+
+          <Card variant="elevated" padding="md" style={[styles.sectionCardGap, styles.sectionCardTopSpacing]}>
+            <View style={styles.sectionHeaderRow}>
+              <View>
+                <Text style={styles.sectionTitleInCard}>Rendez-vous</Text>
+                <Text style={styles.sectionSubtitle}>{weekLabel}</Text>
+              </View>
+              <View style={styles.weekNav}>
+                <Pressable onPress={() => setWeekOffset((w) => w - 1)} style={styles.weekNavBtn}>
+                  <Feather name="chevron-left" size={18} color={colors.primary} />
+                </Pressable>
+                {weekOffset !== 0 && (
+                  <Pressable onPress={() => { setWeekOffset(0); setSelectedDay(todayKey); }} style={styles.weekNavBtn}>
+                    <Feather name="rotate-ccw" size={14} color={colors.primary} />
+                  </Pressable>
+                )}
+                <Pressable onPress={() => setWeekOffset((w) => w + 1)} style={styles.weekNavBtn}>
+                  <Feather name="chevron-right" size={18} color={colors.primary} />
+                </Pressable>
+              </View>
             </View>
-            {hasPieData && (
-              <View style={styles.pieLegendCol}>
-                {piePercentages.map((item) => (
-                  <View key={item.label} style={styles.pieLegendRow}>
-                    <View style={[styles.legendDot, { backgroundColor: item.color }]} />
-                    <Text style={styles.pieLegendLabel}>{item.label}</Text>
-                    <Text style={styles.pieLegendValue}>{item.value}</Text>
-                    <Text style={styles.pieLegendPercent}>{item.percent}%</Text>
-                  </View>
+
+            <View style={styles.dayPillRow}>
+              {weekDays.map((day) => {
+                const isToday = day === todayKey;
+                const isSelected = day === selectedDay;
+                const hasRdv = rdvByDay.has(day);
+                const d = new Date(`${day}T12:00:00`);
+                return (
+                  <Pressable
+                    key={day}
+                    onPress={() => setSelectedDay(day)}
+                    style={[
+                      styles.dayPill,
+                      isSelected && styles.dayPillActive,
+                      isToday && !isSelected && styles.dayPillToday,
+                    ]}
+                  >
+                    <Text style={[styles.dayPillLabel, isSelected && styles.dayPillLabelActive]}>
+                      {DAY_LABELS_SHORT[d.getDay()]}
+                    </Text>
+                    <Text style={[styles.dayPillDate, isSelected && styles.dayPillDateActive]}>
+                      {String(d.getDate()).padStart(2, "0")}
+                    </Text>
+                    {hasRdv ? (
+                      <View style={[styles.dayPillDot, isSelected && styles.dayPillDotActive]} />
+                    ) : (
+                      <View style={styles.dayPillDotSpacer} />
+                    )}
+                  </Pressable>
+                );
+              })}
+            </View>
+
+            {selectedDayRdvs.length === 0 ? (
+              <View style={styles.rdvEmpty}>
+                <Feather name="calendar" size={28} color={colors.borderStrong} />
+                <Text style={styles.rdvEmptyText}>Aucun rendez-vous</Text>
+              </View>
+            ) : (
+              <View style={styles.rdvList}>
+                {selectedDayRdvs.map((item) => (
+                  <PressableCard
+                    key={`${item.porteId}-${item.rdvDate}`}
+                    variant="outlined"
+                    padding="md"
+                    style={styles.rdvCardRow}
+                    onPress={() => onNavigateToImmeuble?.(item.immeubleId)}
+                  >
+                    <View style={styles.rdvTimeCol}>
+                      <Chip
+                        label={item.rdvTime || "--:--"}
+                        icon="clock"
+                        tone="primary"
+                      />
+                    </View>
+                    <View style={styles.rdvInfoCol}>
+                      <Text style={styles.rdvPorteLabel} numberOfLines={1}>
+                        Porte {item.numero}{item.nomPersonnalise ? ` · ${item.nomPersonnalise}` : ""}
+                      </Text>
+                      <Text style={styles.rdvEtageLabel}>
+                        {item.etage === 0 ? "RDC" : `${item.etage}${item.etage === 1 ? "er" : "ème"} étage`}
+                      </Text>
+                      <View style={styles.rdvAddressRow}>
+                        <Feather name="map-pin" size={11} color={colors.textSubtle} />
+                        <Text style={styles.rdvAddressText} numberOfLines={1}>{item.adresse}</Text>
+                      </View>
+                      {item.commentaire ? (
+                        <Text style={styles.rdvComment} numberOfLines={2}>{item.commentaire}</Text>
+                      ) : null}
+                    </View>
+                    <View style={styles.rdvChevron}>
+                      <Feather name="chevron-right" size={16} color={colors.borderStrong} />
+                    </View>
+                  </PressableCard>
                 ))}
               </View>
             )}
-          </View>
-        </View>
-      </Card>
+          </Card>
 
-      <Card variant="elevated" padding="md" style={[styles.sectionCardGap, styles.sectionCardTopSpacing]}>
-        <View style={styles.sectionHeaderRow}>
-          <View>
-            <Text style={styles.sectionTitle}>Rendez-vous</Text>
-            <Text style={styles.sectionSubtitle}>{weekLabel}</Text>
-          </View>
-          <View style={styles.weekNav}>
-            <Pressable onPress={() => setWeekOffset((w) => w - 1)} style={styles.weekNavBtn}>
-              <Feather name="chevron-left" size={18} color={colors.primary} />
-            </Pressable>
-            {weekOffset !== 0 && (
-              <Pressable onPress={() => { setWeekOffset(0); setSelectedDay(todayKey); }} style={styles.weekNavBtn}>
-                <Feather name="rotate-ccw" size={14} color={colors.primary} />
-              </Pressable>
-            )}
-            <Pressable onPress={() => setWeekOffset((w) => w + 1)} style={styles.weekNavBtn}>
-              <Feather name="chevron-right" size={18} color={colors.primary} />
-            </Pressable>
-          </View>
-        </View>
-
-        <View style={styles.dayPillRow}>
-          {weekDays.map((day) => {
-            const isToday = day === todayKey;
-            const isSelected = day === selectedDay;
-            const hasRdv = rdvByDay.has(day);
-            const d = new Date(`${day}T12:00:00`);
-            return (
-              <Pressable
-                key={day}
-                onPress={() => setSelectedDay(day)}
-                style={[
-                  styles.dayPill,
-                  isSelected && styles.dayPillActive,
-                  isToday && !isSelected && styles.dayPillToday,
-                ]}
-              >
-                <Text style={[styles.dayPillLabel, isSelected && styles.dayPillLabelActive]}>
-                  {DAY_LABELS_SHORT[d.getDay()]}
-                </Text>
-                <Text style={[styles.dayPillDate, isSelected && styles.dayPillDateActive]}>
-                  {String(d.getDate()).padStart(2, "0")}
-                </Text>
-                {hasRdv ? (
-                  <View style={[styles.dayPillDot, isSelected && styles.dayPillDotActive]} />
-                ) : (
-                  <View style={styles.dayPillDotSpacer} />
-                )}
-              </Pressable>
-            );
-          })}
-        </View>
-
-        {selectedDayRdvs.length === 0 ? (
-          <View style={styles.rdvEmpty}>
-            <Feather name="calendar" size={28} color={colors.borderStrong} />
-            <Text style={styles.rdvEmptyText}>Aucun rendez-vous</Text>
-          </View>
-        ) : (
-          <View style={styles.rdvList}>
-            {selectedDayRdvs.map((item) => (
-              <PressableCard
-                key={`${item.porteId}-${item.rdvDate}`}
-                variant="outlined"
-                padding="md"
-                style={styles.rdvCardRow}
-                onPress={() => onNavigateToImmeuble?.(item.immeubleId)}
-              >
-                <View style={styles.rdvTimeCol}>
-                  <Chip
-                    label={item.rdvTime || "--:--"}
-                    icon="clock"
-                    tone="primary"
-                  />
-                </View>
-                <View style={styles.rdvInfoCol}>
-                  <Text style={styles.rdvPorteLabel} numberOfLines={1}>
-                    Porte {item.numero}{item.nomPersonnalise ? ` · ${item.nomPersonnalise}` : ""}
-                  </Text>
-                  <Text style={styles.rdvEtageLabel}>
-                    {item.etage === 0 ? "RDC" : `${item.etage}${item.etage === 1 ? "er" : "ème"} étage`}
-                  </Text>
-                  <View style={styles.rdvAddressRow}>
-                    <Feather name="map-pin" size={11} color={colors.textSubtle} />
-                    <Text style={styles.rdvAddressText} numberOfLines={1}>{item.adresse}</Text>
-                  </View>
-                  {item.commentaire ? (
-                    <Text style={styles.rdvComment} numberOfLines={2}>{item.commentaire}</Text>
-                  ) : null}
-                </View>
-                <View style={styles.rdvChevron}>
-                  <Feather name="chevron-right" size={16} color={colors.borderStrong} />
-                </View>
-              </PressableCard>
-            ))}
-          </View>
-        )}
-      </Card>
-
-
-      </Animated.View>
+        </Animated.View>
       )}
     </ScrollView>
   );
@@ -925,17 +962,21 @@ const styles = StyleSheet.create({
     padding: 20,
     gap: 16,
   },
-  headerBlock: {
-    gap: 6,
+  animatedContent: {
+    gap: 12,
   },
-  title: {
-    fontSize: 24,
-    fontWeight: "700",
-    color: colors.text,
+  teamToggleRow: {
+    flexDirection: "row",
+    gap: spacing.sm,
+    marginBottom: spacing.xs,
   },
-  subtitle: {
-    fontSize: 14,
+  periodSelectorWrap: {
+    gap: spacing.xs,
+  },
+  rangeLabel: {
+    fontSize: fontSize.xs,
     color: colors.textMuted,
+    paddingHorizontal: spacing.xs,
   },
   kpiGrid: {
     flexDirection: "row",
@@ -951,58 +992,34 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     flexShrink: 0,
     flexBasis: 140,
-    borderRadius: 16,
+    borderRadius: radius.lg,
     padding: 14,
     minHeight: 110,
     backgroundColor: colors.background,
     borderWidth: 1,
     borderColor: colors.surfaceMuted,
   },
-  kpiHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
+  sectionTitle: {
+    fontSize: fontSize.lg,
+    fontWeight: fontWeight.semibold,
+    color: colors.text,
+    marginTop: spacing.xs,
   },
-  kpiIcon: {
-    width: 34,
-    height: 34,
-    borderRadius: 12,
-    backgroundColor: colors.primarySoft,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  kpiValue: {
-    marginTop: 16,
-    fontSize: 28,
-    fontWeight: "700",
+  sectionTitleInCard: {
+    fontSize: fontSize.md,
+    fontWeight: fontWeight.bold,
     color: colors.text,
   },
-  kpiLabel: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: colors.text,
-  },
-  kpiHint: {
-    marginTop: 4,
-    fontSize: 12,
-    color: colors.textMuted,
-  },
-  sectionSkeletonCard: {
-    borderRadius: 20,
-    backgroundColor: colors.surface,
-    padding: 16,
-    shadowColor: colors.text,
-    shadowOpacity: 0.06,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 6 },
-    elevation: 3,
-    gap: 16,
+  sectionSubtitle: {
+    fontSize: fontSize.xs,
+    color: colors.textSubtle,
+    marginTop: 2,
   },
   sectionCardGap: {
-    gap: 16,
+    gap: 12,
   },
   sectionCardTopSpacing: {
-    marginTop: 10,
+    marginTop: spacing.xs,
   },
   sectionHeaderRow: {
     flexDirection: "row",
@@ -1010,247 +1027,10 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     gap: 12,
   },
-  sectionHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-  },
-  sectionIcon: {
-    width: 38,
-    height: 38,
-    borderRadius: 14,
-    backgroundColor: colors.primarySoft,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: colors.text,
-  },
-  sectionSubtitle: {
-    fontSize: 12,
-    color: colors.textSubtle,
-    marginTop: 2,
-  },
-  sectionRow: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  sectionMetric: {
-    flex: 1,
-    gap: 4,
-  },
-  sectionValue: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: colors.text,
-  },
-  sectionLabel: {
-    fontSize: 12,
-    color: colors.textMuted,
-  },
-  sectionDivider: {
-    width: 1,
-    height: 32,
-    backgroundColor: colors.border,
-    marginHorizontal: 12,
-  },
-
-  chartSurface: {
-    alignSelf: "center",
-    backgroundColor: colors.surface,
-    overflow: "hidden",
-  },
-  yAxisLabel: {
-    fontSize: 11,
-    color: colors.textSubtle,
-  },
-  axisLabel: {
-    fontSize: 10,
-    color: colors.textSubtle,
-  },
-  giftedChartWrap: {
-    paddingTop: 8,
-  },
-
-  pieSection: {
-    gap: 10,
-  },
-  pieSectionTitle: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: colors.text,
-  },
-  pieRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 20,
-  },
-  pieChartWrap: {
-    position: "relative",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  pieCenterLabel: {
-    position: "absolute",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  pieCenterValue: {
-    fontSize: 22,
-    fontWeight: "700",
-    color: colors.text,
-  },
-  pieCenterHint: {
-    fontSize: 11,
-    color: colors.textSubtle,
-    marginTop: -2,
-  },
-  pieLegendCol: {
-    flex: 1,
-    gap: 10,
-  },
-  pieLegendRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  legendDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-  },
-  pieLegendLabel: {
-    flex: 1,
-    fontSize: 13,
-    color: colors.textMuted,
-  },
-  pieLegendValue: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: colors.text,
-    minWidth: 24,
-    textAlign: "right",
-  },
-  pieLegendPercent: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: colors.textSubtle,
-    minWidth: 36,
-    textAlign: "right",
-  },
-  overviewCardGap: {
-    gap: 20,
-  },
-  overviewHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 12,
-  },
-  overviewTitle: {
-    fontSize: 17,
-    fontWeight: "700",
-    color: colors.text,
-  },
-  overviewSubtitle: {
-    fontSize: 12,
-    color: colors.textSubtle,
-    marginTop: 2,
-  },
-  segmentedControl: {
-    flexDirection: "row",
-    backgroundColor: colors.surfaceMuted,
-    borderRadius: 12,
-    padding: 3,
-    gap: 2,
-  },
-  segmentBtn: {
-    paddingHorizontal: 14,
-    paddingVertical: 7,
-    borderRadius: 10,
-  },
-  segmentBtnActive: {
-    backgroundColor: colors.surface,
-    shadowColor: colors.text,
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 1 },
-    elevation: 2,
-  },
-  segmentText: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: colors.textSubtle,
-  },
-  segmentTextActive: {
-    color: colors.primary,
-  },
-  overviewDivider: {
-    height: 1,
-    backgroundColor: colors.surfaceMuted,
-  },
-  chartSection: {
-    gap: 12,
-  },
-  chartHeaderRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 12,
-  },
-  chartHeaderTitle: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: colors.text,
-  },
-  loadingText: {
-    fontSize: 12,
-    color: colors.textSubtle,
-    textAlign: "center",
-  },
-  kpiSkeletonTop: {
-    width: "52%",
-    height: 14,
-    borderRadius: 7,
-    backgroundColor: colors.border,
-  },
-  kpiSkeletonValue: {
-    marginTop: 16,
-    width: "64%",
-    height: 28,
-    borderRadius: 12,
-    backgroundColor: colors.border,
-  },
-  kpiSkeletonHint: {
-    marginTop: 10,
-    width: "58%",
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: colors.border,
-  },
-  sectionSkeletonTitle: {
-    width: "40%",
-    height: 16,
-    borderRadius: 8,
-    backgroundColor: colors.border,
-  },
-  sectionSkeletonSubtitle: {
-    width: "58%",
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: colors.border,
-  },
-  sectionSkeletonChart: {
-    marginTop: 8,
-    height: 170,
-    borderRadius: 14,
-    backgroundColor: colors.border,
-  },
   chartLegendRow: {
     flexDirection: "row",
     gap: 12,
+    flexWrap: "wrap",
   },
   chartLegendItem: {
     flexDirection: "row",
@@ -1263,8 +1043,90 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   chartLegendText: {
-    fontSize: 11,
-    fontWeight: "600",
+    fontSize: fontSize.xs,
+    fontWeight: fontWeight.semibold,
+    color: colors.textSubtle,
+  },
+  giftedChartWrap: {
+    paddingTop: 8,
+  },
+  noDataBox: {
+    height: 140,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  noDataText: {
+    fontSize: fontSize.sm,
+    color: colors.textSubtle,
+  },
+  distRow: {
+    gap: spacing.sm,
+  },
+  distItem: {
+    gap: 4,
+  },
+  distBarTrack: {
+    height: 8,
+    backgroundColor: colors.surfaceMuted,
+    borderRadius: radius.pill,
+    overflow: "hidden",
+  },
+  distBarFill: {
+    height: "100%",
+    borderRadius: radius.pill,
+  },
+  distLabelRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.xs,
+  },
+  distDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  distLabel: {
+    flex: 1,
+    fontSize: fontSize.sm,
+    color: colors.textMuted,
+  },
+  distValue: {
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.bold,
+    color: colors.text,
+    minWidth: 24,
+    textAlign: "right",
+  },
+  distPct: {
+    fontSize: fontSize.xs,
+    fontWeight: fontWeight.semibold,
+    color: colors.textSubtle,
+    minWidth: 36,
+    textAlign: "right",
+  },
+  recordsGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 12,
+  },
+  recordCard: {
+    flexGrow: 1,
+    flexShrink: 0,
+    flexBasis: 140,
+    gap: spacing.xs,
+  },
+  recordLabel: {
+    fontSize: fontSize.xs,
+    color: colors.textMuted,
+    marginTop: spacing.xs,
+  },
+  recordValue: {
+    fontSize: fontSize.lg,
+    fontWeight: fontWeight.bold,
+    color: colors.text,
+  },
+  recordSub: {
+    fontSize: fontSize.xs,
     color: colors.textSubtle,
   },
   weekNav: {
@@ -1275,7 +1137,7 @@ const styles = StyleSheet.create({
   weekNavBtn: {
     width: 32,
     height: 32,
-    borderRadius: 10,
+    borderRadius: radius.sm + 2,
     backgroundColor: colors.primarySoft,
     alignItems: "center",
     justifyContent: "center",
@@ -1289,7 +1151,7 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     paddingVertical: 8,
-    borderRadius: 12,
+    borderRadius: radius.md,
     backgroundColor: colors.background,
     gap: 2,
   },
@@ -1303,7 +1165,7 @@ const styles = StyleSheet.create({
   },
   dayPillLabel: {
     fontSize: 10,
-    fontWeight: "600",
+    fontWeight: fontWeight.semibold,
     color: colors.textSubtle,
     textTransform: "uppercase",
   },
@@ -1312,7 +1174,7 @@ const styles = StyleSheet.create({
   },
   dayPillDate: {
     fontSize: 16,
-    fontWeight: "700",
+    fontWeight: fontWeight.bold,
     color: colors.text,
   },
   dayPillDateActive: {
@@ -1338,7 +1200,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   rdvEmptyText: {
-    fontSize: 13,
+    fontSize: fontSize.sm,
     color: colors.textSubtle,
   },
   rdvList: {
@@ -1358,12 +1220,12 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   rdvPorteLabel: {
-    fontSize: 14,
-    fontWeight: "700",
+    fontSize: fontSize.md,
+    fontWeight: fontWeight.bold,
     color: colors.text,
   },
   rdvEtageLabel: {
-    fontSize: 12,
+    fontSize: fontSize.sm,
     color: colors.textMuted,
   },
   rdvAddressRow: {
@@ -1373,12 +1235,12 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   rdvAddressText: {
-    fontSize: 11,
+    fontSize: fontSize.xs,
     color: colors.textSubtle,
     flex: 1,
   },
   rdvComment: {
-    fontSize: 11,
+    fontSize: fontSize.xs,
     color: colors.textMuted,
     fontStyle: "italic",
     marginTop: 4,
@@ -1387,5 +1249,62 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     width: 24,
+  },
+  yAxisLabel: {
+    fontSize: 11,
+    color: colors.textSubtle,
+  },
+  axisLabel: {
+    fontSize: 10,
+    color: colors.textSubtle,
+  },
+  sectionSkeletonCard: {
+    borderRadius: radius.xl,
+    backgroundColor: colors.surface,
+    padding: 16,
+    shadowColor: colors.text,
+    shadowOpacity: 0.06,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 3,
+    gap: 16,
+  },
+  sectionSkeletonTitle: {
+    width: "40%",
+    height: 16,
+    borderRadius: radius.sm,
+    backgroundColor: colors.border,
+  },
+  sectionSkeletonSubtitle: {
+    width: "58%",
+    height: 12,
+    borderRadius: radius.xs,
+    backgroundColor: colors.border,
+  },
+  sectionSkeletonChart: {
+    marginTop: 8,
+    height: 170,
+    borderRadius: radius.md,
+    backgroundColor: colors.border,
+  },
+  kpiSkeletonTop: {
+    width: "52%",
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: colors.border,
+  },
+  kpiSkeletonValue: {
+    marginTop: 16,
+    width: "64%",
+    height: 28,
+    borderRadius: 12,
+    backgroundColor: colors.border,
+  },
+  kpiSkeletonHint: {
+    marginTop: 10,
+    width: "58%",
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: colors.border,
   },
 });

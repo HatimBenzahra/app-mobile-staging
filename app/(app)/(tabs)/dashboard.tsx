@@ -1,9 +1,26 @@
+import { useCommercialActivity } from "@/hooks/api/use-commercial-activity";
+import { useCommercialTimeline } from "@/hooks/api/use-commercial-timeline";
 import { useWorkspaceProfile } from "@/hooks/api/use-workspace-profile";
 import { authService } from "@/services/auth";
 import type { Commercial, Manager } from "@/types/api";
 import { calculateRank, RANKS } from "@/utils/business/ranks";
-import { Card, ErrorState, IconBadge, PressableCard } from "@/components/ui";
-import { colors } from "@/constants/theme";
+import {
+  findBestDay,
+  getNextRdvCountdown,
+} from "@/utils/stats";
+import {
+  Card,
+  Chip,
+  ErrorState,
+  IconBadge,
+} from "@/components/ui";
+import {
+  colors,
+  fontSize,
+  fontWeight,
+  radius,
+  spacing,
+} from "@/constants/theme";
 import { Feather } from "@expo/vector-icons";
 import { BottomSheetModal, BottomSheetView } from "@gorhom/bottom-sheet";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -27,7 +44,6 @@ type WeeklyData = {
   doors: number;
 };
 
-// Simple custom bar chart component
 const BAR_AREA_HEIGHT = 140;
 
 const SimpleBarChart = memo(function SimpleBarChart({
@@ -73,7 +89,6 @@ export default function DashboardScreen() {
   const bottomSheetRef = useRef<BottomSheetModal>(null);
   const conversionSheetRef = useRef<BottomSheetModal>(null);
   const contentOpacity = useRef(new Animated.Value(0)).current;
-
   const handleChartCardLayout = useCallback((e: LayoutChangeEvent) => {
     const cardInnerWidth = e.nativeEvent.layout.width - 40;
     setChartSlideWidth(cardInnerWidth);
@@ -90,18 +105,21 @@ export default function DashboardScreen() {
   }, []);
 
   const { data: profile, loading, error, refetch } = useWorkspaceProfile(userId, role);
+  const { rdvToday } = useCommercialActivity();
+  const timeline = useCommercialTimeline(userId);
 
   const [refreshing, setRefreshing] = useState(false);
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     try {
-      await refetch();
+      await Promise.all([refetch(), rdvToday.refetch?.(), timeline.refetch?.()]);
     } finally {
       setRefreshing(false);
     }
-  }, [refetch]);
+  }, [refetch, rdvToday, timeline]);
 
   const isManager = role === "manager";
+
   const stats = useMemo(() => {
     if (!profile) {
       return { contratsSignes: 0, immeublesVisites: 0, rendezVousPris: 0 };
@@ -190,14 +208,9 @@ export default function DashboardScreen() {
     }).start();
   }, [contentOpacity, loading, profile]);
 
-  // Calculate weekly data from real backend data
   const { weeklyData, weeklyContracts, conversionRate } = useMemo(() => {
     if (!profile) {
-      return {
-        weeklyData: [],
-        weeklyContracts: [],
-        conversionRate: "0.0",
-      };
+      return { weeklyData: [], weeklyContracts: [], conversionRate: "0.0" };
     }
 
     const immeubles = isManager
@@ -216,10 +229,7 @@ export default function DashboardScreen() {
       };
     });
 
-    const visitsByDate = new Map<
-      string,
-      { doors: number; contracts: number }
-    >();
+    const visitsByDate = new Map<string, { doors: number; contracts: number }>();
     for (const door of allDoors) {
       if (!door.derniereVisite) continue;
       const visitDate = door.derniereVisite.split("T")[0];
@@ -241,7 +251,6 @@ export default function DashboardScreen() {
       doors: visitsByDate.get(date)?.contracts ?? 0,
     }));
 
-    // Calculate conversion rate
     const totalDoors = doorsPerDay.reduce((sum, d) => sum + d.doors, 0);
     const totalContracts = contractsPerDay.reduce((sum, d) => sum + d.doors, 0);
     const rate =
@@ -254,6 +263,16 @@ export default function DashboardScreen() {
     };
   }, [profile, isManager]);
 
+  const nextRdvCountdown = useMemo(
+    () => getNextRdvCountdown(rdvToday.data ?? [], new Date()),
+    [rdvToday.data],
+  );
+
+  const bestDay = useMemo(
+    () => findBestDay(timeline.data ?? [], "portesProspectees"),
+    [timeline.data],
+  );
+
   const handleOpenInfo = useCallback(() => {
     bottomSheetRef.current?.present();
   }, []);
@@ -261,6 +280,13 @@ export default function DashboardScreen() {
   const handleOpenConversionInfo = useCallback(() => {
     conversionSheetRef.current?.present();
   }, []);
+
+
+  const prenom = profile
+    ? isManager
+      ? (profile as Manager).prenom
+      : (profile as Commercial).prenom
+    : null;
 
   if (loading || !profile) {
     return (
@@ -296,144 +322,217 @@ export default function DashboardScreen() {
             />
           </View>
         ) : (
-        <Animated.View style={{ opacity: contentOpacity }}>
-          {/* Rank Card - Compact */}
+          <Animated.View style={{ opacity: contentOpacity, gap: spacing.lg }}>
 
-          <Card variant="elevated" padding="lg">
-            {/* Rank Header */}
-            <View style={styles.rankHeader}>
-              <IconBadge icon="award" tone="warning" size="lg" />
-              <View style={styles.rankInfo}>
-                <Text style={styles.rankTitle}>{rankInfo.name}</Text>
-                <Text style={styles.rankPoints}>{rankInfo.points} points</Text>
+            {/* 1. Hero compact */}
+            <Card variant="elevated" padding="md">
+              <Text style={styles.heroGreeting}>
+                Bonjour {prenom ?? ""}
+              </Text>
+              <View style={styles.heroSubRow}>
+                <Chip
+                  label={isManager ? "Manager" : "Commercial"}
+                  tone="primary"
+                />
               </View>
-              <PressableCard variant="filled" padding="none" style={{ width: 32, height: 32, alignItems: "center", justifyContent: "center", borderRadius: 16 }} onPress={handleOpenInfo}>
-                <Feather name="info" size={18} color="#005BFF" />
-              </PressableCard>
-              {rankInfo.isMaxRank && (
-                <Feather name="check-circle" size={20} color="#10B981" />
-              )}
-            </View>
+            </Card>
 
-            {/* Progress Bar */}
-            {!rankInfo.isMaxRank && nextRank && (
-              <View style={styles.progressSection}>
-                <View style={styles.progressHeader}>
-                  <Text style={styles.progressLabel}>Prochain rang</Text>
-                  <Text style={styles.nextRankName}>{nextRank.name}</Text>
-                </View>
-                <View style={styles.progressBar}>
-                  <View
-                    style={[
-                      styles.progressFill,
-                      { width: `${rankInfo.progressPercent}%` },
-                    ]}
-                  />
-                </View>
-                <Text style={styles.progressText}>
-                  {rankInfo.pointsToNext} points restants
-                </Text>
-              </View>
-            )}
-          </Card>
-
-          {/* Charts Slider */}
-          <Card variant="elevated" padding="lg" onLayout={handleChartCardLayout} style={styles.chartCardContainer}>
-            {chartSlideWidth > 0 && (
-            <GestureScrollView
-              ref={chartScrollRef}
-              horizontal
-              pagingEnabled
-              showsHorizontalScrollIndicator={false}
-              onMomentumScrollEnd={handleChartsMomentumEnd}
-            >
-              <View style={[styles.chartSlide, { width: chartSlideWidth }]}>
-                <View style={styles.chartHeader}>
-                  <Feather name="bar-chart-2" size={20} color="#005BFF" />
-                  <Text style={styles.chartTitle}>
-                    Portes prospectées cette semaine
-                  </Text>
-                </View>
-                <SimpleBarChart data={weeklyData} />
-              </View>
-
-              <View style={[styles.chartSlide, { width: chartSlideWidth }]}>
-                <View style={styles.chartHeader}>
-                  <Feather name="file-text" size={20} color="#10B981" />
-                  <View style={styles.chartTitleContainer}>
-                    <Text style={styles.chartTitle}>
-                      Contrats signés cette semaine
+            {/* 2. Prochain RDV */}
+            {isManager ? (
+              <Card variant="elevated" padding="md">
+                <View style={styles.rdvRow}>
+                  <IconBadge icon="calendar" tone="neutral" size="md" />
+                  <View style={styles.rdvInfo}>
+                    <Text style={styles.rdvTitle}>Agenda équipe aujourd'hui</Text>
+                    <Text style={styles.rdvSub}>
+                      {rdvToday.data?.length ?? 0} RDV planifié{(rdvToday.data?.length ?? 0) !== 1 ? "s" : ""}
                     </Text>
-                    <View style={styles.conversionContainer}>
-                      <View style={styles.conversionBadge}>
-                        <Text style={styles.conversionRate}>
-                          {conversionRate}%
-                        </Text>
-                        <Text style={styles.conversionLabel}>
-                          taux conversion
-                        </Text>
-                      </View>
-                      <Pressable
-                        style={styles.conversionInfoButton}
-                        onPress={handleOpenConversionInfo}
-                      >
-                        <Feather name="help-circle" size={16} color="#059669" />
-                      </Pressable>
-                    </View>
                   </View>
                 </View>
-                <SimpleBarChart data={weeklyContracts} color="#10B981" />
-              </View>
-            </GestureScrollView>
+              </Card>
+            ) : nextRdvCountdown ? (
+              <Card variant="elevated" padding="md">
+                <View style={styles.rdvRow}>
+                  <IconBadge icon="clock" tone="primary" size="md" />
+                  <View style={styles.rdvInfo}>
+                    <Text style={styles.rdvTitle}>
+                      Prochain RDV {nextRdvCountdown.formatted}
+                    </Text>
+                    <Text style={styles.rdvSub}>
+                      {nextRdvCountdown.porte.numero
+                        ? `Porte ${nextRdvCountdown.porte.numero}`
+                        : "Porte inconnue"}
+                      {nextRdvCountdown.porte.etage != null
+                        ? ` · Étage ${nextRdvCountdown.porte.etage}`
+                        : ""}
+                    </Text>
+                  </View>
+                </View>
+              </Card>
+            ) : (
+              <Card variant="elevated" padding="md">
+                <View style={styles.rdvRow}>
+                  <IconBadge icon="calendar" tone="neutral" size="md" />
+                  <View style={styles.rdvInfo}>
+                    <Text style={styles.rdvTitle}>Pas de RDV aujourd'hui</Text>
+                  </View>
+                </View>
+              </Card>
             )}
 
-            {/* Pagination Indicators */}
-            <View style={styles.paginationContainer}>
-              <Pressable
-                onPress={() => handlePaginationPress(0)}
-                style={[
-                  styles.paginationPill,
-                  activeChartIndex === 0 && styles.paginationPillActive,
-                ]}
-              >
-                <Feather
-                  name="bar-chart-2"
-                  size={14}
-                  color={activeChartIndex === 0 ? "#005BFF" : "#94A3B8"}
-                />
-                <Text
+            {/* 3. Carte rang (condensée) */}
+            <Card variant="elevated" padding="lg">
+              <View style={styles.rankHeader}>
+                <IconBadge icon="award" tone="warning" size="lg" />
+                <View style={styles.rankInfo}>
+                  <Text style={styles.rankTitle}>{rankInfo.name}</Text>
+                  <Text style={styles.rankPoints}>{rankInfo.points} points</Text>
+                </View>
+                <Pressable
+                  onPress={handleOpenInfo}
+                  hitSlop={8}
+                  style={styles.rankInfoBtn}
+                >
+                  <IconBadge icon="info" tone="neutral" size="sm" />
+                </Pressable>
+                {rankInfo.isMaxRank && (
+                  <Feather name="check-circle" size={20} color={colors.success} />
+                )}
+              </View>
+
+              {!rankInfo.isMaxRank && nextRank && (
+                <View style={styles.progressSection}>
+                  <View style={styles.progressHeader}>
+                    <Text style={styles.progressLabel}>Prochain rang</Text>
+                    <Text style={styles.nextRankName}>{nextRank.name}</Text>
+                  </View>
+                  <View style={styles.progressBar}>
+                    <View
+                      style={[
+                        styles.progressFill,
+                        { width: `${rankInfo.progressPercent}%` },
+                      ]}
+                    />
+                  </View>
+                  <Text style={styles.progressText}>
+                    {rankInfo.pointsToNext} points restants
+                  </Text>
+                </View>
+              )}
+            </Card>
+
+            {/* 4. Chart hebdomadaire */}
+            <Card variant="elevated" padding="lg" onLayout={handleChartCardLayout} style={styles.chartCardContainer}>
+              {chartSlideWidth > 0 && (
+                <GestureScrollView
+                  ref={chartScrollRef}
+                  horizontal
+                  pagingEnabled
+                  showsHorizontalScrollIndicator={false}
+                  onMomentumScrollEnd={handleChartsMomentumEnd}
+                >
+                  <View style={[styles.chartSlide, { width: chartSlideWidth }]}>
+                    <View style={styles.chartHeader}>
+                      <Feather name="bar-chart-2" size={20} color={colors.primary} />
+                      <Text style={styles.chartTitle}>
+                        Portes prospectées cette semaine
+                      </Text>
+                    </View>
+                    <SimpleBarChart data={weeklyData} />
+                  </View>
+
+                  <View style={[styles.chartSlide, { width: chartSlideWidth }]}>
+                    <View style={styles.chartHeader}>
+                      <Feather name="file-text" size={20} color={colors.success} />
+                      <View style={styles.chartTitleContainer}>
+                        <Text style={styles.chartTitle}>
+                          Contrats signés cette semaine
+                        </Text>
+                        <View style={styles.conversionContainer}>
+                          <View style={styles.conversionBadge}>
+                            <Text style={styles.conversionRate}>
+                              {conversionRate}%
+                            </Text>
+                            <Text style={styles.conversionLabel}>
+                              taux conversion
+                            </Text>
+                          </View>
+                          <Pressable
+                            style={styles.conversionInfoButton}
+                            onPress={handleOpenConversionInfo}
+                          >
+                            <Feather name="help-circle" size={16} color={colors.successText} />
+                          </Pressable>
+                        </View>
+                      </View>
+                    </View>
+                    <SimpleBarChart data={weeklyContracts} color={colors.success} />
+                  </View>
+                </GestureScrollView>
+              )}
+
+              <View style={styles.paginationContainer}>
+                <Pressable
+                  onPress={() => handlePaginationPress(0)}
                   style={[
-                    styles.paginationLabel,
-                    activeChartIndex === 0 && styles.paginationLabelActive,
+                    styles.paginationPill,
+                    activeChartIndex === 0 && styles.paginationPillActive,
                   ]}
                 >
-                  Portes
-                </Text>
-              </Pressable>
-              <Pressable
-                onPress={() => handlePaginationPress(1)}
-                style={[
-                  styles.paginationPill,
-                  activeChartIndex === 1 && styles.paginationPillActive,
-                ]}
-              >
-                <Feather
-                  name="file-text"
-                  size={14}
-                  color={activeChartIndex === 1 ? "#10B981" : "#94A3B8"}
-                />
-                <Text
+                  <Feather
+                    name="bar-chart-2"
+                    size={14}
+                    color={activeChartIndex === 0 ? colors.primary : colors.textSubtle}
+                  />
+                  <Text
+                    style={[
+                      styles.paginationLabel,
+                      activeChartIndex === 0 && styles.paginationLabelActive,
+                    ]}
+                  >
+                    Portes
+                  </Text>
+                </Pressable>
+                <Pressable
+                  onPress={() => handlePaginationPress(1)}
                   style={[
-                    styles.paginationLabel,
-                    activeChartIndex === 1 && styles.paginationLabelActive,
+                    styles.paginationPill,
+                    activeChartIndex === 1 && styles.paginationPillActive,
                   ]}
                 >
-                  Contrats
-                </Text>
-              </Pressable>
-            </View>
-          </Card>
-        </Animated.View>
+                  <Feather
+                    name="file-text"
+                    size={14}
+                    color={activeChartIndex === 1 ? colors.success : colors.textSubtle}
+                  />
+                  <Text
+                    style={[
+                      styles.paginationLabel,
+                      activeChartIndex === 1 && styles.paginationLabelActive,
+                    ]}
+                  >
+                    Contrats
+                  </Text>
+                </Pressable>
+              </View>
+            </Card>
+
+            {/* 5. Record personnel (commercial only) */}
+            {!isManager && bestDay && (
+              <Card variant="outlined" padding="md">
+                <View style={styles.recordRow}>
+                  <IconBadge icon="award" tone="warning" size="md" />
+                  <View style={styles.recordInfo}>
+                    <Text style={styles.recordTitle}>
+                      Record : {bestDay.value} portes
+                    </Text>
+                    <Text style={styles.recordSub}>le {bestDay.label}</Text>
+                  </View>
+                </View>
+              </Card>
+            )}
+
+          </Animated.View>
         )}
       </ScrollView>
 
@@ -445,33 +544,27 @@ export default function DashboardScreen() {
       >
         <BottomSheetView style={styles.sheetContainer}>
           <View style={styles.sheetHeader}>
-            <Feather name="info" size={20} color="#005BFF" />
+            <Feather name="info" size={20} color={colors.primary} />
             <Text style={styles.sheetTitle}>Calcul des points</Text>
           </View>
           <View style={styles.formulaGrid}>
             <Card variant="filled" padding="md" style={styles.formulaItemRow}>
-              <View
-                style={[styles.formulaIcon, { backgroundColor: "#ECFDF5" }]}
-              >
-                <Feather name="check-circle" size={16} color="#10B981" />
+              <View style={[styles.formulaIcon, { backgroundColor: colors.successSoft }]}>
+                <Feather name="check-circle" size={16} color={colors.success} />
               </View>
               <Text style={styles.formulaItemLabel}>Contrat signé</Text>
               <Text style={styles.formulaItemValue}>100 pts</Text>
             </Card>
             <Card variant="filled" padding="md" style={styles.formulaItemRow}>
-              <View
-                style={[styles.formulaIcon, { backgroundColor: "#F5F3FF" }]}
-              >
-                <Feather name="calendar" size={16} color="#8B5CF6" />
+              <View style={[styles.formulaIcon, { backgroundColor: colors.primarySoft }]}>
+                <Feather name="calendar" size={16} color={colors.primary} />
               </View>
               <Text style={styles.formulaItemLabel}>RDV pris</Text>
               <Text style={styles.formulaItemValue}>20 pts</Text>
             </Card>
             <Card variant="filled" padding="md" style={styles.formulaItemRow}>
-              <View
-                style={[styles.formulaIcon, { backgroundColor: "#E5EEFF" }]}
-              >
-                <Feather name="home" size={16} color="#2F80FF" />
+              <View style={[styles.formulaIcon, { backgroundColor: colors.primaryMuted }]}>
+                <Feather name="home" size={16} color={colors.primary} />
               </View>
               <Text style={styles.formulaItemLabel}>Immeuble visité</Text>
               <Text style={styles.formulaItemValue}>5 pts</Text>
@@ -492,7 +585,7 @@ export default function DashboardScreen() {
       >
         <BottomSheetView style={styles.sheetContainer}>
           <View style={styles.sheetHeader}>
-            <Feather name="help-circle" size={20} color="#10B981" />
+            <Feather name="help-circle" size={20} color={colors.success} />
             <Text style={styles.sheetTitle}>Taux de conversion</Text>
           </View>
           <View style={styles.explanationCard}>
@@ -514,35 +607,16 @@ export default function DashboardScreen() {
             </Text>
             <View style={styles.performanceIndicators}>
               <View style={styles.performanceItem}>
-                <View
-                  style={[
-                    styles.performanceDot,
-                    { backgroundColor: "#10B981" },
-                  ]}
-                />
-                <Text style={styles.performanceText}>
-                  {">"} 20% = Excellent
-                </Text>
+                <View style={[styles.performanceDot, { backgroundColor: colors.success }]} />
+                <Text style={styles.performanceText}>{">"} 20% = Excellent</Text>
               </View>
               <View style={styles.performanceItem}>
-                <View
-                  style={[
-                    styles.performanceDot,
-                    { backgroundColor: "#F59E0B" },
-                  ]}
-                />
+                <View style={[styles.performanceDot, { backgroundColor: colors.warning }]} />
                 <Text style={styles.performanceText}>10-20% = Bon</Text>
               </View>
               <View style={styles.performanceItem}>
-                <View
-                  style={[
-                    styles.performanceDot,
-                    { backgroundColor: "#EF4444" },
-                  ]}
-                />
-                <Text style={styles.performanceText}>
-                  {"<"} 10% = � am�liorer
-                </Text>
+                <View style={[styles.performanceDot, { backgroundColor: colors.danger }]} />
+                <Text style={styles.performanceText}>{"<"} 10% = À améliorer</Text>
               </View>
             </View>
           </View>
@@ -555,11 +629,11 @@ export default function DashboardScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F8FAFC",
+    backgroundColor: colors.background,
   },
   contentContainer: {
-    padding: 16,
-    paddingBottom: 32,
+    padding: spacing.lg,
+    paddingBottom: spacing["3xl"],
   },
   loadingContainer: {
     flex: 1,
@@ -567,172 +641,98 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   loadingText: {
-    fontSize: 14,
-    color: "#64748B",
+    fontSize: fontSize.base,
+    color: colors.textMuted,
   },
-  sectionCard: {
-    marginTop: 16,
-    backgroundColor: "#FFFFFF",
-    borderRadius: 20,
-    padding: 16,
-    shadowColor: "#0F172A",
-    shadowOpacity: 0.06,
-    shadowRadius: 14,
-    shadowOffset: { width: 0, height: 6 },
-    elevation: 3,
+  heroGreeting: {
+    fontSize: fontSize["3xl"],
+    fontWeight: fontWeight.bold,
+    color: colors.text,
+    marginBottom: spacing.sm,
   },
-  sectionHeaderRow: {
+  heroSubRow: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
-    gap: 12,
+    gap: spacing.sm,
   },
-  sectionTitleWrap: {
+  rdvRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
+  },
+  rdvInfo: {
     flex: 1,
   },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: "#0F172A",
+  rdvTitle: {
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.semibold,
+    color: colors.text,
   },
-  sectionSubtitle: {
-    fontSize: 12,
-    color: "#64748B",
+  rdvSub: {
+    fontSize: fontSize.sm,
+    color: colors.textMuted,
     marginTop: 2,
-  },
-  periodRow: {
-    flexDirection: "row",
-    gap: 6,
-  },
-  periodChip: {
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-    backgroundColor: "#FFFFFF",
-  },
-  periodChipActive: {
-    borderColor: "#005BFF",
-    backgroundColor: "#005BFF",
-  },
-  periodChipText: {
-    fontSize: 11,
-    fontWeight: "600",
-    color: "#475569",
-  },
-  periodChipTextActive: {
-    color: "#FFFFFF",
-  },
-  legendRow: {
-    flexDirection: "row",
-    gap: 14,
-    marginTop: 12,
-  },
-  legendItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-  },
-  legendDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-  },
-  legendLabel: {
-    fontSize: 11,
-    color: "#64748B",
-  },
-  chartRow: {
-    flexDirection: "row",
-    alignItems: "flex-end",
-    gap: 8,
-    marginTop: 12,
-    minHeight: 140,
-  },
-  chartItem: {
-    flex: 1,
-    alignItems: "center",
-    gap: 6,
-  },
-  chartBars: {
-    flexDirection: "row",
-    alignItems: "flex-end",
-    gap: 4,
-    height: 110,
-    width: "100%",
-    justifyContent: "center",
-  },
-  chartBar: {
-    width: 8,
-    borderRadius: 6,
-  },
-  chartLabel: {
-    fontSize: 10,
-    color: "#94A3B8",
-  },
-  chartHelper: {
-    fontSize: 11,
-    color: "#94A3B8",
-    marginLeft: 8,
   },
   rankHeader: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
+    gap: spacing.md,
   },
   rankInfo: {
     flex: 1,
   },
   rankTitle: {
-    fontSize: 22,
-    fontWeight: "700",
-    color: "#0F172A",
+    fontSize: fontSize["3xl"],
+    fontWeight: fontWeight.bold,
+    color: colors.text,
     marginBottom: 4,
   },
   rankPoints: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#F59E0B",
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.semibold,
+    color: colors.warning,
+  },
+  rankInfoBtn: {
+    padding: 4,
   },
   progressSection: {
-    marginTop: 16,
+    marginTop: spacing.lg,
   },
   progressHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 8,
+    marginBottom: spacing.sm,
   },
   progressLabel: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: "#64748B",
+    fontSize: fontSize.xs,
+    fontWeight: fontWeight.semibold,
+    color: colors.textMuted,
   },
   nextRankName: {
-    fontSize: 13,
-    fontWeight: "700",
-    color: "#0F172A",
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.bold,
+    color: colors.text,
   },
   progressBar: {
     height: 8,
-    backgroundColor: "#F1F5F9",
-    borderRadius: 4,
+    backgroundColor: colors.surfaceMuted,
+    borderRadius: radius.xs,
     overflow: "hidden",
-    marginBottom: 6,
+    marginBottom: spacing.xs,
   },
   progressFill: {
     height: "100%",
-    backgroundColor: "#F59E0B",
-    borderRadius: 4,
+    backgroundColor: colors.warning,
+    borderRadius: radius.xs,
   },
   progressText: {
-    fontSize: 11,
-    color: "#64748B",
+    fontSize: fontSize.xs,
+    color: colors.textMuted,
     textAlign: "center",
   },
   chartCardContainer: {
-    marginTop: 20,
+    marginTop: 0,
   },
   chartSlide: {
     paddingHorizontal: 0,
@@ -741,47 +741,47 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
-    gap: 8,
-    marginTop: 16,
-    backgroundColor: "#F1F5F9",
-    borderRadius: 12,
+    gap: spacing.sm,
+    marginTop: spacing.lg,
+    backgroundColor: colors.surfaceMuted,
+    borderRadius: radius.md,
     padding: 4,
     alignSelf: "center",
   },
   paginationPill: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 10,
+    gap: spacing.xs + 2,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.sm + 2,
   },
   paginationPillActive: {
-    backgroundColor: "#FFFFFF",
-    shadowColor: "#0F172A",
+    backgroundColor: colors.surface,
+    shadowColor: colors.text,
     shadowOpacity: 0.06,
     shadowRadius: 4,
     shadowOffset: { width: 0, height: 1 },
     elevation: 2,
   },
   paginationLabel: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: "#94A3B8",
+    fontSize: fontSize.sm + 1,
+    fontWeight: fontWeight.semibold,
+    color: colors.textSubtle,
   },
   paginationLabelActive: {
-    color: "#0F172A",
+    color: colors.text,
   },
   chartHeader: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 10,
-    marginBottom: 20,
+    gap: spacing.sm + 2,
+    marginBottom: spacing.xl,
   },
   chartTitle: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: "#0F172A",
+    fontSize: fontSize.lg,
+    fontWeight: fontWeight.bold,
+    color: colors.text,
     flex: 1,
   },
   chartTitleContainer: {
@@ -793,32 +793,32 @@ const styles = StyleSheet.create({
   conversionContainer: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
+    gap: spacing.sm,
   },
   conversionBadge: {
-    backgroundColor: "#ECFDF5",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 12,
+    backgroundColor: colors.successSoft,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs + 2,
+    borderRadius: radius.md,
     alignItems: "center",
   },
   conversionRate: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: "#10B981",
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.bold,
+    color: colors.success,
   },
   conversionLabel: {
-    fontSize: 9,
-    fontWeight: "600",
-    color: "#059669",
+    fontSize: fontSize.xs - 2,
+    fontWeight: fontWeight.semibold,
+    color: colors.successText,
     textTransform: "uppercase",
     letterSpacing: 0.5,
   },
   conversionInfoButton: {
     width: 24,
     height: 24,
-    borderRadius: 12,
-    backgroundColor: "#F0FDF4",
+    borderRadius: radius.pill,
+    backgroundColor: colors.successSoft,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -834,14 +834,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "flex-end",
   },
-  barValueContainer: {
-    height: 24,
-    justifyContent: "center",
-    marginBottom: 4,
-  },
   barValue: {
-    fontSize: 11,
-    fontWeight: "700",
+    fontSize: fontSize.xs,
+    fontWeight: fontWeight.bold,
   },
   barWrapper: {
     width: "100%",
@@ -851,120 +846,138 @@ const styles = StyleSheet.create({
   },
   bar: {
     width: "100%",
-    borderTopLeftRadius: 6,
-    borderTopRightRadius: 6,
+    borderTopLeftRadius: radius.xs,
+    borderTopRightRadius: radius.xs,
     minHeight: 4,
   },
   dayLabel: {
-    fontSize: 11,
-    fontWeight: "600",
-    color: "#64748B",
-    marginTop: 8,
+    fontSize: fontSize.xs,
+    fontWeight: fontWeight.semibold,
+    color: colors.textMuted,
+    marginTop: spacing.sm,
+  },
+  recordRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
+  },
+  recordInfo: {
+    flex: 1,
+  },
+  recordTitle: {
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.semibold,
+    color: colors.text,
+  },
+  recordSub: {
+    fontSize: fontSize.sm,
+    color: colors.textMuted,
+    marginTop: 2,
   },
   sheetContainer: {
     flex: 1,
-    paddingHorizontal: 20,
-    paddingTop: 8,
+    paddingHorizontal: spacing.xl,
+    paddingTop: spacing.sm,
     paddingBottom: 200,
   },
   sheetHeader: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 10,
-    marginBottom: 20,
+    gap: spacing.sm + 2,
+    marginBottom: spacing.xl,
   },
   sheetTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#0F172A",
+    fontSize: fontSize.xl,
+    fontWeight: fontWeight.bold,
+    color: colors.text,
   },
   formulaGrid: {
-    gap: 12,
-    marginBottom: 20,
+    gap: spacing.md,
+    marginBottom: spacing.xl,
   },
   formulaItemRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 14,
+    gap: spacing.lg - 2,
   },
   formulaIcon: {
     width: 40,
     height: 40,
-    borderRadius: 10,
+    borderRadius: radius.sm + 2,
     alignItems: "center",
     justifyContent: "center",
   },
   formulaItemLabel: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#64748B",
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.semibold,
+    color: colors.textMuted,
     flex: 1,
   },
   formulaItemValue: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: "#005BFF",
+    fontSize: fontSize.lg,
+    fontWeight: fontWeight.bold,
+    color: colors.primary,
   },
   formulaNote: {
-    fontSize: 13,
-    color: "#64748B",
+    fontSize: fontSize.sm + 1,
+    color: colors.textMuted,
     lineHeight: 20,
     textAlign: "center",
-    paddingHorizontal: 10,
+    paddingHorizontal: spacing.sm + 2,
   },
   explanationCard: {
-    gap: 16,
+    gap: spacing.lg,
   },
   explanationTitle: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: "#0F172A",
+    fontSize: fontSize.lg,
+    fontWeight: fontWeight.bold,
+    color: colors.text,
     marginBottom: 4,
   },
   explanationText: {
-    fontSize: 14,
-    color: "#64748B",
+    fontSize: fontSize.base,
+    color: colors.textMuted,
     lineHeight: 20,
   },
   formulaBox: {
-    backgroundColor: "#F0FDF4",
-    padding: 12,
-    borderRadius: 12,
+    backgroundColor: colors.successSoft,
+    padding: spacing.md,
+    borderRadius: radius.md,
     borderWidth: 1,
-    borderColor: "#D1FAE5",
+    borderColor: colors.successSoft,
   },
   formulaText: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: "#059669",
+    fontSize: fontSize.sm + 1,
+    fontWeight: fontWeight.semibold,
+    color: colors.successText,
     textAlign: "center",
   },
   explanationExample: {
-    fontSize: 13,
-    color: "#64748B",
+    fontSize: fontSize.sm + 1,
+    color: colors.textMuted,
     lineHeight: 20,
   },
   boldText: {
-    fontWeight: "700",
-    color: "#0F172A",
+    fontWeight: fontWeight.bold,
+    color: colors.text,
   },
   performanceIndicators: {
-    gap: 8,
-    marginTop: 8,
+    gap: spacing.sm,
+    marginTop: spacing.sm,
   },
   performanceItem: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
+    gap: spacing.sm,
   },
   performanceDot: {
     width: 8,
     height: 8,
-    borderRadius: 4,
+    borderRadius: radius.pill,
   },
   performanceText: {
-    fontSize: 12,
-    color: "#64748B",
-    fontWeight: "500",
+    fontSize: fontSize.sm,
+    color: colors.textMuted,
+    fontWeight: fontWeight.medium,
   },
 });

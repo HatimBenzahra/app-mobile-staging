@@ -10,3 +10,6 @@ export { ErrorState } from "./ErrorState";
 export { ToastProvider, useToast } from "./Toast";
 export type { ToastVariant } from "./Toast";
 export { OfflineBanner } from "./OfflineBanner";
+export { DeltaBadge } from "./DeltaBadge";
+export { PeriodSelector } from "./PeriodSelector";
+export { Funnel } from "./Funnel";

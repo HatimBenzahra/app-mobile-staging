@@ -1,7 +1,7 @@
 {
   "tool_name": "Bash",
-  "tool_input_preview": "{\"command\":\"npx tsc --noEmit 2>&1\",\"timeout\":120000,\"description\":\"Run TypeScript type check\"}",
+  "tool_input_preview": "{\"command\":\"npx tsc --noEmit 2>&1\",\"timeout\":60000}",
   "error": "Exit code 2\ncomponents/immeubles/AddPorteSheet.tsx(98,9): error TS7053: Element implicitly has an 'any' type because expression of type '\"numero\" | \"nomPersonnalise\" | \"etage\"' can't be used to index type '{ etage?: string | undefined; numero?: string | undefined; }'.\n  Property 'nomPersonnalise' does not exist on type '{ etage?: string | undefined; numero?: string | undefined; }'.",
-  "timestamp": "2026-05-22T07:24:18.248Z",
+  "timestamp": "2026-05-22T08:16:48.994Z",
   "retry_count": 1
 }
