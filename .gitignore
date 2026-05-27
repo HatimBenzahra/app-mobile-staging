@@ -47,6 +47,9 @@ dist/
 build/
 .env
 .env.*
+# Exceptions : configs d'env versionnees (URL backend uniquement, AUCUN secret)
+!.env.staging
+!.env.production
 .DS_Store
 
 # APK builds
@@ -54,3 +57,16 @@ build/
 
 # EAS config (contains secrets)
 eas.json
+
+# OMC : etat runtime volatile (ne PAS versionner — source du churn de commits)
+.omc/state/
+.omc/sessions/
+.omc/logs/
+.omc/project-memory.json
+# (on garde .omc/plans/ versionne : ce sont des docs utiles)
+
+# .omc parasites poses dans assets/ (ceux d'android/ sont deja ignores via /android)
+assets/**/.omc/
+
+# Backups manuels de config
+*.staging-bak
