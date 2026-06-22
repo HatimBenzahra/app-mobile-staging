@@ -192,7 +192,9 @@ export function useRecording({ enabled, immeubleId }: UseRecordingOptions) {
     const opId = ++operationIdRef.current;
     if (__DEV__) console.log("[useRecording] === START RECORDING === opId:", opId, "immeubleId:", immeubleId);
 
-    trackerRef.current.start();
+    if (!trackerRef.current.isStarted) {
+      trackerRef.current.start();
+    }
 
     let backgroundServiceRunning = false;
 
@@ -282,6 +284,8 @@ export function useRecording({ enabled, immeubleId }: UseRecordingOptions) {
     if (!isLocalRecording()) {
       if (__DEV__) console.log("[useRecording] stopRecording skipped — nothing active");
       await stopBackgroundRecordingService();
+      trackerRef.current.reset();
+      activePorteRef.current = null;
       stopInFlightRef.current = false;
       return;
     }
@@ -345,6 +349,8 @@ export function useRecording({ enabled, immeubleId }: UseRecordingOptions) {
       }
     } finally {
       await stopBackgroundRecordingService();
+      trackerRef.current.reset();
+      activePorteRef.current = null;
       stopInFlightRef.current = false;
       if (mountedRef.current) {
         setIsStopping(false);

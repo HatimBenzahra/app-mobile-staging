@@ -68,7 +68,28 @@ fi
 # ── Build APK (backend injecte, l'emporte sur .env via @expo/env) ────────
 export EXPO_PUBLIC_API_URL="${API_URL}"
 log "Build APK release (backend = ${API_URL})..."
-rm -rf android/app/build/outputs
+log "Nettoyage caches Android sensibles aux chemins absolus..."
+rm -rf android/.gradle android/build/generated/autolinking android/app/build
+
+set_gradle_property() {
+  local key="$1"
+  local value="$2"
+  local file="android/gradle.properties"
+  local tmp
+  tmp="$(mktemp)"
+  awk -v key="${key}" -v value="${value}" '
+    index($0, key "=") == 1 { print key "=" value; done = 1; next }
+    { print }
+    END { if (!done) print key "=" value }
+  ' "${file}" > "${tmp}"
+  mv "${tmp}" "${file}"
+}
+
+log "Configuration memoire Gradle pour le build release..."
+set_gradle_property "org.gradle.jvmargs" "-Xmx4096m -XX:MaxMetaspaceSize=2048m -XX:+HeapDumpOnOutOfMemoryError -Dfile.encoding=UTF-8"
+set_gradle_property "kotlin.daemon.jvmargs" "-Xmx2048m -XX:MaxMetaspaceSize=1024m -Dfile.encoding=UTF-8"
+set_gradle_property "org.gradle.workers.max" "2"
+
 ( cd android && ./gradlew :app:assembleRelease ) || fail "Build gradle echoue"
 
 APK="$(find android/app/build/outputs -name '*.apk' -type f | head -1)"
