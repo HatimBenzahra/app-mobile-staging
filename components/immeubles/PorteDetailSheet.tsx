@@ -232,6 +232,27 @@ export default function PorteDetailSheet({
                 </Card>
               </View>
 
+              {porte.statut === "CONTRAT_SIGNE" ? (
+                <Card
+                  variant="outlined"
+                  padding="md"
+                  style={styles.contratsCard}
+                >
+                  <View
+                    style={[
+                      styles.factIcon,
+                      { backgroundColor: status.accent },
+                    ]}
+                  >
+                    <Feather name="award" size={13} color="#FFFFFF" />
+                  </View>
+                  <Text style={styles.factLabel}>Contrats signés</Text>
+                  <Text style={styles.factValue}>
+                    {porte.nbContrats ?? 1}
+                  </Text>
+                </Card>
+              ) : null}
+
               {hasRdv ? (
                 <Card
                   variant="filled"
@@ -426,6 +447,9 @@ const styles = StyleSheet.create({
   },
   factCard: {
     flex: 1,
+    gap: 6,
+  },
+  contratsCard: {
     gap: 6,
   },
   factIcon: {

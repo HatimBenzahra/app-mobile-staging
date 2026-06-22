@@ -150,6 +150,8 @@ type ImmeubleDetailsViewProps = {
   onBack: () => void;
   onDirtyChange?: (dirty: boolean) => void;
   onRefreshImmeuble?: () => void | Promise<void>;
+  autoOpenPorteId?: number | null;
+  onAutoOpenPorteConsumed?: () => void;
 };
 
 function ImmeubleDetailsView({
@@ -157,6 +159,8 @@ function ImmeubleDetailsView({
   onBack,
   onDirtyChange,
   onRefreshImmeuble,
+  autoOpenPorteId,
+  onAutoOpenPorteConsumed,
 }: ImmeubleDetailsViewProps) {
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
@@ -212,6 +216,20 @@ function ImmeubleDetailsView({
     {},
   );
   const [detailPorte, setDetailPorte] = useState<Porte | null>(null);
+  const consumedAutoPorteRef = useRef<number | null>(null);
+  useEffect(() => {
+    if (autoOpenPorteId == null) {
+      consumedAutoPorteRef.current = null;
+      return;
+    }
+    if (consumedAutoPorteRef.current === autoOpenPorteId) return;
+    const porte = portesState.find((p) => p.id === autoOpenPorteId);
+    if (porte) {
+      consumedAutoPorteRef.current = autoOpenPorteId;
+      setDetailPorte(porte);
+      onAutoOpenPorteConsumed?.();
+    }
+  }, [autoOpenPorteId, onAutoOpenPorteConsumed, portesState]);
   const { data: detailPorteDurationSec } = useLastPorteRecordingDuration(
     detailPorte?.id ?? null,
   );
@@ -688,7 +706,11 @@ function ImmeubleDetailsView({
 
       const key = getDisplayStatusKey(porte);
       if (key) {
-        counts[key] = (counts[key] || 0) + 1;
+        // Pour CONTRAT_SIGNE, on additionne nbContrats (une porte peut
+        // contenir plusieurs contrats). Pour les autres statuts, +1.
+        const increment =
+          key === "CONTRAT_SIGNE" ? porte.nbContrats || 1 : 1;
+        counts[key] = (counts[key] || 0) + increment;
       }
     }
 

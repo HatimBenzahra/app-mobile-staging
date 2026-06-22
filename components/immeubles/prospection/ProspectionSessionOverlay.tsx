@@ -142,9 +142,9 @@ export default function ProspectionSessionOverlay({
             >
               <View style={styles.startingContainer}>
                 <ActivityIndicator size="large" color={colors.primary} />
-                <Text style={styles.startingTitle}>Préparation du chrono…</Text>
+                <Text style={styles.startingTitle}>Préparez-vous…</Text>
                 <Text style={styles.startingHint}>
-                  Démarrage du micro pour ce passage. Ne sors pas de l'écran.
+                  Ne sors pas de l'écran, on lance le passage.
                 </Text>
               </View>
             </Animated.View>

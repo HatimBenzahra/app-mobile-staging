@@ -28,6 +28,8 @@ type ImmeublesScreenProps = {
   onHeaderVisibilityChange?: (visible: boolean) => void;
   autoSelectImmeubleId?: number | null;
   onAutoSelectConsumed?: () => void;
+  autoOpenPorteId?: number | null;
+  onAutoOpenPorteConsumed?: () => void;
 };
 
 type ListRow = { _type: "controls" } | Immeuble[];
@@ -61,6 +63,8 @@ export default function ImmeublesScreen({
   onHeaderVisibilityChange,
   autoSelectImmeubleId,
   onAutoSelectConsumed,
+  autoOpenPorteId,
+  onAutoOpenPorteConsumed,
 }: ImmeublesScreenProps) {
   const insets = useSafeAreaInsets();
   const { width, height: screenHeight } = useWindowDimensions();
@@ -182,7 +186,10 @@ export default function ImmeublesScreen({
       const prospectees = portes.filter(
         (porte) => porte.statut !== "NON_VISITE",
       ).length;
-      const total = portes.length;
+      // Couverture = prospectées / capacité théorique de l'immeuble.
+      // Fallback sur le count des portes existantes si le théorique est 0.
+      const theoretical = (imm.nbEtages ?? 0) * (imm.nbPortesParEtage ?? 0);
+      const total = theoretical > 0 ? theoretical : portes.length;
       const percent = total === 0 ? 0 : Math.round((prospectees / total) * 100);
       if (progressFilter === "all") return true;
       if (progressFilter === "incomplete") return percent < 100;
@@ -302,11 +309,12 @@ export default function ImmeublesScreen({
 
     for (const immeuble of immeublesEnCours) {
       const portes = immeuble.portes || [];
-      const total =
-        portes.length || immeuble.nbEtages * immeuble.nbPortesParEtage;
-      const prospectees = portes.length
-        ? portes.filter((porte) => porte.statut !== "NON_VISITE").length
-        : 0;
+      const theoretical =
+        (immeuble.nbEtages ?? 0) * (immeuble.nbPortesParEtage ?? 0);
+      const total = theoretical > 0 ? theoretical : portes.length;
+      const prospectees = portes.filter(
+        (porte) => porte.statut !== "NON_VISITE",
+      ).length;
       const progressPercent =
         total === 0 ? 0 : Math.round((prospectees / total) * 100);
       const progressColor =
@@ -428,6 +436,8 @@ export default function ImmeublesScreen({
           onBack={handleCloseDetails}
           onDirtyChange={setDetailsDirty}
           onRefreshImmeuble={handleRefreshImmeuble}
+          autoOpenPorteId={autoOpenPorteId}
+          onAutoOpenPorteConsumed={onAutoOpenPorteConsumed}
         />
       </Animated.View>
     );

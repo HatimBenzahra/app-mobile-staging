@@ -21,7 +21,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 type AgendaScreenProps = {
-  onNavigateToImmeuble?: (immeubleId: number) => void;
+  onNavigateToImmeuble?: (immeubleId: number, porteId?: number) => void;
 };
 
 type RdvItem = {
@@ -244,8 +244,8 @@ export default function AgendaScreen({
   }, [todayKey]);
 
   const handleCardPress = useCallback(
-    (immeubleId: number) => {
-      onNavigateToImmeuble?.(immeubleId);
+    (immeubleId: number, porteId: number) => {
+      onNavigateToImmeuble?.(immeubleId, porteId);
     },
     [onNavigateToImmeuble],
   );
@@ -415,7 +415,7 @@ export default function AgendaScreen({
                       variant="outlined"
                       padding="sm"
                       style={styles.cardRdvBorder}
-                      onPress={() => handleCardPress(item.immeubleId)}
+                      onPress={() => handleCardPress(item.immeubleId, item.porteId)}
                     >
                       <View style={styles.cardInner}>
                         <View style={styles.cardLeft}>
@@ -458,7 +458,7 @@ export default function AgendaScreen({
                         variant="outlined"
                         padding="sm"
                         style={{ borderLeftWidth: 3, borderLeftColor: accentColor }}
-                        onPress={() => handleCardPress(item.immeubleId)}
+                        onPress={() => handleCardPress(item.immeubleId, item.porteId)}
                       >
                         <View style={styles.cardInner}>
                           <View style={styles.cardLeft}>

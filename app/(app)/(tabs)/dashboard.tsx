@@ -235,8 +235,8 @@ export default function DashboardScreen() {
       const visitDate = door.derniereVisite.split("T")[0];
       const current = visitsByDate.get(visitDate) ?? { doors: 0, contracts: 0 };
       current.doors += 1;
-      if ((door.nbContrats || 0) > 0) {
-        current.contracts += 1;
+      if (door.statut === "CONTRAT_SIGNE") {
+        current.contracts += door.nbContrats || 1;
       }
       visitsByDate.set(visitDate, current);
     }

@@ -41,13 +41,17 @@ export default function SwipeTabs({
   const [swipeEnabled, setSwipeEnabled] = useState(true);
   const pendingImmeubleIdRef = useRef<number | null>(null);
   const [autoSelectImmeubleId, setAutoSelectImmeubleId] = useState<number | null>(null);
+  const pendingPorteIdRef = useRef<number | null>(null);
+  const [autoOpenPorteId, setAutoOpenPorteId] = useState<number | null>(null);
 
   const handleNavigateToImmeuble = useCallback(
-    (immeubleId: number) => {
+    (immeubleId: number, porteId?: number) => {
       const immeublesTabIdx = tabRoutes.findIndex((r) => r.key === "immeubles");
       if (immeublesTabIdx < 0) return;
       pendingImmeubleIdRef.current = immeubleId;
       setAutoSelectImmeubleId(immeubleId);
+      pendingPorteIdRef.current = porteId ?? null;
+      setAutoOpenPorteId(porteId ?? null);
       onIndexChange(immeublesTabIdx);
     },
     [onIndexChange, tabRoutes],
@@ -56,6 +60,11 @@ export default function SwipeTabs({
   const handleAutoSelectConsumed = useCallback(() => {
     pendingImmeubleIdRef.current = null;
     setAutoSelectImmeubleId(null);
+  }, []);
+
+  const handleAutoOpenPorteConsumed = useCallback(() => {
+    pendingPorteIdRef.current = null;
+    setAutoOpenPorteId(null);
   }, []);
 
   useEffect(() => {
@@ -81,6 +90,8 @@ export default function SwipeTabs({
             onHeaderVisibilityChange={onHeaderVisibilityChange}
             autoSelectImmeubleId={autoSelectImmeubleId}
             onAutoSelectConsumed={handleAutoSelectConsumed}
+            autoOpenPorteId={autoOpenPorteId}
+            onAutoOpenPorteConsumed={handleAutoOpenPorteConsumed}
           />
         );
       }
@@ -98,7 +109,7 @@ export default function SwipeTabs({
       }
       return <DashboardScreen />;
     },
-    [autoSelectImmeubleId, handleAutoSelectConsumed, handleNavigateToImmeuble, handleSwipeLockChange, index, onHeaderVisibilityChange, onRailVisibilityChange],
+    [autoOpenPorteId, autoSelectImmeubleId, handleAutoOpenPorteConsumed, handleAutoSelectConsumed, handleNavigateToImmeuble, handleSwipeLockChange, index, onHeaderVisibilityChange, onRailVisibilityChange],
   );
 
   return (

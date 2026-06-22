@@ -596,9 +596,7 @@ export default function StatistiquesScreen({
                 setPeriod(p);
                 setChartKey((k) => k + 1);
               }}
-              onRequestCustom={() => {
-                toast.show({ message: "Sélection personnalisée bientôt", variant: "info" });
-              }}
+              showCustom={false}
             />
             <Text style={styles.rangeLabel}>{formatRange(currentRange)}</Text>
           </View>

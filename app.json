@@ -1,10 +1,10 @@
 {
   "expo": {
-    "name": "ProWin Staging",
+    "name": "ProWin",
     "slug": "pro-win-staging",
     "version": "1.1.0",
     "orientation": "default",
-    "scheme": "prospection-staging",
+    "scheme": "prospection",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "icon": "./assets/images/icon.png",
@@ -25,7 +25,7 @@
         "UIStatusBarHidden": false,
         "UIStatusBarStyle": "UIStatusBarStyleLightContent"
       },
-      "bundleIdentifier": "com.aksilsadi.prospection.staging"
+      "bundleIdentifier": "com.aksilsadi.prospection"
     },
     "android": {
       "edgeToEdgeEnabled": true,
@@ -52,7 +52,7 @@
         "android.permission.WAKE_LOCK",
         "android.permission.BLUETOOTH"
       ],
-      "package": "com.aksilsadi.prospection.staging"
+      "package": "com.aksilsadi.prospection"
     },
     "web": {
       "output": "static",
