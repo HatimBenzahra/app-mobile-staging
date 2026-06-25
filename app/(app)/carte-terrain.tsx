@@ -50,7 +50,7 @@ type TerrainPoint = {
   longitude: number;
 };
 
-type TerrainMode = "BATIMENT" | "QUARTIER";
+type TerrainMode = "VISUALISATION" | "BATIMENT" | "QUARTIER";
 
 type DraftPin = TerrainPoint & {
   id: string;
@@ -93,12 +93,32 @@ function makeDraftPin(point: TerrainPoint): DraftPin {
   };
 }
 
-export default function CarteTerrainScreen() {
+function getLieuMarkerColor(type?: TypeHabitat) {
+  if (type === "MAISON") return colors.success;
+  if (type === "PAVILLON") return "#F97316";
+  return colors.primary;
+}
+
+function getHabitatLabel(type?: TypeHabitat) {
+  if (type === "MAISON") return "Maison";
+  if (type === "PAVILLON") return "Pavillon";
+  return "Immeuble";
+}
+
+type CarteTerrainScreenProps = {
+  embedded?: boolean;
+  onNavigateToLieu?: (immeubleId: number) => void;
+};
+
+export default function CarteTerrainScreen({
+  embedded = false,
+  onNavigateToLieu,
+}: CarteTerrainScreenProps = {}) {
   const insets = useSafeAreaInsets();
   const cameraRef = useRef<CameraRef | null>(null);
   const [userId, setUserId] = useState<number | null>(null);
   const [role, setRole] = useState<string | null>(null);
-  const [mode, setMode] = useState<TerrainMode>("BATIMENT");
+  const [mode, setMode] = useState<TerrainMode>("VISUALISATION");
   const [mapCenter, setMapCenter] = useState<TerrainPoint>(DEFAULT_REGION);
   const [buildingPin, setBuildingPin] = useState<DraftPin | null>(null);
   const [quartierPins, setQuartierPins] = useState<DraftPin[]>([]);
@@ -107,11 +127,18 @@ export default function CarteTerrainScreen() {
   const [loadingLocation, setLoadingLocation] = useState(true);
   const [loadingSuggestions, setLoadingSuggestions] = useState(false);
   const [creatingLieu, setCreatingLieu] = useState(false);
+  const [selectedExistingLieu, setSelectedExistingLieu] = useState<Immeuble | null>(null);
+  const [movingLieu, setMovingLieu] = useState<Immeuble | null>(null);
+  const [editingLieu, setEditingLieu] = useState<Immeuble | null>(null);
+  const [editingType, setEditingType] = useState<TypeHabitat>("IMMEUBLE");
+  const [editingNbMaisons, setEditingNbMaisons] = useState(1);
+  const [updatingLieu, setUpdatingLieu] = useState(false);
 
   const { data: profile, refetch } = useWorkspaceProfile(userId, role);
   const { createMaison, loading: creatingMaison } = useCreateMaison();
 
   const activePin = useMemo(() => {
+    if (mode === "VISUALISATION") return null;
     if (mode === "BATIMENT") return buildingPin;
     return quartierPins.find((pin) => pin.id === activeQuartierPinId) ?? null;
   }, [activeQuartierPinId, buildingPin, mode, quartierPins]);
@@ -211,7 +238,7 @@ export default function CarteTerrainScreen() {
         zoom: 16,
         duration: 450,
       });
-      if (!buildingPin && quartierPins.length === 0) {
+      if (mode === "BATIMENT" && !buildingPin && quartierPins.length === 0) {
         setBuildingActivePin(nextRegion);
       }
     } catch {
@@ -219,7 +246,7 @@ export default function CarteTerrainScreen() {
     } finally {
       setLoadingLocation(false);
     }
-  }, [buildingPin, quartierPins.length, setBuildingActivePin]);
+  }, [buildingPin, mode, quartierPins.length, setBuildingActivePin]);
 
   useEffect(() => {
     void centerOnCurrentLocation();
@@ -240,10 +267,36 @@ export default function CarteTerrainScreen() {
   const handleMapPress = (event: NativeSyntheticEvent<PressEvent>) => {
     const [longitude, latitude] = event.nativeEvent.lngLat;
     const point = { latitude, longitude };
+    if (movingLieu) {
+      setSelectedExistingLieu(null);
+      Alert.alert(
+        "Deplacer le lieu",
+        "Confirmer cette nouvelle position ?",
+        [
+          { text: "Annuler", style: "cancel" },
+          {
+            text: "Deplacer",
+            onPress: () => {
+              void handleMoveLieu(point);
+            },
+          },
+        ],
+      );
+      return;
+    }
+    if (mode === "VISUALISATION") {
+      setSelectedExistingLieu(null);
+      setEditingLieu(null);
+      return;
+    }
     if (mode === "BATIMENT") {
+      setSelectedExistingLieu(null);
+      setEditingLieu(null);
       setBuildingActivePin(point);
       return;
     }
+    setSelectedExistingLieu(null);
+    setEditingLieu(null);
     addQuartierPin(point);
   };
 
@@ -293,6 +346,11 @@ export default function CarteTerrainScreen() {
       }
 
       await refetch();
+      if (embedded) {
+        setBuildingPin(null);
+        setSuggestions([]);
+        return;
+      }
       router.back();
     } finally {
       setCreatingLieu(false);
@@ -329,12 +387,92 @@ export default function CarteTerrainScreen() {
       });
 
       await refetch();
+      if (embedded) {
+        setQuartierPins([]);
+        setActiveQuartierPinId(null);
+        setSuggestions([]);
+        return;
+      }
       router.back();
     } catch {
       Alert.alert("Creation impossible", "Le quartier n'a pas pu etre cree.");
     } finally {
       setCreatingLieu(false);
     }
+  };
+
+  const handleMoveLieu = async (point: TerrainPoint) => {
+    if (!movingLieu) return;
+    setUpdatingLieu(true);
+    try {
+      await api.immeubles.update({
+        id: movingLieu.id,
+        latitude: point.latitude,
+        longitude: point.longitude,
+      });
+      setMovingLieu(null);
+      await refetch();
+    } catch {
+      Alert.alert("Deplacement impossible", "La nouvelle position n'a pas pu etre enregistree.");
+    } finally {
+      setUpdatingLieu(false);
+    }
+  };
+
+  const openEditLieu = (immeuble: Immeuble) => {
+    setSelectedExistingLieu(null);
+    setEditingLieu(immeuble);
+    setEditingType(immeuble.typeHabitat ?? "IMMEUBLE");
+    setEditingNbMaisons(immeuble.nbMaisonsPrevu ?? immeuble.nbPortesParEtage ?? 1);
+  };
+
+  const handleSaveEditLieu = async () => {
+    if (!editingLieu) return;
+    setUpdatingLieu(true);
+    try {
+      await api.immeubles.update({
+        id: editingLieu.id,
+        typeHabitat: editingType,
+        nbEtages: editingType === "MAISON" ? 1 : editingLieu.nbEtages,
+        nbPortesParEtage: editingType === "PAVILLON" ? editingNbMaisons : editingType === "MAISON" ? 1 : editingLieu.nbPortesParEtage,
+        nbMaisonsPrevu: editingType === "PAVILLON" ? editingNbMaisons : editingType === "MAISON" ? 1 : null,
+      });
+      setEditingLieu(null);
+      await refetch();
+    } catch {
+      Alert.alert("Modification impossible", "Le lieu n'a pas pu etre modifie.");
+    } finally {
+      setUpdatingLieu(false);
+    }
+  };
+
+  const handleDeleteLieu = (immeuble: Immeuble) => {
+    Alert.alert(
+      "Supprimer ce lieu ?",
+      "Possible uniquement si aucune porte n'a encore ete prospectee.",
+      [
+        { text: "Annuler", style: "cancel" },
+        {
+          text: "Supprimer",
+          style: "destructive",
+          onPress: async () => {
+            setUpdatingLieu(true);
+            try {
+              await api.immeubles.removeTerrainLieu(immeuble.id);
+              setSelectedExistingLieu(null);
+              await refetch();
+            } catch {
+              Alert.alert(
+                "Suppression impossible",
+                "Ce lieu contient peut-etre deja une prospection ou n'est pas accessible.",
+              );
+            } finally {
+              setUpdatingLieu(false);
+            }
+          },
+        },
+      ],
+    );
   };
 
   const creating = creatingMaison || creatingLieu;
@@ -371,13 +509,19 @@ export default function CarteTerrainScreen() {
             id={`immeuble-${immeuble.id}`}
             lngLat={[immeuble.longitude!, immeuble.latitude!]}
             anchor="bottom"
+            onPress={(event) => {
+              event.stopPropagation();
+              if (mode !== "VISUALISATION") return;
+              setSelectedExistingLieu(immeuble);
+              setMovingLieu(null);
+              setEditingLieu(null);
+            }}
           >
             <View
               style={[
                 styles.mapMarker,
                 {
-                  backgroundColor:
-                    immeuble.typeHabitat === "MAISON" ? colors.success : colors.primary,
+                  backgroundColor: getLieuMarkerColor(immeuble.typeHabitat),
                 },
               ]}
             >
@@ -402,30 +546,39 @@ export default function CarteTerrainScreen() {
             id={`quartier-pin-${pin.id}`}
             lngLat={[pin.longitude, pin.latitude]}
             anchor="bottom"
+            onPress={(event) => {
+              event.stopPropagation();
+              selectQuartierPin(pin);
+            }}
           >
-            <Pressable
+            <View
               style={[
                 styles.quartierMapMarker,
                 pin.id === activeQuartierPinId && styles.quartierMapMarkerActive,
               ]}
-              onPress={() => selectQuartierPin(pin)}
             >
               <Text style={styles.quartierMapMarkerText}>{index + 1}</Text>
-            </Pressable>
+            </View>
           </Marker>
         ))}
       </MapLibreMap>
 
       <View style={[styles.topBar, { paddingTop: insets.top + 8 }]}>
-        <Pressable style={styles.iconButton} onPress={() => router.back()}>
-          <Feather name="chevron-left" size={22} color={colors.text} />
-        </Pressable>
+        {!embedded && (
+          <Pressable style={styles.iconButton} onPress={() => router.back()}>
+            <Feather name="chevron-left" size={22} color={colors.text} />
+          </Pressable>
+        )}
         <View style={styles.topTitle}>
           <Text style={styles.title}>Carte terrain</Text>
           <Text style={styles.subtitle}>
-            {mode === "BATIMENT"
-              ? "Pose un repere rouge sur le lieu a prospecter."
-              : "Pose plusieurs reperes pour definir un quartier."}
+            {movingLieu
+              ? `Touche la nouvelle position pour ${movingLieu.adresse}.`
+              : mode === "VISUALISATION"
+                ? "Consulte les reperes et ouvre leurs options."
+                : mode === "BATIMENT"
+                  ? "Pose un repere rouge sur le lieu a prospecter."
+                  : "Pose plusieurs reperes pour definir un quartier."}
           </Text>
         </View>
         <Pressable style={styles.iconButton} onPress={centerOnCurrentLocation}>
@@ -438,7 +591,7 @@ export default function CarteTerrainScreen() {
       </View>
 
       <View style={[styles.modeSwitch, { top: insets.top + 78 }]}>
-        {(["BATIMENT", "QUARTIER"] as TerrainMode[]).map((nextMode) => {
+        {(["VISUALISATION", "BATIMENT", "QUARTIER"] as TerrainMode[]).map((nextMode) => {
           const selected = mode === nextMode;
           return (
             <Pressable
@@ -447,21 +600,177 @@ export default function CarteTerrainScreen() {
               onPress={() => {
                 setMode(nextMode);
                 setSuggestions([]);
+                setSelectedExistingLieu(null);
+                setEditingLieu(null);
+                setMovingLieu(null);
               }}
             >
               <Feather
-                name={nextMode === "BATIMENT" ? "map-pin" : "map"}
+                name={
+                  nextMode === "VISUALISATION"
+                    ? "eye"
+                    : nextMode === "BATIMENT"
+                      ? "map-pin"
+                      : "map"
+                }
                 size={15}
                 color={selected ? colors.textOnPrimary : colors.primary}
               />
               <Text style={[styles.modeText, selected && styles.modeTextSelected]}>
-                {nextMode === "BATIMENT" ? "Batiment" : "Quartier"}
+                {nextMode === "VISUALISATION"
+                  ? "Voir"
+                  : nextMode === "BATIMENT"
+                    ? "Batiment"
+                    : "Quartier"}
               </Text>
             </Pressable>
           );
         })}
       </View>
 
+      {selectedExistingLieu ? (
+        <Card
+          variant="elevated"
+          padding="md"
+          style={[styles.panel, { paddingBottom: Math.max(insets.bottom, 12) }]}
+        >
+          <View style={styles.panelHeader}>
+            <View style={styles.panelTitleBlock}>
+              <Text style={styles.panelTitle} numberOfLines={1}>
+                {getHabitatLabel(selectedExistingLieu.typeHabitat)}
+              </Text>
+              <Text style={styles.panelHint} numberOfLines={2}>
+                {selectedExistingLieu.adresse}
+              </Text>
+            </View>
+            <Pressable style={styles.iconButton} onPress={() => setSelectedExistingLieu(null)}>
+              <Feather name="x" size={18} color={colors.textStrong} />
+            </Pressable>
+          </View>
+
+          <View style={styles.markerActions}>
+            <Pressable
+              style={styles.markerAction}
+              onPress={() => {
+                onNavigateToLieu?.(selectedExistingLieu.id);
+                setSelectedExistingLieu(null);
+              }}
+            >
+              <Feather name="arrow-right-circle" size={18} color={colors.primary} />
+              <Text style={styles.markerActionText}>Voir detail</Text>
+            </Pressable>
+            <Pressable
+              style={styles.markerAction}
+              onPress={() => openEditLieu(selectedExistingLieu)}
+              disabled={updatingLieu}
+            >
+              <Feather name="edit-3" size={18} color={colors.primary} />
+              <Text style={styles.markerActionText}>Modifier</Text>
+            </Pressable>
+            <Pressable
+              style={[styles.markerAction, movingLieu?.id === selectedExistingLieu.id && styles.markerActionActive]}
+              onPress={() => {
+                setMovingLieu(selectedExistingLieu);
+                setSelectedExistingLieu(null);
+              }}
+              disabled={updatingLieu}
+            >
+              <Feather name="move" size={18} color={colors.primary} />
+              <Text style={styles.markerActionText}>Deplacer</Text>
+            </Pressable>
+            <Pressable
+              style={[styles.markerAction, styles.markerActionDanger]}
+              onPress={() => handleDeleteLieu(selectedExistingLieu)}
+              disabled={updatingLieu}
+            >
+              {updatingLieu ? (
+                <ActivityIndicator size="small" color={colors.danger} />
+              ) : (
+                <Feather name="trash-2" size={18} color={colors.danger} />
+              )}
+              <Text style={[styles.markerActionText, styles.markerActionDangerText]}>Supprimer</Text>
+            </Pressable>
+          </View>
+        </Card>
+      ) : editingLieu ? (
+        <Card
+          variant="elevated"
+          padding="md"
+          style={[styles.panel, { paddingBottom: Math.max(insets.bottom, 12) }]}
+        >
+          <View style={styles.panelHeader}>
+            <View style={styles.panelTitleBlock}>
+              <Text style={styles.panelTitle} numberOfLines={1}>
+                Modifier le lieu
+              </Text>
+              <Text style={styles.panelHint} numberOfLines={2}>
+                {editingLieu.adresse}
+              </Text>
+            </View>
+            <Pressable style={styles.iconButton} onPress={() => setEditingLieu(null)}>
+              <Feather name="x" size={18} color={colors.textStrong} />
+            </Pressable>
+          </View>
+
+          <View style={styles.typeRow}>
+            {habitatOptions.map((option) => {
+              const selected = editingType === option.type;
+              return (
+                <Pressable
+                  key={option.type}
+                  style={[styles.typeButton, selected && styles.typeButtonSelected]}
+                  onPress={() => setEditingType(option.type)}
+                >
+                  <Feather
+                    name={option.icon}
+                    size={16}
+                    color={selected ? colors.textOnPrimary : colors.primary}
+                  />
+                  <Text style={[styles.typeLabel, selected && styles.typeLabelSelected]}>
+                    {option.label}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+
+          {editingType === "PAVILLON" && (
+            <View style={styles.stepperRow}>
+              <Text style={styles.stepperLabel}>Maisons prevues</Text>
+              <View style={styles.stepperControls}>
+                <Pressable
+                  style={styles.stepperButton}
+                  onPress={() => setEditingNbMaisons((value) => Math.max(1, value - 1))}
+                >
+                  <Feather name="minus" size={16} color={colors.primary} />
+                </Pressable>
+                <Text style={styles.stepperValue}>{editingNbMaisons}</Text>
+                <Pressable
+                  style={styles.stepperButton}
+                  onPress={() => setEditingNbMaisons((value) => value + 1)}
+                >
+                  <Feather name="plus" size={16} color={colors.primary} />
+                </Pressable>
+              </View>
+            </View>
+          )}
+
+          <Pressable
+            style={[styles.createButton, updatingLieu && styles.createButtonDisabled]}
+            onPress={handleSaveEditLieu}
+            disabled={updatingLieu}
+          >
+            {updatingLieu ? (
+              <ActivityIndicator size="small" color={colors.textOnPrimary} />
+            ) : (
+              <>
+                <Text style={styles.createText}>Enregistrer</Text>
+                <Feather name="check" size={16} color={colors.textOnPrimary} />
+              </>
+            )}
+          </Pressable>
+        </Card>
+      ) : mode !== "VISUALISATION" ? (
       <Card
         variant="elevated"
         padding="md"
@@ -625,6 +934,7 @@ export default function CarteTerrainScreen() {
           )}
         </Pressable>
       </Card>
+      ) : null}
     </View>
   );
 }
@@ -900,6 +1210,39 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "900",
     color: colors.text,
+  },
+  markerActions: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  markerAction: {
+    flexGrow: 1,
+    flexBasis: "22%",
+    minHeight: 48,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: colors.border,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 4,
+    backgroundColor: colors.surface,
+  },
+  markerActionActive: {
+    borderColor: colors.primary,
+    backgroundColor: colors.primarySoft,
+  },
+  markerActionDanger: {
+    borderColor: "#FECACA",
+    backgroundColor: "#FEF2F2",
+  },
+  markerActionText: {
+    fontSize: 11,
+    fontWeight: "800",
+    color: colors.primary,
+  },
+  markerActionDangerText: {
+    color: colors.danger,
   },
   createButton: {
     height: 50,

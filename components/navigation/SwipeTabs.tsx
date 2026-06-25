@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { StyleSheet, View } from "react-native";
 import { TabView } from "react-native-tab-view";
 import AgendaScreen from "@/app/(app)/(tabs)/agenda";
+import CarteTerrainScreen from "@/app/(app)/carte-terrain";
 import DashboardScreen from "@/app/(app)/(tabs)/dashboard";
 import ImmeublesScreen from "@/app/(app)/(tabs)/immeubles";
 import StatistiquesScreen from "@/app/(app)/(tabs)/statistiques";
@@ -9,12 +10,15 @@ import EquipeScreen from "@/app/(app)/(tabs)/equipe";
 import HistoriqueScreen from "@/app/(app)/(tabs)/historique";
 import { authService } from "@/services/auth";
 
-const buildRoutes = (isManager: boolean) => {
-  const baseRoutes = [
-    { key: "dashboard", title: "Dashboard", icon: "bar-chart-2" },
-    { key: "immeubles", title: "Immeubles", icon: "home" },
+export type TabRoute = { key: string; title: string; icon: string };
+
+export const buildRoutes = (isManager: boolean): TabRoute[] => {
+  const baseRoutes: TabRoute[] = [
+    { key: "dashboard", title: "Tableau", icon: "bar-chart-2" },
+    { key: "carte", title: "Carte", icon: "map" },
+    { key: "immeubles", title: "Lieux", icon: "map-pin" },
     { key: "agenda", title: "Agenda", icon: "book-open" },
-    { key: "statistiques", title: "Statistiques", icon: "trending-up" },
+    { key: "statistiques", title: "Stats", icon: "trending-up" },
   ];
   if (isManager) {
     baseRoutes.push({ key: "equipe", title: "Équipe", icon: "users" });
@@ -84,7 +88,7 @@ export default function SwipeTabs({
       if (route.key === "immeubles") {
         return (
           <ImmeublesScreen
-            isActive={index === 1}
+            isActive={tabRoutes[index]?.key === "immeubles"}
             onSwipeLockChange={handleSwipeLockChange}
             onHamburgerVisibilityChange={onRailVisibilityChange}
             onHeaderVisibilityChange={onHeaderVisibilityChange}
@@ -94,6 +98,9 @@ export default function SwipeTabs({
             onAutoOpenPorteConsumed={handleAutoOpenPorteConsumed}
           />
         );
+      }
+      if (route.key === "carte") {
+        return <CarteTerrainScreen embedded onNavigateToLieu={handleNavigateToImmeuble} />;
       }
       if (route.key === "historique") {
         return <HistoriqueScreen />;

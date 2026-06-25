@@ -180,6 +180,23 @@ export type CreateImmeubleInput = {
 
 export type TypeHabitat = "IMMEUBLE" | "MAISON" | "PAVILLON";
 
+export type UpdateImmeubleInput = {
+  id: number;
+  adresse?: string;
+  latitude?: number | null;
+  longitude?: number | null;
+  typeHabitat?: TypeHabitat;
+  nbEtages?: number;
+  nbPortesParEtage?: number;
+  quartierId?: number | null;
+  nbMaisonsPrevu?: number | null;
+  ascenseurPresent?: boolean | null;
+  digitalCode?: string | null;
+  commercialId?: number | null;
+  managerId?: number | null;
+  zoneId?: number | null;
+};
+
 export type Quartier = {
   id: number;
   nom: string;

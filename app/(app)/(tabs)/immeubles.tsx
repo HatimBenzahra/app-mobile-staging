@@ -5,9 +5,8 @@ import { useCreateImmeuble } from "@/hooks/api/use-create-immeuble";
 import { useWorkspaceProfile } from "@/hooks/api/use-workspace-profile";
 import { colors, progressColors } from "@/constants/theme";
 import { authService } from "@/services/auth";
-import type { Immeuble } from "@/types/api";
+import type { Immeuble, TypeHabitat } from "@/types/api";
 import { Feather } from "@expo/vector-icons";
-import { router } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Animated,
@@ -35,8 +34,20 @@ type ImmeublesScreenProps = {
 
 type ListRow = { _type: "controls" } | Immeuble[];
 
-const CONTROLS_ROW_HEIGHT = 170;
+const CONTROLS_ROW_HEIGHT = 214;
 const DATA_ROW_HEIGHT = 208;
+
+const TYPE_CHIPS: {
+  key: "all" | TypeHabitat;
+  label: string;
+  icon: keyof typeof Feather.glyphMap;
+  color: string;
+}[] = [
+  { key: "all", label: "Tous", icon: "map-pin", color: colors.primary },
+  { key: "MAISON", label: "Maisons", icon: "home", color: colors.success },
+  { key: "PAVILLON", label: "Pavillons", icon: "grid", color: "#F97316" },
+  { key: "IMMEUBLE", label: "Immeubles", icon: "layers", color: colors.primary },
+];
 
 const FILTER_CHIPS: {
   key: string;
@@ -56,6 +67,39 @@ const FILTER_CHIPS: {
   { key: "high", label: "70-99%", icon: "trending-up", color: progressColors.high },
   { key: "complete", label: "100%", icon: "check", color: progressColors.complete },
 ];
+
+function getLieuMeta(immeuble: Immeuble): {
+  label: string;
+  icon: keyof typeof Feather.glyphMap;
+  color: string;
+  detail: string;
+} {
+  if (immeuble.typeHabitat === "MAISON") {
+    return {
+      label: "Maison",
+      icon: "home",
+      color: colors.success,
+      detail: "1 porte",
+    };
+  }
+
+  if (immeuble.typeHabitat === "PAVILLON") {
+    const maisons = immeuble.nbMaisonsPrevu ?? immeuble.nbPortesParEtage ?? 1;
+    return {
+      label: "Pavillon",
+      icon: "grid",
+      color: "#F97316",
+      detail: `${maisons} maisons prevues`,
+    };
+  }
+
+  return {
+    label: "Immeuble",
+    icon: "layers",
+    color: colors.primary,
+    detail: `${immeuble.nbEtages} etages`,
+  };
+}
 
 export default function ImmeublesScreen({
   isActive = true,
@@ -81,6 +125,7 @@ export default function ImmeublesScreen({
   const filterChipAnimsRef = useRef(new Map<string, Animated.Value>()).current;
   const [filtersVisible, setFiltersVisible] = useState(true);
   const [progressFilter, setProgressFilter] = useState("incomplete");
+  const [typeFilter, setTypeFilter] = useState<"all" | TypeHabitat>("all");
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [selectedImmeubleId, setSelectedImmeubleId] = useState<number | null>(
     null,
@@ -176,10 +221,14 @@ export default function ImmeublesScreen({
     [profile],
   );
   const filteredImmeubles = useMemo(() => {
-    if (!query.trim()) return immeubles;
+    const byType =
+      typeFilter === "all"
+        ? immeubles
+        : immeubles.filter((imm) => imm.typeHabitat === typeFilter);
+    if (!query.trim()) return byType;
     const lower = query.toLowerCase();
-    return immeubles.filter((imm) => imm.adresse.toLowerCase().includes(lower));
-  }, [immeubles, query]);
+    return byType.filter((imm) => imm.adresse.toLowerCase().includes(lower));
+  }, [immeubles, query, typeFilter]);
 
   const immeublesEnCours = useMemo(() => {
     const filtered = filteredImmeubles.filter((imm) => {
@@ -359,11 +408,8 @@ export default function ImmeublesScreen({
     onAutoSelectConsumed?.();
   }, [autoSelectImmeubleId, handleOpenImmeuble, immeubles, onAutoSelectConsumed]);
 
-  const totalPortes = useMemo(() => {
-    return immeubles.reduce(
-      (total, imm) => total + imm.nbEtages * imm.nbPortesParEtage,
-      0,
-    );
+  const totalMaisonsLike = useMemo(() => {
+    return immeubles.filter((imm) => imm.typeHabitat === "MAISON" || imm.typeHabitat === "PAVILLON").length;
   }, [immeubles]);
 
   const selectedImmeuble = useMemo(
@@ -505,14 +551,14 @@ export default function ImmeublesScreen({
               <View style={styles.summaryRow}>
                 <StatTile
                   icon="layers"
-                  label="Immeubles à finir"
+                  label="Lieux a finir"
                   value={immeublesEnCours.length}
                   emphasis="primary"
                 />
                 <StatTile
-                  icon="grid"
-                  label="Portes totales"
-                  value={totalPortes}
+                  icon="home"
+                  label="Maisons/Pavillons"
+                  value={totalMaisonsLike}
                 />
               </View>
 
@@ -533,8 +579,8 @@ export default function ImmeublesScreen({
           ListEmptyComponent={
             !loading && !error ? (
               <Card variant="elevated" padding="md" style={{ alignItems: "center", gap: 8 }}>
-                <Feather name="home" size={32} color={colors.textSubtle} />
-                <Text style={styles.emptyText}>Aucun immeuble trouve</Text>
+                <Feather name="map-pin" size={32} color={colors.textSubtle} />
+                <Text style={styles.emptyText}>Aucun lieu trouve</Text>
               </Card>
             ) : null
           }
@@ -542,47 +588,61 @@ export default function ImmeublesScreen({
             !Array.isArray(row) ? (
               <View style={styles.controlsSticky}>
                 {!isSearchFocused && filtersVisible && (
-                  <View style={styles.filterRow}>
-                    {FILTER_CHIPS.map((chip) => {
-                      const selected = progressFilter === chip.key;
-                      const anim = getFilterChipAnim(chip.key);
-                      return (
-                        <Animated.View
+                  <View style={styles.filterStack}>
+                    <View style={styles.filterRow}>
+                      {TYPE_CHIPS.map((chip) => (
+                        <Chip
                           key={chip.key}
-                          style={{
-                            opacity: anim,
-                            transform: [
-                              {
-                                translateY: anim.interpolate({
-                                  inputRange: [0, 1],
-                                  outputRange: [16, 0],
-                                }),
-                              },
-                              {
-                                translateX: anim.interpolate({
-                                  inputRange: [0, 1],
-                                  outputRange: [12, 0],
-                                }),
-                              },
-                              {
-                                scale: anim.interpolate({
-                                  inputRange: [0, 1],
-                                  outputRange: [0.9, 1],
-                                }),
-                              },
-                            ],
-                          }}
-                        >
-                          <Chip
-                            label={chip.label}
-                            icon={chip.icon}
-                            selected={selected}
-                            accent={chip.color}
-                            onPress={() => setProgressFilter(chip.key)}
-                          />
-                        </Animated.View>
-                      );
-                    })}
+                          label={chip.label}
+                          icon={chip.icon}
+                          selected={typeFilter === chip.key}
+                          accent={chip.color}
+                          onPress={() => setTypeFilter(chip.key)}
+                        />
+                      ))}
+                    </View>
+                    <View style={styles.filterRow}>
+                      {FILTER_CHIPS.map((chip) => {
+                        const selected = progressFilter === chip.key;
+                        const anim = getFilterChipAnim(chip.key);
+                        return (
+                          <Animated.View
+                            key={chip.key}
+                            style={{
+                              opacity: anim,
+                              transform: [
+                                {
+                                  translateY: anim.interpolate({
+                                    inputRange: [0, 1],
+                                    outputRange: [16, 0],
+                                  }),
+                                },
+                                {
+                                  translateX: anim.interpolate({
+                                    inputRange: [0, 1],
+                                    outputRange: [12, 0],
+                                  }),
+                                },
+                                {
+                                  scale: anim.interpolate({
+                                    inputRange: [0, 1],
+                                    outputRange: [0.9, 1],
+                                  }),
+                                },
+                              ],
+                            }}
+                          >
+                            <Chip
+                              label={chip.label}
+                              icon={chip.icon}
+                              selected={selected}
+                              accent={chip.color}
+                              onPress={() => setProgressFilter(chip.key)}
+                            />
+                          </Animated.View>
+                        );
+                      })}
+                    </View>
                   </View>
                 )}
                 <View style={styles.searchWrapRow}>
@@ -598,7 +658,7 @@ export default function ImmeublesScreen({
                     </View>
                     <TextInput
                       ref={searchInputRef}
-                      placeholder="Rechercher un immeuble, adresse, ville?"
+                      placeholder="Rechercher un lieu, adresse, ville?"
                       placeholderTextColor={colors.textSubtle}
                       style={styles.searchInput}
                       value={query}
@@ -654,7 +714,7 @@ export default function ImmeublesScreen({
                     progressPercent: 0,
                     progressColor: progressColors.high,
                   };
-                  const cardLabel = `Appartement ${String.fromCharCode(65 + (index % 26))}`;
+                  const meta = getLieuMeta(immeuble);
                   const anim = getCardAnimation(immeuble.id);
                   const animValue = anim;
                   return (
@@ -694,10 +754,12 @@ export default function ImmeublesScreen({
                         onPress={() => handleOpenImmeuble(immeuble.id)}
                       >
                         <View style={styles.cardHeader}>
-                          <View style={styles.cardIcon}>
-                            <Feather name="home" size={18} color={colors.primary} />
+                          <View style={[styles.cardIcon, { backgroundColor: `${meta.color}1A` }]}>
+                            <Feather name={meta.icon} size={18} color={meta.color} />
                           </View>
-                          <Text style={styles.cardChip}>{cardLabel}</Text>
+                          <Text style={[styles.cardChip, { color: meta.color }]}>
+                            {meta.label}
+                          </Text>
                         </View>
                         <View style={styles.cardContent}>
                           <Text
@@ -711,9 +773,7 @@ export default function ImmeublesScreen({
                           </Text>
                           <View style={styles.cardMetaRow}>
                             <Feather name="grid" size={11} color={colors.textStrong} />
-                            <Text style={styles.cardMeta}>
-                              {immeuble.nbEtages} etages
-                            </Text>
+                            <Text style={styles.cardMeta}>{meta.detail}</Text>
                             <Text style={styles.cardMeta}>•</Text>
                             <Text style={styles.cardMeta}>
                               {progress.total} portes
@@ -754,12 +814,6 @@ export default function ImmeublesScreen({
         />
 
         <View style={[styles.fabStack, { bottom: insets.bottom + 72 }]}>
-          <Pressable
-            style={[styles.fab, styles.mapFab]}
-            onPress={() => router.push("/carte-terrain")}
-          >
-            <Feather name="map-pin" size={20} color={colors.textOnPrimary} />
-          </Pressable>
           <Pressable
             style={styles.fab}
             onPress={() => setIsAddOpen(true)}
@@ -926,6 +980,9 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
     gap: 8,
   },
+  filterStack: {
+    gap: 8,
+  },
   filterRowAnimated: {
     overflow: "hidden",
   },
@@ -1085,9 +1142,6 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 6 },
     elevation: 6,
-  },
-  mapFab: {
-    backgroundColor: colors.success,
   },
   controlsSticky: {
     backgroundColor: colors.background,

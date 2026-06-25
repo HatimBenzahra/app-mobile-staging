@@ -65,6 +65,43 @@ export const CREATE_QUARTIER = `
   }
 `;
 
+export const UPDATE_IMMEUBLE = `
+  mutation UpdateImmeuble($updateImmeubleInput: UpdateImmeubleInput!) {
+    updateImmeuble(updateImmeubleInput: $updateImmeubleInput) {
+      id
+      adresse
+      nbEtages
+      nbPortesParEtage
+      typeHabitat
+      nbMaisonsPrevu
+      ascenseurPresent
+      digitalCode
+      latitude
+      longitude
+      quartierId
+      createdAt
+      updatedAt
+    }
+  }
+`;
+
+export const REMOVE_TERRAIN_LIEU = `
+  mutation RemoveTerrainLieu($id: Int!) {
+    removeTerrainLieu(id: $id) {
+      id
+      adresse
+      nbEtages
+      nbPortesParEtage
+      typeHabitat
+      nbMaisonsPrevu
+      latitude
+      longitude
+      quartierId
+      updatedAt
+    }
+  }
+`;
+
 // V2 : nouvel endpoint qui ne pré-crée pas les portes du nouvel étage.
 export const ADD_ETAGE_TO_IMMEUBLE = `
   mutation AddEtageEmpty($immeubleId: Int!) {

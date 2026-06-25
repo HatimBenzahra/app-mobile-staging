@@ -93,22 +93,28 @@ export default function NavigationRail({
         targetIndex: 0,
       },
       {
-        key: "immeubles",
-        icon: "home" as keyof typeof Feather.glyphMap,
-        label: "Immeubles",
+        key: "carte",
+        icon: "map" as keyof typeof Feather.glyphMap,
+        label: "Carte",
         targetIndex: 1,
+      },
+      {
+        key: "immeubles",
+        icon: "map-pin" as keyof typeof Feather.glyphMap,
+        label: "Lieux",
+        targetIndex: 2,
       },
       {
         key: "agenda",
         icon: "book-open" as keyof typeof Feather.glyphMap,
         label: "Agenda",
-        targetIndex: 2,
+        targetIndex: 3,
       },
       {
         key: "stats",
         icon: "trending-up" as keyof typeof Feather.glyphMap,
         label: "Stats",
-        targetIndex: 3,
+        targetIndex: 4,
       },
       ...(isManager
         ? [
@@ -116,7 +122,7 @@ export default function NavigationRail({
               key: "equipe",
               icon: "users" as keyof typeof Feather.glyphMap,
               label: "Équipe",
-              targetIndex: 4,
+              targetIndex: 5,
             },
           ]
         : []),
@@ -124,7 +130,7 @@ export default function NavigationRail({
         key: "historique",
         icon: "clock" as keyof typeof Feather.glyphMap,
         label: "Historique",
-        targetIndex: isManager ? 5 : 4,
+        targetIndex: isManager ? 6 : 5,
       },
     ],
     [isManager],

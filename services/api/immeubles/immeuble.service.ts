@@ -1,13 +1,21 @@
 import { gql } from "@/services/core/graphql";
-import type { CreateImmeubleInput, CreateQuartierInput, Immeuble, Quartier } from "@/types/api";
+import type {
+  CreateImmeubleInput,
+  CreateQuartierInput,
+  Immeuble,
+  Quartier,
+  UpdateImmeubleInput,
+} from "@/types/api";
 import {
   ADD_ETAGE_TO_IMMEUBLE,
   ADD_PORTE_TO_ETAGE,
   CREATE_IMMEUBLE,
   CREATE_MAISON_FROM_IMMEUBLE_INPUT,
   CREATE_QUARTIER,
+  REMOVE_TERRAIN_LIEU,
   REMOVE_ETAGE_FROM_IMMEUBLE,
   REMOVE_PORTE_FROM_ETAGE,
+  UPDATE_IMMEUBLE,
 } from "./immeuble.mutations";
 
 export const immeubleApi = {
@@ -33,6 +41,22 @@ export const immeubleApi = {
       { createQuartierInput: CreateQuartierInput }
     >(CREATE_QUARTIER, { createQuartierInput: input });
     return response.createQuartier;
+  },
+
+  async update(input: UpdateImmeubleInput): Promise<Immeuble> {
+    const response = await gql<
+      { updateImmeuble: Immeuble },
+      { updateImmeubleInput: UpdateImmeubleInput }
+    >(UPDATE_IMMEUBLE, { updateImmeubleInput: input });
+    return response.updateImmeuble;
+  },
+
+  async removeTerrainLieu(id: number): Promise<Immeuble> {
+    const response = await gql<
+      { removeTerrainLieu: Immeuble },
+      { id: number }
+    >(REMOVE_TERRAIN_LIEU, { id });
+    return response.removeTerrainLieu;
   },
 
   async addEtageToImmeuble(id: number): Promise<Immeuble> {

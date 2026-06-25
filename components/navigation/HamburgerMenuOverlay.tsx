@@ -7,7 +7,7 @@ import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Animated, Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-const MAX_MENU_ITEMS = 6;
+const MAX_MENU_ITEMS = 7;
 
 type MenuItemProps = {
   icon: keyof typeof Feather.glyphMap;
@@ -121,23 +121,37 @@ export default function HamburgerMenuOverlay({
       {
         key: "dashboard",
         icon: "bar-chart-2" as keyof typeof Feather.glyphMap,
-        label: "Dashboard",
+        label: "Tableau",
         targetIndex: 0,
         isActive: currentIndex === 0,
       },
       {
-        key: "immeubles",
-        icon: "home" as keyof typeof Feather.glyphMap,
-        label: "Immeubles",
+        key: "carte",
+        icon: "map" as keyof typeof Feather.glyphMap,
+        label: "Carte",
         targetIndex: 1,
         isActive: currentIndex === 1,
       },
       {
-        key: "statistiques",
-        icon: "trending-up" as keyof typeof Feather.glyphMap,
-        label: "Statistiques",
+        key: "immeubles",
+        icon: "map-pin" as keyof typeof Feather.glyphMap,
+        label: "Lieux",
         targetIndex: 2,
         isActive: currentIndex === 2,
+      },
+      {
+        key: "agenda",
+        icon: "book-open" as keyof typeof Feather.glyphMap,
+        label: "Agenda",
+        targetIndex: 3,
+        isActive: currentIndex === 3,
+      },
+      {
+        key: "statistiques",
+        icon: "trending-up" as keyof typeof Feather.glyphMap,
+        label: "Stats",
+        targetIndex: 4,
+        isActive: currentIndex === 4,
       },
       ...(isManager
         ? [
@@ -145,8 +159,8 @@ export default function HamburgerMenuOverlay({
               key: "equipe",
               icon: "users" as keyof typeof Feather.glyphMap,
               label: "Équipe",
-              targetIndex: 3,
-              isActive: currentIndex === 3,
+              targetIndex: 5,
+              isActive: currentIndex === 5,
             },
           ]
         : []),
@@ -154,8 +168,8 @@ export default function HamburgerMenuOverlay({
         key: "historique",
         icon: "clock" as keyof typeof Feather.glyphMap,
         label: "Historique",
-        targetIndex: isManager ? 4 : 3,
-        isActive: currentIndex === (isManager ? 4 : 3),
+        targetIndex: isManager ? 6 : 5,
+        isActive: currentIndex === (isManager ? 6 : 5),
       },
     ],
     [currentIndex, isManager],
