@@ -2,6 +2,7 @@ import { Card } from "@/components/ui";
 import { colors } from "@/constants/theme";
 import { useCreateMaison } from "@/hooks/api/use-create-maison";
 import { useWorkspaceProfile } from "@/hooks/api/use-workspace-profile";
+import { useQuartiers } from "@/hooks/api/use-quartiers";
 import { api } from "@/services/api";
 import { authService } from "@/services/auth";
 import type { CreateQuartierPointInput, Immeuble, TypeHabitat } from "@/types/api";
@@ -107,12 +108,10 @@ function getHabitatLabel(type?: TypeHabitat) {
 
 type CarteTerrainScreenProps = {
   embedded?: boolean;
-  onNavigateToLieu?: (immeubleId: number) => void;
 };
 
 export default function CarteTerrainScreen({
   embedded = false,
-  onNavigateToLieu,
 }: CarteTerrainScreenProps = {}) {
   const insets = useSafeAreaInsets();
   const cameraRef = useRef<CameraRef | null>(null);
@@ -133,8 +132,14 @@ export default function CarteTerrainScreen({
   const [editingType, setEditingType] = useState<TypeHabitat>("IMMEUBLE");
   const [editingNbMaisons, setEditingNbMaisons] = useState(1);
   const [updatingLieu, setUpdatingLieu] = useState(false);
+  const navigatingRef = useRef(false);
+  // Remet le garde à zéro dès que le panneau marqueur se ferme.
+  useEffect(() => {
+    if (selectedExistingLieu === null) navigatingRef.current = false;
+  }, [selectedExistingLieu]);
 
   const { data: profile, refetch } = useWorkspaceProfile(userId, role);
+  const { data: quartiers } = useQuartiers();
   const { createMaison, loading: creatingMaison } = useCreateMaison();
 
   const activePin = useMemo(() => {
@@ -316,8 +321,8 @@ export default function CarteTerrainScreen({
     adresse: draft.selectedAddress!.properties.label,
     latitude: draft.latitude,
     longitude: draft.longitude,
-    nbEtages: 1,
-    nbPortesParEtage: draft.typeHabitat === "PAVILLON" ? draft.nbMaisonsPrevu : 1,
+    nbEtages: draft.typeHabitat === "PAVILLON" ? draft.nbMaisonsPrevu : 1,
+    nbPortesParEtage: 1,
     nbMaisonsPrevu: draft.typeHabitat === "PAVILLON" ? draft.nbMaisonsPrevu : 1,
     ascenseurPresent: false,
     digitalCode: null,
@@ -346,12 +351,9 @@ export default function CarteTerrainScreen({
       }
 
       await refetch();
-      if (embedded) {
-        setBuildingPin(null);
-        setSuggestions([]);
-        return;
-      }
-      router.back();
+      setBuildingPin(null);
+      setSuggestions([]);
+      router.push(`/lieu/${result.id}`);
     } finally {
       setCreatingLieu(false);
     }
@@ -375,25 +377,27 @@ export default function CarteTerrainScreen({
         latitude: pin.latitude,
         longitude: pin.longitude,
         typeHabitat: pin.typeHabitat,
-        nbEtages: 1,
-        nbPortesParEtage: pin.typeHabitat === "PAVILLON" ? pin.nbMaisonsPrevu : 1,
+        // PAVILLON = N maisons (1 foyer chacune) → N étages × 1 porte.
+        nbEtages: pin.typeHabitat === "PAVILLON" ? pin.nbMaisonsPrevu : 1,
+        nbPortesParEtage: 1,
         nbMaisonsPrevu: pin.typeHabitat === "PAVILLON" ? pin.nbMaisonsPrevu : 1,
       }));
 
-      await api.immeubles.createQuartier({
+      const result = await api.immeubles.createQuartier({
         commercialId: role === "commercial" ? (userId ?? undefined) : undefined,
         managerId: role === "manager" ? (userId ?? undefined) : undefined,
         points,
       });
 
       await refetch();
-      if (embedded) {
-        setQuartierPins([]);
-        setActiveQuartierPinId(null);
-        setSuggestions([]);
-        return;
+      setQuartierPins([]);
+      setActiveQuartierPinId(null);
+      setSuggestions([]);
+      if (result?.id) {
+        router.push(`/quartier/${result.id}`);
+      } else if (!embedded) {
+        router.back();
       }
-      router.back();
     } catch {
       Alert.alert("Creation impossible", "Le quartier n'a pas pu etre cree.");
     } finally {
@@ -529,6 +533,22 @@ export default function CarteTerrainScreen({
             </View>
           </Marker>
         ))}
+        {mode === "VISUALISATION" && (quartiers ?? []).filter((q) => q.latitude != null && q.longitude != null).map((quartier) => (
+          <Marker
+            key={`quartier-${quartier.id}`}
+            id={`quartier-${quartier.id}`}
+            lngLat={[quartier.longitude!, quartier.latitude!]}
+            anchor="bottom"
+            onPress={(event) => {
+              event.stopPropagation();
+              router.push(`/quartier/${quartier.id}`);
+            }}
+          >
+            <View style={styles.quartierBadgeMarker}>
+              <Feather name="map" size={14} color={colors.textOnPrimary} />
+            </View>
+          </Marker>
+        ))}
         {buildingPin && mode === "BATIMENT" && (
           <Marker
             id="new-building-pin"
@@ -645,12 +665,14 @@ export default function CarteTerrainScreen({
             <Pressable
               style={styles.markerAction}
               onPress={() => {
-                onNavigateToLieu?.(selectedExistingLieu.id);
+                if (navigatingRef.current) return;
+                navigatingRef.current = true;
                 setSelectedExistingLieu(null);
+                router.push(`/lieu/${selectedExistingLieu.id}`);
               }}
             >
               <Feather name="arrow-right-circle" size={18} color={colors.primary} />
-              <Text style={styles.markerActionText}>Voir detail</Text>
+              <Text style={styles.markerActionText}>Prospecter</Text>
             </Pressable>
             <Pressable
               style={styles.markerAction}
@@ -1077,6 +1099,21 @@ const styles = StyleSheet.create({
     borderColor: colors.surface,
     backgroundColor: "#F97316",
     elevation: 4,
+  },
+  quartierBadgeMarker: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 2,
+    borderColor: colors.surface,
+    backgroundColor: "#7C3AED",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    elevation: 5,
   },
   quartierMapMarkerActive: {
     width: 36,

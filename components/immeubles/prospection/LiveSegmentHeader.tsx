@@ -10,6 +10,10 @@ type LiveSegmentHeaderProps = {
   porteName?: string | null;
   startedAt: number;
   compact?: boolean;
+  unitLabel?: string;
+  showUnit?: boolean;
+  /** true pour MAISON et PAVILLON : 1 foyer par unité, pas de numéro de porte */
+  isSingleUnit?: boolean;
 };
 
 function formatChrono(ms: number) {
@@ -25,6 +29,9 @@ function LiveSegmentHeaderImpl({
   porteName,
   startedAt,
   compact = false,
+  unitLabel = "Étage",
+  showUnit = true,
+  isSingleUnit = false,
 }: LiveSegmentHeaderProps) {
   const [now, setNow] = useState(() => Date.now());
 
@@ -35,14 +42,25 @@ function LiveSegmentHeaderImpl({
 
   const elapsedMs = now - startedAt;
 
+  // Eyebrow : IMMEUBLE → "Étage X · Porte Y" ; PAVILLON → "Maison X" ; MAISON → "" (showUnit=false)
+  const eyebrow = isSingleUnit
+    ? showUnit ? `${unitLabel} ${porteEtage}` : ""
+    : showUnit ? `${unitLabel} ${porteEtage} · Porte ${porteNumero}` : `Porte ${porteNumero}`;
+
+  // Titre : IMMEUBLE → "Porte Y" ou nom perso ; PAVILLON → "Maison X" ou nom perso ; MAISON → unitLabel ou nom perso
+  const defaultTitle = isSingleUnit
+    ? showUnit ? `${unitLabel} ${porteEtage}` : unitLabel
+    : `Porte ${porteNumero}`;
+  const title = porteName?.trim() || defaultTitle;
+
   return (
     <View style={[styles.container, compact && styles.containerCompact]}>
       <View style={styles.left}>
-        <Text style={styles.eyebrow}>
-          Étage {porteEtage} · Porte {porteNumero}
-        </Text>
+        {eyebrow ? (
+          <Text style={styles.eyebrow}>{eyebrow}</Text>
+        ) : null}
         <Text style={styles.name} numberOfLines={1} ellipsizeMode="tail">
-          {porteName?.trim() || `Porte ${porteNumero}`}
+          {title}
         </Text>
       </View>
       <View style={styles.chrono}>

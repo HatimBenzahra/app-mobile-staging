@@ -1,12 +1,14 @@
 import AddImmeubleSheet from "@/components/immeubles/AddImmeubleSheet";
-import ImmeubleDetailsView from "@/components/immeubles/ImmeubleDetailsScreen";
 import { Card, Chip, ErrorState, PressableCard, StatTile } from "@/components/ui";
 import { useCreateImmeuble } from "@/hooks/api/use-create-immeuble";
 import { useWorkspaceProfile } from "@/hooks/api/use-workspace-profile";
 import { colors, progressColors } from "@/constants/theme";
 import { authService } from "@/services/auth";
+import { effectiveTypeHabitat } from "@/components/immeubles/lieu-terms";
+import { getImmeubleProgress } from "@/components/immeubles/lieu-progress";
 import type { Immeuble, TypeHabitat } from "@/types/api";
 import { Feather } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Animated,
@@ -26,10 +28,6 @@ type ImmeublesScreenProps = {
   onSwipeLockChange?: (locked: boolean) => void;
   onHamburgerVisibilityChange?: (visible: boolean) => void;
   onHeaderVisibilityChange?: (visible: boolean) => void;
-  autoSelectImmeubleId?: number | null;
-  onAutoSelectConsumed?: () => void;
-  autoOpenPorteId?: number | null;
-  onAutoOpenPorteConsumed?: () => void;
 };
 
 type ListRow = { _type: "controls" } | Immeuble[];
@@ -74,17 +72,19 @@ function getLieuMeta(immeuble: Immeuble): {
   color: string;
   detail: string;
 } {
-  if (immeuble.typeHabitat === "MAISON") {
+  const effType = effectiveTypeHabitat(immeuble);
+
+  if (effType === "MAISON") {
     return {
       label: "Maison",
       icon: "home",
       color: colors.success,
-      detail: "1 porte",
+      detail: "Maison individuelle",
     };
   }
 
-  if (immeuble.typeHabitat === "PAVILLON") {
-    const maisons = immeuble.nbMaisonsPrevu ?? immeuble.nbPortesParEtage ?? 1;
+  if (effType === "PAVILLON") {
+    const maisons = immeuble.nbMaisonsPrevu ?? immeuble.nbEtages ?? 1;
     return {
       label: "Pavillon",
       icon: "grid",
@@ -103,14 +103,8 @@ function getLieuMeta(immeuble: Immeuble): {
 
 export default function ImmeublesScreen({
   isActive = true,
-  onSwipeLockChange,
-  onHamburgerVisibilityChange,
-  onHeaderVisibilityChange,
-  autoSelectImmeubleId,
-  onAutoSelectConsumed,
-  autoOpenPorteId,
-  onAutoOpenPorteConsumed,
 }: ImmeublesScreenProps) {
+  const router = useRouter();
   const insets = useSafeAreaInsets();
   const { width, height: screenHeight } = useWindowDimensions();
   const isLandscape = width > screenHeight;
@@ -127,18 +121,11 @@ export default function ImmeublesScreen({
   const [progressFilter, setProgressFilter] = useState("incomplete");
   const [typeFilter, setTypeFilter] = useState<"all" | TypeHabitat>("all");
   const [isAddOpen, setIsAddOpen] = useState(false);
-  const [selectedImmeubleId, setSelectedImmeubleId] = useState<number | null>(
-    null,
-  );
-  const [detailsDirty, setDetailsDirty] = useState(false);
   const cardAnimationsRef = useRef<Map<number, Animated.Value>>(new Map());
   const hasAnimatedOnce = useRef(false);
   const ANIMATED_CARD_LIMIT = 12;
   const listOpacity = useRef(new Animated.Value(1)).current;
   const listTranslate = useRef(new Animated.Value(0)).current;
-  const detailsOpacity = useRef(new Animated.Value(0)).current;
-  const detailsTranslate = useRef(new Animated.Value(24)).current;
-  const [isExitingDetails, setIsExitingDetails] = useState(false);
 
   const getFilterChipAnim = (key: string) => {
     const existing = filterChipAnimsRef.get(key);
@@ -232,15 +219,7 @@ export default function ImmeublesScreen({
 
   const immeublesEnCours = useMemo(() => {
     const filtered = filteredImmeubles.filter((imm) => {
-      const portes = imm.portes || [];
-      const prospectees = portes.filter(
-        (porte) => porte.statut !== "NON_VISITE",
-      ).length;
-      // Couverture = prospectées / capacité théorique de l'immeuble.
-      // Fallback sur le count des portes existantes si le théorique est 0.
-      const theoretical = (imm.nbEtages ?? 0) * (imm.nbPortesParEtage ?? 0);
-      const total = theoretical > 0 ? theoretical : portes.length;
-      const percent = total === 0 ? 0 : Math.round((prospectees / total) * 100);
+      const { percent } = getImmeubleProgress(imm);
       if (progressFilter === "all") return true;
       if (progressFilter === "incomplete") return percent < 100;
       if (progressFilter === "low") return percent < 35;
@@ -265,7 +244,7 @@ export default function ImmeublesScreen({
   };
 
   useEffect(() => {
-    if (selectedImmeubleId !== null || !isActive) return;
+    if (!isActive) return;
     if (immeublesEnCours.length === 0) return;
     if (hasAnimatedOnce.current) {
       immeublesEnCours.forEach((imm) => {
@@ -292,25 +271,7 @@ export default function ImmeublesScreen({
       }),
     );
     Animated.stagger(30, animations).start();
-  }, [ANIMATED_CARD_LIMIT, immeublesEnCours, isActive, selectedImmeubleId]);
-
-  useEffect(() => {
-    if (selectedImmeubleId === null) return;
-    detailsOpacity.setValue(0);
-    detailsTranslate.setValue(24);
-    Animated.parallel([
-      Animated.timing(detailsOpacity, {
-        toValue: 1,
-        duration: 220,
-        useNativeDriver: true,
-      }),
-      Animated.timing(detailsTranslate, {
-        toValue: 0,
-        duration: 220,
-        useNativeDriver: true,
-      }),
-    ]).start();
-  }, [detailsOpacity, detailsTranslate, selectedImmeubleId]);
+  }, [ANIMATED_CARD_LIMIT, immeublesEnCours, isActive]);
 
   const immeubleRows = useMemo(() => {
     const rows: Immeuble[][] = [];
@@ -358,27 +319,12 @@ export default function ImmeublesScreen({
     > = {};
 
     for (const immeuble of immeublesEnCours) {
-      const portes = immeuble.portes || [];
-      const theoretical =
-        (immeuble.nbEtages ?? 0) * (immeuble.nbPortesParEtage ?? 0);
-      const total = theoretical > 0 ? theoretical : portes.length;
-      const prospectees = portes.filter(
-        (porte) => porte.statut !== "NON_VISITE",
-      ).length;
-      const progressPercent =
-        total === 0 ? 0 : Math.round((prospectees / total) * 100);
-      const progressColor =
-        progressPercent < 35
-          ? progressColors.low
-          : progressPercent < 70
-            ? progressColors.mid
-            : progressColors.high;
-
+      const { total, prospectees, percent, color } = getImmeubleProgress(immeuble);
       entries[immeuble.id] = {
         total,
         prospectees,
-        progressPercent,
-        progressColor,
+        progressPercent: percent,
+        progressColor: color,
       };
     }
 
@@ -387,77 +333,14 @@ export default function ImmeublesScreen({
 
   const handleOpenImmeuble = useCallback(
     (immeubleId: number) => {
-      onHeaderVisibilityChange?.(false);
-      // Keep the navigation rail visible in details so the layout doesn't
-      // reflow when entering an immeuble.
-      onSwipeLockChange?.(true);
-      setSelectedImmeubleId(immeubleId);
+      router.push(`/lieu/${immeubleId}`);
     },
-    [onHeaderVisibilityChange, onSwipeLockChange],
+    [router],
   );
-
-  useEffect(() => {
-    if (autoSelectImmeubleId == null) return;
-    if (!immeubles.length) return;
-    const exists = immeubles.some((imm) => imm.id === autoSelectImmeubleId);
-    if (!exists) {
-      onAutoSelectConsumed?.();
-      return;
-    }
-    handleOpenImmeuble(autoSelectImmeubleId);
-    onAutoSelectConsumed?.();
-  }, [autoSelectImmeubleId, handleOpenImmeuble, immeubles, onAutoSelectConsumed]);
 
   const totalMaisonsLike = useMemo(() => {
     return immeubles.filter((imm) => imm.typeHabitat === "MAISON" || imm.typeHabitat === "PAVILLON").length;
   }, [immeubles]);
-
-  const selectedImmeuble = useMemo(
-    () =>
-      selectedImmeubleId
-        ? immeubles.find((imm) => imm.id === selectedImmeubleId) || null
-        : null,
-    [immeubles, selectedImmeubleId],
-  );
-
-  const handleCloseDetails = useCallback(() => {
-    if (isExitingDetails) return;
-    setIsExitingDetails(true);
-    Animated.parallel([
-      Animated.timing(detailsOpacity, {
-        toValue: 0,
-        duration: 180,
-        useNativeDriver: true,
-      }),
-      Animated.timing(detailsTranslate, {
-        toValue: 24,
-        duration: 180,
-        useNativeDriver: true,
-      }),
-    ]).start(() => {
-      setSelectedImmeubleId(null);
-      onSwipeLockChange?.(false);
-      onHeaderVisibilityChange?.(true);
-      setIsExitingDetails(false);
-      if (detailsDirty) {
-        void refetch();
-        setDetailsDirty(false);
-      }
-    });
-  }, [
-    detailsDirty,
-    detailsOpacity,
-    detailsTranslate,
-    isExitingDetails,
-    onHamburgerVisibilityChange,
-    onHeaderVisibilityChange,
-    onSwipeLockChange,
-    refetch,
-  ]);
-
-  const handleRefreshImmeuble = useCallback(() => {
-    void refetch();
-  }, [refetch]);
 
   const [refreshing, setRefreshing] = useState(false);
   const onRefresh = useCallback(async () => {
@@ -468,27 +351,6 @@ export default function ImmeublesScreen({
       setRefreshing(false);
     }
   }, [refetch]);
-
-  if (selectedImmeuble) {
-    return (
-      <Animated.View
-        style={{
-          flex: 1,
-          opacity: detailsOpacity,
-          transform: [{ translateX: detailsTranslate }],
-        }}
-      >
-        <ImmeubleDetailsView
-          immeuble={selectedImmeuble}
-          onBack={handleCloseDetails}
-          onDirtyChange={setDetailsDirty}
-          onRefreshImmeuble={handleRefreshImmeuble}
-          autoOpenPorteId={autoOpenPorteId}
-          onAutoOpenPorteConsumed={onAutoOpenPorteConsumed}
-        />
-      </Animated.View>
-    );
-  }
 
   if (isInitialLoading) {
     return (
@@ -707,7 +569,7 @@ export default function ImmeublesScreen({
               </View>
             ) : (
               <View style={styles.row}>
-                {row.map((immeuble, index) => {
+                {row.map((immeuble) => {
                   const progress = progressByImmeubleId[immeuble.id] ?? {
                     total: 0,
                     prospectees: 0,
@@ -776,7 +638,12 @@ export default function ImmeublesScreen({
                             <Text style={styles.cardMeta}>{meta.detail}</Text>
                             <Text style={styles.cardMeta}>•</Text>
                             <Text style={styles.cardMeta}>
-                              {progress.total} portes
+                              {(() => {
+                                const et = effectiveTypeHabitat(immeuble);
+                                if (et === "MAISON") return "1 foyer";
+                                if (et === "PAVILLON") return `${progress.total} maison${progress.total !== 1 ? "s" : ""}`;
+                                return `${progress.total} porte${progress.total !== 1 ? "s" : ""}`;
+                              })()}
                             </Text>
                           </View>
                           <View style={styles.progressRow}>

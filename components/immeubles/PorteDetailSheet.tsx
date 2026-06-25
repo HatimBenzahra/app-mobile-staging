@@ -20,7 +20,8 @@ import {
   STATUS_DISPLAY,
   getDisplayStatusKey,
 } from "@/components/immeubles/prospection/status-display";
-import type { Porte } from "@/types/api";
+import { getLieuTerms } from "@/components/immeubles/lieu-terms";
+import type { Porte, TypeHabitat } from "@/types/api";
 
 type PorteDetailSheetProps = {
   porte: Porte | null;
@@ -29,6 +30,7 @@ type PorteDetailSheetProps = {
   onClose: () => void;
   onResume: (porte: Porte) => void;
   onEdit: (porte: Porte) => void;
+  typeHabitat?: TypeHabitat;
 };
 
 // Only ABSENT (matin/soir) and RDV_PRIS are eligible for re-prospection.
@@ -90,6 +92,7 @@ export default function PorteDetailSheet({
   onClose,
   onResume,
   onEdit,
+  typeHabitat,
 }: PorteDetailSheetProps) {
   const opacity = useRef(new Animated.Value(0)).current;
   const translateY = useRef(new Animated.Value(36)).current;
@@ -117,6 +120,14 @@ export default function PorteDetailSheet({
   }, [open, opacity, translateY]);
 
   if (!porte) return null;
+
+  const terms = getLieuTerms(typeHabitat);
+  // MAISON: hide étage prefix entirely, PAVILLON: "Maison X · Porte", IMMEUBLE: "Étage X · Porte"
+  const eyebrowPrefix = terms.isMaison
+    ? null
+    : terms.isPavillon
+      ? `Maison ${porte.etage} · Porte`
+      : `Étage ${porte.etage} · Porte`;
 
   const statusKey = getDisplayStatusKey(porte);
   const status = statusKey
@@ -183,10 +194,12 @@ export default function PorteDetailSheet({
               </View>
 
               <View style={styles.identity}>
-                <Text style={styles.eyebrow}>
-                  Étage {porte.etage} · Porte
-                </Text>
-                <Text style={styles.porteNumber}>{porte.numero}</Text>
+                {eyebrowPrefix !== null ? (
+                  <Text style={styles.eyebrow}>
+                    {eyebrowPrefix}
+                  </Text>
+                ) : null}
+                <Text style={styles.porteNumber}>{terms.isMaison ? terms.unitLabel : porte.numero}</Text>
                 {porte.nomPersonnalise ? (
                   <Text style={styles.porteName} numberOfLines={1}>
                     {porte.nomPersonnalise}

@@ -2,6 +2,8 @@ import { Feather } from "@expo/vector-icons";
 import { memo } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { colors } from "@/constants/theme";
+import { getLieuTerms } from "@/components/immeubles/lieu-terms";
+import type { TypeHabitat } from "@/types/api";
 
 type DetailsHeaderProps = {
   topInset: number;
@@ -9,6 +11,8 @@ type DetailsHeaderProps = {
   nbEtages: number;
   nbPortesParEtage: number;
   onBack: () => void;
+  typeHabitat?: TypeHabitat;
+  nbMaisonsPrevu?: number | null;
 };
 
 function DetailsHeader({
@@ -17,11 +21,15 @@ function DetailsHeader({
   nbEtages,
   nbPortesParEtage,
   onBack,
+  typeHabitat,
+  nbMaisonsPrevu,
 }: DetailsHeaderProps) {
-  const portesText =
-    nbPortesParEtage > 0
-      ? `${nbEtages} étage${nbEtages > 1 ? "s" : ""} · ${nbPortesParEtage} portes/étage`
-      : `${nbEtages} étage${nbEtages > 1 ? "s" : ""}`;
+  const terms = getLieuTerms(typeHabitat);
+  const portesText = terms.headerSubtitle(
+    nbEtages,
+    nbPortesParEtage,
+    nbMaisonsPrevu,
+  );
 
   return (
     <View style={[styles.header, { paddingTop: topInset + 10 }]}>

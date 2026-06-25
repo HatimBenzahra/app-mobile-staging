@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { StyleSheet, View } from "react-native";
 import { TabView } from "react-native-tab-view";
 import AgendaScreen from "@/app/(app)/(tabs)/agenda";
@@ -9,6 +9,7 @@ import StatistiquesScreen from "@/app/(app)/(tabs)/statistiques";
 import EquipeScreen from "@/app/(app)/(tabs)/equipe";
 import HistoriqueScreen from "@/app/(app)/(tabs)/historique";
 import { authService } from "@/services/auth";
+import { useRouter } from "expo-router";
 
 export type TabRoute = { key: string; title: string; icon: string };
 
@@ -40,36 +41,20 @@ export default function SwipeTabs({
   onHeaderVisibilityChange,
   onRailVisibilityChange,
 }: SwipeTabsProps) {
+  const router = useRouter();
   const [isManager, setIsManager] = useState(false);
   const tabRoutes = useMemo(() => buildRoutes(isManager), [isManager]);
   const [swipeEnabled, setSwipeEnabled] = useState(true);
-  const pendingImmeubleIdRef = useRef<number | null>(null);
-  const [autoSelectImmeubleId, setAutoSelectImmeubleId] = useState<number | null>(null);
-  const pendingPorteIdRef = useRef<number | null>(null);
-  const [autoOpenPorteId, setAutoOpenPorteId] = useState<number | null>(null);
 
   const handleNavigateToImmeuble = useCallback(
     (immeubleId: number, porteId?: number) => {
-      const immeublesTabIdx = tabRoutes.findIndex((r) => r.key === "immeubles");
-      if (immeublesTabIdx < 0) return;
-      pendingImmeubleIdRef.current = immeubleId;
-      setAutoSelectImmeubleId(immeubleId);
-      pendingPorteIdRef.current = porteId ?? null;
-      setAutoOpenPorteId(porteId ?? null);
-      onIndexChange(immeublesTabIdx);
+      const path = porteId != null
+        ? `/lieu/${immeubleId}?porteId=${porteId}`
+        : `/lieu/${immeubleId}`;
+      router.push(path as Parameters<typeof router.push>[0]);
     },
-    [onIndexChange, tabRoutes],
+    [router],
   );
-
-  const handleAutoSelectConsumed = useCallback(() => {
-    pendingImmeubleIdRef.current = null;
-    setAutoSelectImmeubleId(null);
-  }, []);
-
-  const handleAutoOpenPorteConsumed = useCallback(() => {
-    pendingPorteIdRef.current = null;
-    setAutoOpenPorteId(null);
-  }, []);
 
   useEffect(() => {
     const loadRole = async () => {
@@ -92,15 +77,11 @@ export default function SwipeTabs({
             onSwipeLockChange={handleSwipeLockChange}
             onHamburgerVisibilityChange={onRailVisibilityChange}
             onHeaderVisibilityChange={onHeaderVisibilityChange}
-            autoSelectImmeubleId={autoSelectImmeubleId}
-            onAutoSelectConsumed={handleAutoSelectConsumed}
-            autoOpenPorteId={autoOpenPorteId}
-            onAutoOpenPorteConsumed={handleAutoOpenPorteConsumed}
           />
         );
       }
       if (route.key === "carte") {
-        return <CarteTerrainScreen embedded onNavigateToLieu={handleNavigateToImmeuble} />;
+        return <CarteTerrainScreen embedded />;
       }
       if (route.key === "historique") {
         return <HistoriqueScreen />;
@@ -116,7 +97,7 @@ export default function SwipeTabs({
       }
       return <DashboardScreen />;
     },
-    [autoOpenPorteId, autoSelectImmeubleId, handleAutoOpenPorteConsumed, handleAutoSelectConsumed, handleNavigateToImmeuble, handleSwipeLockChange, index, onHeaderVisibilityChange, onRailVisibilityChange],
+    [handleNavigateToImmeuble, handleSwipeLockChange, index, onHeaderVisibilityChange, onRailVisibilityChange, tabRoutes],
   );
 
   return (

@@ -35,6 +35,10 @@ type FloorPlanSheetProps = {
     item: [number, Porte[]];
   }) => ReactElement | null;
   styles: Record<string, any>;
+  planTitle?: string;
+  unitLabel?: string;
+  unitLabelPlural?: string;
+  showFloors?: boolean;
 };
 
 function FloorPlanSheet({
@@ -52,6 +56,10 @@ function FloorPlanSheet({
   floorPlanKeyExtractor,
   renderFloorPlanSection,
   styles,
+  planTitle = "Plan de l'immeuble",
+  unitLabel = "Étage",
+  unitLabelPlural = "etages",
+  showFloors = true,
 }: FloorPlanSheetProps) {
   if (!showFloorPlan) return null;
 
@@ -88,11 +96,10 @@ function FloorPlanSheet({
                 <Feather name="grid" size={22} color="#005BFF" />
               </View>
               <View style={styles.floorPlanHeroText}>
-                <Text style={styles.floorPlanTitle}>
-                  Plan de l&apos;immeuble
-                </Text>
+                <Text style={styles.floorPlanTitle}>{planTitle}</Text>
                 <Text style={styles.floorPlanSubtitle}>
-                  {sortedPortesCount} portes • {floorsCount} etages
+                  {sortedPortesCount} portes
+                  {showFloors ? ` • ${floorsCount} ${unitLabelPlural}` : ""}
                 </Text>
               </View>
             </View>
@@ -109,7 +116,7 @@ function FloorPlanSheet({
                 </View>
                 <View style={styles.floorPlanCurrentInfo}>
                   <Text style={styles.floorPlanCurrentFloor}>
-                    Étage {currentPorte?.etage ?? "--"}
+                    {unitLabel} {currentPorte?.etage ?? "--"}
                   </Text>
                   {currentStatus && (
                     <Text

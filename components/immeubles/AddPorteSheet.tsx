@@ -16,6 +16,8 @@ import {
   useWindowDimensions,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { getLieuTerms } from "@/components/immeubles/lieu-terms";
+import type { TypeHabitat } from "@/types/api";
 
 export type AddPortePayload = {
   etage: number;
@@ -29,6 +31,7 @@ type AddPorteSheetProps = {
   defaultNumero?: string;
   onClose: () => void;
   onSubmit: (payload: AddPortePayload) => void;
+  typeHabitat?: TypeHabitat;
 };
 
 export default function AddPorteSheet({
@@ -37,12 +40,18 @@ export default function AddPorteSheet({
   defaultNumero = "",
   onClose,
   onSubmit,
+  typeHabitat,
 }: AddPorteSheetProps) {
+  const terms = getLieuTerms(typeHabitat);
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const isTablet = width >= 700;
   const sheetRef = useRef<BottomSheetModal>(null);
-  const [errors, setErrors] = useState<{ etage?: string; numero?: string }>({});
+  const [errors, setErrors] = useState<{
+    etage?: string;
+    numero?: string;
+    nomPersonnalise?: string;
+  }>({});
   const [form, setForm] = useState({
     etage: String(defaultEtage),
     numero: defaultNumero,
@@ -101,10 +110,10 @@ export default function AddPorteSheet({
   };
 
   const validate = () => {
-    const nextErrors: { etage?: string; numero?: string } = {};
+    const nextErrors: { etage?: string; numero?: string; nomPersonnalise?: string } = {};
     const etageValue = Number(form.etage);
     if (!form.etage || Number.isNaN(etageValue) || etageValue < 1) {
-      nextErrors.etage = "Etage invalide";
+      nextErrors.etage = `${terms.unitLabel} invalide`;
     }
     if (!form.numero.trim()) {
       nextErrors.numero = "Numero requis";
@@ -158,7 +167,7 @@ export default function AddPorteSheet({
           keyboardShouldPersistTaps="handled"
         >
           <Card variant="outlined" padding="md" style={styles.card}>
-            <Text style={styles.label}>Etage</Text>
+            <Text style={styles.label}>{terms.unitLabel}</Text>
             <View style={[styles.inputRow, errors.etage && styles.inputError]}>
               <Feather name="layers" size={16} color={colors.textMuted} />
               <TextInput

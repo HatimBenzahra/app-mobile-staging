@@ -14,7 +14,8 @@ import {
 } from "react-native";
 import { colors, palette } from "@/constants/theme";
 
-import type { Porte } from "@/types/api";
+import { getLieuTerms } from "@/components/immeubles/lieu-terms";
+import type { Porte, TypeHabitat } from "@/types/api";
 
 type EditPorteSheetProps = {
   editMode:
@@ -55,6 +56,7 @@ type EditPorteSheetProps = {
   formatDateLabel: (value: string) => string;
   formatTimeLabel: (value: string) => string;
   styles: Record<string, any>;
+  typeHabitat?: TypeHabitat;
 };
 
 function EditPorteSheet({
@@ -77,8 +79,10 @@ function EditPorteSheet({
   formatDateLabel,
   formatTimeLabel,
   styles,
+  typeHabitat,
 }: EditPorteSheetProps) {
   if (!editMode || !editPorte) return null;
+  const terms = getLieuTerms(typeHabitat);
 
   const isRdv = editMode === "RENDEZ_VOUS_PRIS";
   const isArgumente = editMode === "ARGUMENTE";
@@ -172,7 +176,7 @@ function EditPorteSheet({
                   isTablet && styles.sheetSubtitleTablet,
                 ]}
               >
-                {editPorte.nomPersonnalise || `Porte ${editPorte.numero || ""}`}
+                {editPorte.nomPersonnalise || (terms.isMaison ? terms.unitLabel : `Porte ${editPorte.numero || ""}`)}
               </Text>
             </View>
           </View>
@@ -182,7 +186,7 @@ function EditPorteSheet({
             <View style={styles.inputRow}>
               <Feather name="edit-3" size={16} color={colors.textMuted} />
               <TextInput
-                placeholder={`Porte ${editPorte?.numero || ""}`}
+                placeholder={terms.isMaison ? terms.unitLabel : `Porte ${editPorte?.numero || ""}`}
                 value={editForm.nomPersonnalise}
                 onChangeText={(value) =>
                   setEditForm((prev) => ({

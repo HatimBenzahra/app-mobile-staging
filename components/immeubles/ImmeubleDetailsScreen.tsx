@@ -11,6 +11,7 @@ import {
   getDisplayStatusKey,
 } from "@/components/immeubles/prospection/status-display";
 import { useProspectionSession } from "@/hooks/prospection/use-prospection-session";
+import { effectiveTypeHabitat, getLieuTerms } from "@/components/immeubles/lieu-terms";
 import ActionToast from "@/components/immeubles/details/ActionToast";
 import DetailsHeader from "@/components/immeubles/details/DetailsHeader";
 import EditPorteSheet from "@/components/immeubles/details/EditPorteSheet";
@@ -75,6 +76,36 @@ const getMaxEtage = (portes: Porte[], fallback: number) => {
 const buildFallbackPortes = (immeuble: Immeuble | null) => {
   if (!immeuble) return [];
   const portes: Porte[] = [];
+
+  // MAISON : un seul foyer (étage implicite 1, porte "1").
+  if (immeuble.typeHabitat === "MAISON") {
+    portes.push({
+      id: -1001,
+      numero: "1",
+      etage: 1,
+      immeubleId: immeuble.id,
+      statut: "NON_VISITE",
+    });
+    return portes;
+  }
+
+  // PAVILLON : N maisons (nbMaisonsPrevu), 1 porte par maison. Chaque "maison"
+  // joue le rôle d'un étage dans la mécanique existante (1 porte par niveau).
+  if (immeuble.typeHabitat === "PAVILLON") {
+    const nbMaisons = immeuble.nbMaisonsPrevu ?? 0;
+    if (!nbMaisons || nbMaisons < 1) return portes;
+    for (let maison = nbMaisons; maison >= 1; maison -= 1) {
+      portes.push({
+        id: -(maison * 1000 + 1),
+        numero: "1",
+        etage: maison,
+        immeubleId: immeuble.id,
+        statut: "NON_VISITE",
+      });
+    }
+    return portes;
+  }
+
   if (!immeuble.nbEtages || !immeuble.nbPortesParEtage) return portes;
   for (let etage = immeuble.nbEtages; etage >= 1; etage -= 1) {
     for (let i = 1; i <= immeuble.nbPortesParEtage; i += 1) {
@@ -98,12 +129,14 @@ type ProgressCardProps = {
   };
   progressFill: Animated.Value;
   isTablet: boolean;
+  unitLabelPlural?: string;
 };
 
 const ProgressCard = memo(function ProgressCard({
   progress,
   progressFill,
   isTablet,
+  unitLabelPlural = "portes",
 }: ProgressCardProps) {
   return (
     <View
@@ -117,7 +150,7 @@ const ProgressCard = memo(function ProgressCard({
           <View style={styles.progressTextsNew}>
             <Text style={styles.progressTitleNew}>Progression</Text>
             <Text style={styles.progressSubtitleNew}>
-              {progress.visited} / {progress.total} portes
+              {progress.visited} / {progress.total} {unitLabelPlural}
             </Text>
           </View>
         </View>
@@ -165,6 +198,17 @@ function ImmeubleDetailsView({
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const isTablet = width >= 700;
+  // effectiveTypeHabitat remaps les pavillons legacy (nbPortesParEtage > 1)
+  // en IMMEUBLE pour l'affichage, sans toucher aux vrais immeubles ni aux
+  // nouveaux pavillons (nbPortesParEtage = 1).
+  const effectiveType = useMemo(
+    () => effectiveTypeHabitat(immeuble),
+    [immeuble],
+  );
+  const terms = useMemo(
+    () => getLieuTerms(effectiveType),
+    [effectiveType],
+  );
   const [portesState, setPortesState] = useState<Porte[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [actionToast, setActionToast] = useState<{
@@ -714,9 +758,22 @@ function ImmeubleDetailsView({
       }
     }
 
-    const theoreticalTotal =
-      (immeuble.nbEtages ?? 0) * (immeuble.nbPortesParEtage ?? 0);
-    const total = theoreticalTotal > 0 ? theoreticalTotal : sortedPortes.length;
+    // Utilise effectiveType pour les pavillons legacy (nbPortesParEtage > 1 → IMMEUBLE).
+    // MAISON : au moins 1 foyer, mais on accepte les portes réelles si >1.
+    // PAVILLON : nbMaisonsPrevu maisons = total.
+    // IMMEUBLE (incl. pavillon legacy) : nbEtages × nbPortesParEtage.
+    const realPortesCount = sortedPortes.filter((p) => p.id > 0).length;
+    let total: number;
+    if (effectiveType === "MAISON") {
+      total = Math.max(1, realPortesCount);
+    } else if (effectiveType === "PAVILLON") {
+      // Fallback sur nbEtages pour les pavillons créés avant le fix.
+      total = immeuble.nbMaisonsPrevu ?? immeuble.nbEtages ?? sortedPortes.length;
+    } else {
+      const theoreticalTotal =
+        (immeuble.nbEtages ?? 0) * (immeuble.nbPortesParEtage ?? 0);
+      total = theoreticalTotal > 0 ? theoreticalTotal : sortedPortes.length;
+    }
     return {
       progress: {
         total,
@@ -726,7 +783,7 @@ function ImmeubleDetailsView({
       floors: Array.from(floorSet).sort((a, b) => b - a),
       statusCounts: counts,
     };
-  }, [sortedPortes, immeuble.nbEtages, immeuble.nbPortesParEtage]);
+  }, [sortedPortes, effectiveType, immeuble.nbEtages, immeuble.nbPortesParEtage, immeuble.nbMaisonsPrevu]);
 
   const portesParEtage = useMemo(() => {
     if (!showFloorPlan) return [] as [number, Porte[]][];
@@ -807,6 +864,18 @@ function ImmeubleDetailsView({
 
   const openAddPorte = useCallback(() => {
     if (prospectionSession.isLocked) return;
+    // MAISON : un seul foyer. Si la porte existe déjà (id > 0), on saute
+    // directement à la phase READY via beginFromExisting. Sinon on ouvre le
+    // flow de création à l'étage 1 — NamingView auto-soumettra la porte 1.
+    if (terms.isMaison) {
+      const foyer = realPortes.find((p) => p.etage === 1);
+      if (foyer) {
+        prospectionSession.beginFromExisting(foyer);
+      } else {
+        prospectionSession.open(1);
+      }
+      return;
+    }
     // Trouve l'étage actif : le plus haut avec encore du travail (portes
     // NON_VISITE ou capacité non remplie). Si tout est terminé, on retombe
     // sur l'étage le plus haut.
@@ -830,6 +899,7 @@ function ImmeubleDetailsView({
     immeuble.nbPortesParEtage,
     prospectionSession,
     realPortes,
+    terms.isMaison,
   ]);
 
   const handleAddEtage = useCallback(async () => {
@@ -849,13 +919,13 @@ function ImmeubleDetailsView({
     const tempIds = tempDoors.map((porte) => porte.id);
     setPortesState((prev) => [...prev, ...tempDoors]);
     if (onDirtyChange) onDirtyChange(true);
-    showToast("Etage ajoute", `Etage ${nextEtage}`);
+    showToast(`${terms.unitLabel} ajouté${terms.isPavillon ? "e" : ""}`, `${terms.unitLabel} ${nextEtage}`);
     const added = await addEtageToImmeuble(immeuble.id);
     if (!added) {
       setPortesState((prev) =>
         prev.filter((porte) => !tempIds.includes(porte.id)),
       );
-      showToast("Erreur", "Ajout etage impossible");
+      showToast("Erreur", `Ajout ${terms.unitLabel.toLowerCase()} impossible`);
       return;
     }
 
@@ -871,17 +941,21 @@ function ImmeubleDetailsView({
     onDirtyChange,
     onRefreshImmeuble,
     showToast,
+    terms,
   ]);
 
   const openDeletePorte = useCallback(() => {
     if (portesState.length === 0) {
-      showToast("Aucune porte", "Impossible de supprimer");
+      showToast(
+        terms.isMaison ? "Aucun foyer" : "Aucune porte",
+        "Impossible de supprimer",
+      );
       return;
     }
     setDeleteFloor(null);
     setDeleteTarget(null);
     setIsPortePickerOpen(true);
-  }, [portesState.length, showToast]);
+  }, [portesState.length, showToast, terms]);
 
   const handlePortePickerSelect = useCallback((porte: Porte) => {
     setIsPortePickerOpen(false);
@@ -935,12 +1009,12 @@ function ImmeubleDetailsView({
     if (removingEtage) return;
     const lastFloor = getMaxEtage(portesState, immeuble.nbEtages ?? 0);
     if (!lastFloor) {
-      showToast("Aucun etage", "Impossible de supprimer");
+      showToast(`Aucun${terms.isPavillon ? "e" : ""} ${terms.unitLabel.toLowerCase()}`, "Impossible de supprimer");
       return;
     }
     setDeleteTarget(null);
     setDeleteFloor(lastFloor);
-  }, [immeuble.nbEtages, portesState, removingEtage, showToast]);
+  }, [immeuble.nbEtages, portesState, removingEtage, showToast, terms]);
 
   const confirmDeleteEtage = useCallback(async () => {
     if (deleteFloor === null) return;
@@ -952,7 +1026,7 @@ function ImmeubleDetailsView({
     setCurrentIndex((prev) =>
       Math.max(0, Math.min(prev, Math.max(0, nextPortes.length - 1))),
     );
-    showToast("Etage supprime", `Etage ${targetFloor}`);
+    showToast(`${terms.unitLabel} supprimé${terms.isPavillon ? "e" : ""}`, `${terms.unitLabel} ${targetFloor}`);
     setDeleteFloor(null);
     const removed = await removeEtageFromImmeuble(immeuble.id);
     if (!removed) {
@@ -966,6 +1040,7 @@ function ImmeubleDetailsView({
     portesState,
     removeEtageFromImmeuble,
     showToast,
+    terms,
   ]);
 
 
@@ -1005,39 +1080,42 @@ function ImmeubleDetailsView({
 
 
 
-  const fabActions = useMemo<FabAction[]>(
-    () => [
+  const fabActions = useMemo<FabAction[]>(() => {
+    const actions: FabAction[] = [
       {
         label: "Nouvelle prospection",
-        subLabel: "Démarrer une porte",
+        subLabel: terms.isMaison ? "Démarrer ce foyer" : terms.isPavillon ? "Démarrer une maison" : "Démarrer une porte",
         icon: "plus-circle",
         tone: "hero",
         onPress: openAddPorte,
       },
-      {
-        label: "Ajouter etage",
-        subLabel: "Nouveau niveau",
+    ];
+    // MAISON : pas d'ajout/suppression d'unité (1 foyer unique), pas de suppr porte.
+    if (!terms.isMaison) {
+      actions.push({
+        label: terms.addUnitLabel,
+        subLabel: terms.isPavillon ? "Nouvelle maison" : "Nouveau niveau",
         icon: "layers",
         tone: "primary",
         onPress: handleAddEtage,
-      },
-      {
+      });
+      actions.push({
         label: "Supprimer porte",
-        subLabel: "Derniere de l'etage",
+        subLabel: `Derniere de ${terms.isPavillon ? "la maison" : "l'etage"}`,
         icon: "trash-2",
         tone: "danger",
         onPress: openDeletePorte,
-      },
-      {
-        label: "Supprimer etage",
-        subLabel: "Dernier etage",
+      });
+      actions.push({
+        label: terms.removeUnitLabel,
+        subLabel: terms.isPavillon ? "Derniere maison" : "Dernier etage",
         icon: "minus-circle",
         tone: "danger",
         onPress: openDeleteEtage,
-      },
-    ],
-    [handleAddEtage, openAddPorte, openDeleteEtage, openDeletePorte],
-  );
+      });
+    }
+    return actions;
+  }, [handleAddEtage, openAddPorte, openDeleteEtage, openDeletePorte, terms]);
 
   const openStatusFilterSheet = useCallback(() => {
     setPendingStatusFilter(statusFilters[0] ?? null);
@@ -1080,7 +1158,9 @@ function ImmeubleDetailsView({
       const [etage, portes] = item;
       return (
         <View style={styles.floorPlanEtageSection}>
-          <Text style={styles.floorPlanEtageLabel}>Étage {etage}</Text>
+          <Text style={styles.floorPlanEtageLabel}>
+            {terms.unitLabel} {etage}
+          </Text>
           <View style={styles.floorPlanDoorsGrid}>
             {portes.map((porte) => {
               const status = getDisplayStatus(porte);
@@ -1116,7 +1196,7 @@ function ImmeubleDetailsView({
         </View>
       );
     },
-    [currentPorte?.id, handleFloorPlanDoorPress],
+    [currentPorte?.id, handleFloorPlanDoorPress, terms.unitLabel],
   );
 
   return (
@@ -1127,6 +1207,8 @@ function ImmeubleDetailsView({
         nbEtages={displayNbEtages}
         nbPortesParEtage={immeuble.nbPortesParEtage}
         onBack={() => setShowExitConfirm(true)}
+        typeHabitat={effectiveType}
+        nbMaisonsPrevu={immeuble.nbMaisonsPrevu}
       />
 
       {actionToast ? (
@@ -1172,6 +1254,7 @@ function ImmeubleDetailsView({
                 progress={progress}
                 progressFill={progressFill}
                 isTablet={isTablet}
+                unitLabelPlural={terms.unitLabelPlural}
               />
 
               <View style={styles.statusHeaderRow}>
@@ -1202,8 +1285,16 @@ function ImmeubleDetailsView({
                 onPorteTap={handlePorteTap}
                 isTablet={isTablet}
                 hasFilters={statusFilters.length > 0}
-                nbEtages={immeuble.nbEtages}
-                nbPortesParEtage={immeuble.nbPortesParEtage}
+                nbEtages={
+                  effectiveType === "PAVILLON"
+                    ? (immeuble.nbMaisonsPrevu ?? immeuble.nbEtages)
+                    : immeuble.nbEtages
+                }
+                nbPortesParEtage={
+                  effectiveType === "PAVILLON" ? 1 : immeuble.nbPortesParEtage
+                }
+                typeHabitat={effectiveType}
+                nbMaisonsPrevu={immeuble.nbMaisonsPrevu}
               />
             </ScrollView>
           </Animated.View>
@@ -1230,6 +1321,7 @@ function ImmeubleDetailsView({
         formatDateLabel={formatDateLabel}
         formatTimeLabel={formatTimeLabel}
         styles={styles}
+        typeHabitat={effectiveType}
       />
 
       <FloorPlanSheet
@@ -1247,6 +1339,10 @@ function ImmeubleDetailsView({
         floorPlanKeyExtractor={floorPlanKeyExtractor}
         renderFloorPlanSection={renderFloorPlanSection}
         styles={styles}
+        planTitle={terms.planTitle}
+        unitLabel={terms.unitLabel}
+        unitLabelPlural={terms.unitLabelPlural}
+        showFloors={terms.showFloors}
       />
       {isFilterSheetOpen ? (
         <StatusFilterSheet
@@ -1276,6 +1372,8 @@ function ImmeubleDetailsView({
         nbEtages={displayNbEtages}
         nbPortesParEtage={immeuble.nbPortesParEtage}
         portes={realPortes}
+        typeHabitat={effectiveType}
+        nbMaisonsPrevu={immeuble.nbMaisonsPrevu}
       />
 
       <ConfirmActionOverlay
@@ -1287,21 +1385,23 @@ function ImmeubleDetailsView({
         open={!!deleteTarget || deleteFloor !== null}
         title={
           deleteFloor !== null
-            ? "Supprimer le dernier étage ?"
+            ? `Supprimer ${terms.isPavillon ? "la dernière maison" : "le dernier étage"} ?`
             : "Supprimer cette porte ?"
         }
         highlight={
           deleteFloor !== null
-            ? `Étage ${deleteFloor}`
+            ? `${terms.unitLabel} ${deleteFloor}`
             : deleteTarget
-              ? `Étage ${deleteTarget.etage} · Porte ${
-                  deleteTarget.nomPersonnalise || deleteTarget.numero
-                }`
+              ? terms.showFloors
+                ? `${terms.unitLabel} ${deleteTarget.etage} · Porte ${
+                    deleteTarget.nomPersonnalise || deleteTarget.numero
+                  }`
+                : `Porte ${deleteTarget.nomPersonnalise || deleteTarget.numero}`
               : undefined
         }
         description={
           deleteFloor !== null
-            ? "Toutes les portes de cet étage seront supprimées. L'historique sera définitivement perdu."
+            ? `Toutes les portes de ${terms.isPavillon ? "cette maison" : "cet étage"} seront supprimées. L'historique sera définitivement perdu.`
             : deleteTarget
               ? "L'historique de cette porte sera définitivement perdu."
               : undefined
@@ -1337,6 +1437,7 @@ function ImmeubleDetailsView({
         onClose={() => setDetailPorte(null)}
         onResume={handleDetailResume}
         onEdit={handleDetailEdit}
+        typeHabitat={effectiveType}
       />
 
       {hasNativePicker && showDatePicker && DateTimePicker ? (
@@ -1532,7 +1633,7 @@ function ImmeubleDetailsView({
             </View>
             <Text style={styles.exitTitle}>Quitter la fiche ?</Text>
             <Text style={styles.exitText}>
-              Tu vas revenir a la liste des immeubles. Continuer ?
+              Tu vas quitter cette fiche. Continuer ?
             </Text>
             <View style={styles.exitActions}>
               <Pressable

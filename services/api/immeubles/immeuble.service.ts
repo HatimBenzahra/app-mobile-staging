@@ -17,6 +17,7 @@ import {
   REMOVE_PORTE_FROM_ETAGE,
   UPDATE_IMMEUBLE,
 } from "./immeuble.mutations";
+import { GET_QUARTIERS } from "./immeuble.queries";
 
 export const immeubleApi = {
   async create(input: CreateImmeubleInput): Promise<Immeuble> {
@@ -92,5 +93,13 @@ export const immeubleApi = {
       { immeubleId: number; etage: number }
     >(REMOVE_PORTE_FROM_ETAGE, { immeubleId, etage });
     return response.removePorteFromEtage;
+  },
+
+  async getQuartiers(): Promise<Quartier[]> {
+    const response = await gql<{ quartiers: Quartier[] }, Record<string, never>>(
+      GET_QUARTIERS,
+      {},
+    );
+    return response.quartiers;
   },
 };

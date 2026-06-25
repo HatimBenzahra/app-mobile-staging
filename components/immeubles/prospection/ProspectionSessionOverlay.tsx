@@ -47,7 +47,8 @@ import type {
   ProspectionSessionApi,
   SaveStatusInput,
 } from "@/hooks/prospection/use-prospection-session";
-import type { Porte } from "@/types/api";
+import type { Porte, TypeHabitat } from "@/types/api";
+import { getLieuTerms } from "@/components/immeubles/lieu-terms";
 import { colors, fontSize, spacing } from "@/constants/theme";
 
 type ProspectionSessionOverlayProps = {
@@ -55,6 +56,8 @@ type ProspectionSessionOverlayProps = {
   nbEtages?: number;
   nbPortesParEtage?: number;
   portes?: Porte[];
+  typeHabitat?: TypeHabitat;
+  nbMaisonsPrevu?: number | null;
 };
 
 const SCREEN_PAD = 18;
@@ -75,6 +78,8 @@ export default function ProspectionSessionOverlay({
   nbEtages = 1,
   nbPortesParEtage,
   portes = [],
+  typeHabitat,
+  nbMaisonsPrevu,
 }: ProspectionSessionOverlayProps) {
   const { state } = session;
   const insets = useSafeAreaInsets();
@@ -117,6 +122,8 @@ export default function ProspectionSessionOverlay({
               nbEtages={nbEtages}
               nbPortesParEtage={nbPortesParEtage}
               portes={portes}
+              typeHabitat={typeHabitat}
+              nbMaisonsPrevu={nbMaisonsPrevu}
             />
           ) : null}
 
@@ -127,6 +134,7 @@ export default function ProspectionSessionOverlay({
               isTablet={isTablet}
               insetsTop={insets.top}
               insetsBottom={insets.bottom}
+              typeHabitat={typeHabitat}
             />
           ) : null}
 
@@ -157,6 +165,7 @@ export default function ProspectionSessionOverlay({
               isTablet={isTablet}
               insetsTop={insets.top}
               insetsBottom={insets.bottom}
+              typeHabitat={typeHabitat}
             />
           ) : null}
         </View>
@@ -200,6 +209,7 @@ function FloorCard({
   onPress,
   isTablet,
   locked,
+  unitLabel = "Étage",
 }: {
   etage: number;
   done: number;
@@ -208,6 +218,7 @@ function FloorCard({
   onPress: () => void;
   isTablet: boolean;
   locked?: boolean;
+  unitLabel?: string;
 }) {
   const ratio = total === 0 ? 0 : done / total;
   const isComplete = total > 0 && ratio === 1;
@@ -224,7 +235,7 @@ function FloorCard({
         locked && { opacity: 0.4, backgroundColor: colors.surfaceMuted },
       ]}
       accessibilityRole="button"
-      accessibilityLabel={`Étage ${etage}`}
+      accessibilityLabel={`${unitLabel} ${etage}`}
     >
       <View style={styles.floorCardTop}>
         <Text
@@ -326,6 +337,7 @@ function NamingView({
   nbEtages,
   nbPortesParEtage,
   portes,
+  typeHabitat,
 }: {
   session: ProspectionSessionApi;
   isTablet: boolean;
@@ -334,20 +346,25 @@ function NamingView({
   nbEtages: number;
   nbPortesParEtage?: number;
   portes: Porte[];
+  typeHabitat?: TypeHabitat;
+  nbMaisonsPrevu?: number | null;
 }) {
   const state = session.state;
   const isCreating = state.phase === "CREATING";
+  const terms = getLieuTerms(typeHabitat);
 
   const initialEtage =
     state.phase === "NAMING" || state.phase === "CREATING"
       ? state.etage || null
       : null;
 
+  // MAISON : 1 foyer unique, aucune notion d'étage — on saute l'étape "étage"
+  // et on démarre directement sur l'étage implicite 1.
   const [step, setStep] = useState<"etage" | "porte">(
-    initialEtage ? "porte" : "etage",
+    terms.isMaison ? "porte" : initialEtage ? "porte" : "etage",
   );
   const [selectedEtage, setSelectedEtage] = useState<number | null>(
-    initialEtage,
+    terms.isMaison ? 1 : initialEtage,
   );
   const [error, setError] = useState<string | null>(null);
 
@@ -446,7 +463,9 @@ function NamingView({
   const handleCreateNew = useCallback(async () => {
     if (selectedEtage === null || effectiveNum <= 0) return;
     if (isFloorAtCapacity) {
-      setError(`Étage complet (${nbPortesParEtage} portes maximum).`);
+      setError(
+        `${terms.unitLabel} complet${terms.isPavillon ? "e" : ""} (${nbPortesParEtage} portes maximum).`,
+      );
       return;
     }
     if (duplicatePorte) {
@@ -466,7 +485,7 @@ function NamingView({
           : "Création impossible. Réessaie.",
       );
     }
-  }, [duplicatePorte, effectiveNum, isFloorAtCapacity, nbPortesParEtage, selectedEtage, session]);
+  }, [duplicatePorte, effectiveNum, isFloorAtCapacity, nbPortesParEtage, selectedEtage, session, terms]);
 
   const handleExistingTap = useCallback(
     (porte: Porte) => {
@@ -475,6 +494,17 @@ function NamingView({
     },
     [session],
   );
+
+  // MAISON : un foyer unique. Dès que le composant est monté (étape = porte,
+  // étage = 1, numéro = 1), on soumet automatiquement sans interaction.
+  const autoSubmittedRef = useRef(false);
+  useEffect(() => {
+    if (!terms.isMaison) return;
+    if (autoSubmittedRef.current) return;
+    if (selectedEtage === null || effectiveNum <= 0) return;
+    autoSubmittedRef.current = true;
+    void handleCreateNew();
+  }, [terms.isMaison, selectedEtage, effectiveNum, handleCreateNew]);
 
   const pad = isTablet ? TABLET_PAD : SCREEN_PAD;
   const cols = isTablet ? 5 : 4;
@@ -497,12 +527,12 @@ function NamingView({
         }}
       >
         <View style={styles.headerRow}>
-          {step === "porte" ? (
+          {step === "porte" && !terms.isMaison ? (
             <Pressable
               onPress={handleBackToFloor}
               style={styles.iconBtn}
               accessibilityRole="button"
-              accessibilityLabel="Retour aux étages"
+              accessibilityLabel={`Retour aux ${terms.unitLabelPlural}`}
               hitSlop={10}
             >
               <Feather name="chevron-left" size={22} color={colors.text} />
@@ -518,15 +548,21 @@ function NamingView({
               <Feather name="x" size={20} color={colors.text} />
             </Pressable>
           )}
-          <View style={styles.stepBadge}>
-            <View
-              style={step === "porte" ? styles.dotDone : styles.dotActive}
-            />
-            <View
-              style={step === "porte" ? styles.dotActive : styles.dotInactive}
-            />
-            <View style={styles.dotInactive} />
-          </View>
+          {terms.isMaison ? (
+            <View style={styles.stepBadge}>
+              <View style={styles.dotActive} />
+            </View>
+          ) : (
+            <View style={styles.stepBadge}>
+              <View
+                style={step === "porte" ? styles.dotDone : styles.dotActive}
+              />
+              <View
+                style={step === "porte" ? styles.dotActive : styles.dotInactive}
+              />
+              <View style={styles.dotInactive} />
+            </View>
+          )}
           <View style={{ width: 36 }} />
         </View>
 
@@ -534,9 +570,13 @@ function NamingView({
           <Animated.View entering={FadeIn.duration(140)} style={{ gap: 18 }}>
             <View style={styles.heroBlock}>
               <Text style={styles.eyebrow}>Étape 1</Text>
-              <Text style={styles.heroTitle}>Quel étage ?</Text>
+              <Text style={styles.heroTitle}>
+                {terms.isPavillon ? "Quelle maison ?" : "Quel étage ?"}
+              </Text>
               <Text style={styles.heroLead}>
-                Tape l'étage où tu vas prospecter. Aucune saisie au clavier.
+                {terms.isPavillon
+                  ? "Tape la maison où tu vas prospecter. Aucune saisie au clavier."
+                  : "Tape l'étage où tu vas prospecter. Aucune saisie au clavier."}
               </Text>
             </View>
             <View
@@ -561,6 +601,7 @@ function NamingView({
                     onPress={() => handleSelectFloor(floor.etage)}
                     isTablet={isTablet}
                     locked={floor.locked}
+                    unitLabel={terms.unitLabel}
                   />
                 </View>
               ))}
@@ -569,7 +610,11 @@ function NamingView({
         ) : (
           <Animated.View entering={FadeIn.duration(140)} style={{ gap: 18 }}>
             <View style={styles.heroBlock}>
-              <Text style={styles.eyebrow}>Étape 2 · Étage {selectedEtage}</Text>
+              <Text style={styles.eyebrow}>
+                {terms.isMaison
+                  ? "Maison individuelle"
+                  : `Étape 2 · ${terms.unitLabel} ${selectedEtage}`}
+              </Text>
               <Text style={styles.heroTitle}>Quelle porte ?</Text>
               <Text style={styles.heroLead}>
                 Choisis une porte existante pour la repasser, ou démarre la
@@ -674,7 +719,7 @@ function NamingView({
                     <Text style={styles.dupText}>
                       Porte {duplicatePorte.numero} existe déjà
                       {duplicatePorte.etage !== selectedEtage
-                        ? ` (étage ${duplicatePorte.etage})`
+                        ? ` (${terms.unitLabel.toLowerCase()} ${duplicatePorte.etage})`
                         : ""}
                       . Tape sur le bouton pour la reprendre.
                     </Text>
@@ -711,7 +756,7 @@ function NamingView({
               </Pressable>
               {isFloorAtCapacity ? (
                 <Text style={styles.capacityNotice}>
-                  L'étage est complet ({nbPortesParEtage} portes). Termine ou supprime des portes existantes.
+                  {terms.isPavillon ? "La maison est complète" : "L'étage est complet"} ({nbPortesParEtage} portes). Termine ou supprime des portes existantes.
                 </Text>
               ) : null}
             </View>
@@ -731,13 +776,16 @@ function ReadyView({
   isTablet,
   insetsTop,
   insetsBottom,
+  typeHabitat,
 }: {
   session: ProspectionSessionApi;
   isTablet: boolean;
   insetsTop: number;
   insetsBottom: number;
+  typeHabitat?: TypeHabitat;
 }) {
   const state = session.state;
+  const terms = getLieuTerms(typeHabitat);
   if (state.phase !== "READY") return null;
   const { porte } = state;
 
@@ -785,7 +833,11 @@ function ReadyView({
           </View>
 
           <View style={styles.heroBlock}>
-            <Text style={styles.eyebrow}>Tu approches de la porte</Text>
+            <Text style={styles.eyebrow}>
+              {terms.isMaison || terms.isPavillon
+                ? `Tu approches du ${terms.unitLabel.toLowerCase()}`
+                : "Tu approches de la porte"}
+            </Text>
             <Text style={styles.heroTitle}>Prêt à sonner ?</Text>
           </View>
 
@@ -794,15 +846,24 @@ function ReadyView({
               <View style={styles.porteIconWrap}>
                 <Feather name="bell" size={20} color={colors.text} />
               </View>
-              <View style={styles.porteEtageBadge}>
-                <Text style={styles.porteEtageText}>
-                  Étage {porte.etage}
-                </Text>
-              </View>
+              {terms.showFloors ? (
+                <View style={styles.porteEtageBadge}>
+                  <Text style={styles.porteEtageText}>
+                    {terms.unitLabel} {porte.etage}
+                  </Text>
+                </View>
+              ) : null}
             </View>
-            <Text style={styles.porteNumber}>{porte.numero}</Text>
+            <Text style={styles.porteNumber}>
+              {terms.isMaison || terms.isPavillon
+                ? (terms.showFloors ? `${porte.etage}` : terms.unitLabel)
+                : porte.numero}
+            </Text>
             <Text style={styles.porteSubtitle}>
-              {porte.nomPersonnalise || "Porte à prospecter"}
+              {porte.nomPersonnalise ||
+                (terms.isMaison || terms.isPavillon
+                  ? `${terms.unitLabel} à prospecter`
+                  : "Porte à prospecter")}
             </Text>
           </View>
 
@@ -855,13 +916,16 @@ function ActiveView({
   isTablet,
   insetsTop,
   insetsBottom,
+  typeHabitat,
 }: {
   session: ProspectionSessionApi;
   isTablet: boolean;
   insetsTop: number;
   insetsBottom: number;
+  typeHabitat?: TypeHabitat;
 }) {
   const state = session.state;
+  const terms = getLieuTerms(typeHabitat);
   if (state.phase !== "ACTIVE" && state.phase !== "SAVING") return null;
 
   const { porte, startedAt } = state;
@@ -1002,6 +1066,9 @@ function ActiveView({
             porteEtage={porte.etage}
             porteName={porte.nomPersonnalise}
             startedAt={startedAt}
+            unitLabel={terms.unitLabel}
+            showUnit={terms.showFloors}
+            isSingleUnit={terms.isMaison || terms.isPavillon}
           />
 
           <StatusGrid

@@ -15,7 +15,8 @@ import {
   getDisplayStatusKey,
 } from "@/components/immeubles/prospection/status-display";
 import { useToast } from "@/components/ui";
-import type { Porte } from "@/types/api";
+import { getLieuTerms } from "@/components/immeubles/lieu-terms";
+import type { Porte, TypeHabitat } from "@/types/api";
 
 type FloorSummary = {
   etage: number;
@@ -33,12 +34,14 @@ type BuildingFloorStripProps = {
   isTablet?: boolean;
   nbEtages?: number;
   nbPortesParEtage?: number;
+  typeHabitat?: TypeHabitat;
 };
 
 function summarize(
   portes: Porte[],
   nbEtages?: number,
   nbPortesParEtage?: number,
+  disableLock?: boolean,
 ): FloorSummary[] {
   const map = new Map<number, Porte[]>();
   for (const porte of portes) {
@@ -65,6 +68,9 @@ function summarize(
     return { etage, total, done, portes: sorted, locked: false, active: false };
   });
 
+  // PAVILLON (disableLock): toutes les maisons sont accessibles librement.
+  if (disableLock) return etagesArray;
+
   // Descending pass: first floor with remaining work is active, those below are locked.
   let activeFound = false;
   return etagesArray.map((summary) => {
@@ -85,11 +91,13 @@ function FloorCard({
   active,
   onPress,
   isTablet,
+  unitLabel,
 }: {
   summary: FloorSummary;
   active: boolean;
   onPress: () => void;
   isTablet: boolean;
+  unitLabel: string;
 }) {
   const ratio = summary.total === 0 ? 0 : summary.done / summary.total;
   const isComplete = ratio === 1;
@@ -107,7 +115,7 @@ function FloorCard({
         isLocked && styles.cardLocked,
       ]}
       accessibilityRole="button"
-      accessibilityLabel={`Étage ${summary.etage}, ${summary.done} sur ${summary.total} portes prospectées${isLocked ? ", verrouillé" : ""}`}
+      accessibilityLabel={`${unitLabel} ${summary.etage}, ${summary.done} sur ${summary.total} portes prospectées${isLocked ? ", verrouillé" : ""}`}
     >
       <View style={styles.cardHeader}>
         <Text
@@ -173,12 +181,14 @@ function BuildingFloorStripImpl({
   isTablet = false,
   nbEtages,
   nbPortesParEtage,
+  typeHabitat,
 }: BuildingFloorStripProps) {
   const toast = useToast();
+  const terms = getLieuTerms(typeHabitat);
 
   const floors = useMemo(
-    () => summarize(allPortes, nbEtages, nbPortesParEtage),
-    [allPortes, nbEtages, nbPortesParEtage],
+    () => summarize(allPortes, nbEtages, nbPortesParEtage, terms.isPavillon),
+    [allPortes, nbEtages, nbPortesParEtage, terms.isPavillon],
   );
 
   if (floors.length === 0) return null;
@@ -198,7 +208,9 @@ function BuildingFloorStripImpl({
           <View style={styles.iconBadge}>
             <Feather name="layers" size={13} color={colors.text} />
           </View>
-          <Text style={styles.headerTitle}>Cartographie</Text>
+          <Text style={styles.headerTitle}>
+            {terms.isPavillon ? "Maisons" : "Cartographie"}
+          </Text>
         </View>
         <View style={styles.headerRight}>
           <Text style={styles.headerPct}>{overallPct}%</Text>
@@ -223,10 +235,11 @@ function BuildingFloorStripImpl({
             active={activeEtage === floor.etage}
             onPress={() => {
               if (floor.locked) {
+                const unitLower = terms.unitLabel.toLowerCase();
                 toast.show({
                   message: activeEtageNum
-                    ? `Termine d'abord l'étage ${activeEtageNum}.`
-                    : "Étage verrouillé.",
+                    ? `Termine d'abord ${terms.isPavillon ? "la" : "l'"}${unitLower} ${activeEtageNum}.`
+                    : `${terms.unitLabel} verrouillé${terms.isPavillon ? "e" : ""}.`,
                   variant: "info",
                 });
                 return;
@@ -234,6 +247,7 @@ function BuildingFloorStripImpl({
               onFloorTap?.(floor.etage);
             }}
             isTablet={isTablet}
+            unitLabel={terms.unitLabel}
           />
         ))}
       </ScrollView>

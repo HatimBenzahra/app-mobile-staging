@@ -6,7 +6,8 @@ import { colors } from "@/constants/theme";
 import BuildingFloorStrip from "@/components/immeubles/prospection/BuildingFloorStrip";
 import FloorSection from "@/components/immeubles/prospection/FloorSection";
 import ProspectionJourney from "@/components/immeubles/prospection/ProspectionJourney";
-import type { Porte } from "@/types/api";
+import { getLieuTerms } from "@/components/immeubles/lieu-terms";
+import type { Porte, TypeHabitat } from "@/types/api";
 
 type ProspectedDoorsListProps = {
   portes: Porte[];
@@ -16,6 +17,8 @@ type ProspectedDoorsListProps = {
   hasFilters?: boolean;
   nbEtages?: number;
   nbPortesParEtage?: number;
+  typeHabitat?: TypeHabitat;
+  nbMaisonsPrevu?: number | null;
 };
 
 function groupByEtage(portes: Porte[]): Array<{ etage: number; portes: Porte[] }> {
@@ -38,7 +41,9 @@ function ProspectedDoorsListImpl({
   hasFilters = false,
   nbEtages,
   nbPortesParEtage,
+  typeHabitat,
 }: ProspectedDoorsListProps) {
+  const terms = getLieuTerms(typeHabitat);
   const sections = useMemo(() => groupByEtage(portes), [portes]);
   const totalsPerFloor = useMemo(() => {
     const m = new Map<number, number>();
@@ -68,7 +73,7 @@ function ProspectedDoorsListImpl({
         isTablet={isTablet}
       />
 
-      {hasAnyBuildingData ? (
+      {terms.showFloors && hasAnyBuildingData ? (
         <BuildingFloorStrip
           allPortes={stripPortes}
           activeEtage={focusedEtage}
@@ -78,6 +83,7 @@ function ProspectedDoorsListImpl({
           isTablet={isTablet}
           nbEtages={nbEtages}
           nbPortesParEtage={nbPortesParEtage}
+          typeHabitat={typeHabitat}
         />
       ) : null}
 
@@ -96,7 +102,9 @@ function ProspectedDoorsListImpl({
           <Text style={styles.emptyText}>
             {hasFilters
               ? "Aucun résultat avec ce filtre. Essaie un autre statut."
-              : "Tape le bouton « + » pour ajouter ta première porte et démarrer la prospection."}
+              : terms.isMaison
+                ? "Démarre la prospection de ce foyer via le bouton ci-dessous."
+                : "Tape le bouton « + » pour ajouter ta première porte et démarrer la prospection."}
           </Text>
           {!hasFilters ? (
             <View style={styles.emptyHintPill}>
@@ -116,6 +124,7 @@ function ProspectedDoorsListImpl({
               onPorteTap={onPorteTap}
               isTablet={isTablet}
               isFocused={focusedEtage === section.etage}
+              typeHabitat={typeHabitat}
             />
           ))}
         </View>

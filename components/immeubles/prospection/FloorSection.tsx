@@ -4,7 +4,8 @@ import { StyleSheet, Text, View } from "react-native";
 import { colors } from "@/constants/theme";
 
 import PorteTile from "@/components/immeubles/prospection/PorteTile";
-import type { Porte } from "@/types/api";
+import { getLieuTerms } from "@/components/immeubles/lieu-terms";
+import type { Porte, TypeHabitat } from "@/types/api";
 
 type FloorSectionProps = {
   etage: number;
@@ -13,6 +14,7 @@ type FloorSectionProps = {
   onPorteTap: (porte: Porte) => void;
   isTablet?: boolean;
   isFocused?: boolean;
+  typeHabitat?: TypeHabitat;
 };
 
 function FloorSectionImpl({
@@ -22,13 +24,33 @@ function FloorSectionImpl({
   onPorteTap,
   isTablet = false,
   isFocused = false,
+  typeHabitat,
 }: FloorSectionProps) {
   if (portes.length === 0) return null;
 
+  const terms = getLieuTerms(typeHabitat);
   const total = totalOnFloor ?? portes.length;
   const done = portes.length;
   const pct = total === 0 ? 0 : Math.round((done / total) * 100);
   const isComplete = pct === 100;
+
+  // MAISON / PAVILLON : pas de header de section avec compteur — uniquement la porte/tuile.
+  if (terms.isMaison || terms.isPavillon) {
+    return (
+      <View style={[styles.section, isTablet && styles.sectionTablet]}>
+        <View style={[styles.grid, isTablet && styles.gridTablet]}>
+          {portes.map((porte) => (
+            <PorteTile
+              key={porte.id}
+              porte={porte}
+              onPress={onPorteTap}
+              isTablet={isTablet}
+            />
+          ))}
+        </View>
+      </View>
+    );
+  }
 
   return (
     <View style={[styles.section, isTablet && styles.sectionTablet]}>
@@ -59,7 +81,7 @@ function FloorSectionImpl({
             </View>
             <View style={styles.headerText}>
               <Text style={[styles.title, isTablet && styles.titleTablet]}>
-                Étage {etage}
+                {terms.unitLabel} {etage}
               </Text>
               <Text style={styles.subtitle}>
                 {done} prospecté{done > 1 ? "es" : "e"} sur {total}
