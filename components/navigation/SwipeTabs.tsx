@@ -126,7 +126,7 @@ export default function SwipeTabs({
         renderScene={renderScene}
         onIndexChange={onIndexChange}
         renderTabBar={() => null}
-        swipeEnabled={swipeEnabled}
+        swipeEnabled={swipeEnabled && tabRoutes[index]?.key !== "carte"}
         lazy
       />
     </View>

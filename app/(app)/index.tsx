@@ -1,6 +1,6 @@
 import AnimatedHeader from "@/components/navigation/AnimatedHeader";
 import NavigationRail from "@/components/navigation/NavigationRail";
-import SwipeTabs from "@/components/navigation/SwipeTabs";
+import SwipeTabs, { buildRoutes } from "@/components/navigation/SwipeTabs";
 import ProfileSheet from "@/components/ProfileSheet";
 import { AudioSessionProvider } from "@/hooks/audio/use-audio-session";
 import {
@@ -9,7 +9,7 @@ import {
 } from "@/hooks/use-profile-sheet";
 import { authService } from "@/services/auth";
 import { useRouter } from "expo-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { StyleSheet, View } from "react-native";
 
 function AppContent() {
@@ -20,6 +20,23 @@ function AppContent() {
   const [showHeader, setShowHeader] = useState(true);
   const [showRail, setShowRail] = useState(true);
   const { sheetRef } = useProfileSheet();
+  const didSetInitialTab = useRef(false);
+
+  const isManager = role === "manager";
+  const isCommercial = role != null && !isManager;
+  const routes = useMemo(() => buildRoutes(isManager), [isManager]);
+  const activeKey = routes[index]?.key;
+  const isCarte = activeKey === "carte";
+
+  // Le commercial atterrit directement sur la carte plein écran.
+  useEffect(() => {
+    if (didSetInitialTab.current || role == null) return;
+    didSetInitialTab.current = true;
+    if (isCommercial) {
+      const carteIdx = routes.findIndex((r) => r.key === "carte");
+      if (carteIdx >= 0) setIndex(carteIdx);
+    }
+  }, [role, isCommercial, routes]);
 
   useEffect(() => {
     const loadIdentity = async () => {
@@ -77,14 +94,20 @@ function AppContent() {
     isConnected: false,
   };
 
+  // Navigation via la rail gauche (reco tablette : plus ergonomique en paysage,
+  // 2 mains, qu'une barre en bas). Sur la Carte on masque juste le header pour
+  // une carte immersive ; la rail reste pour naviguer (et sortir de la carte).
+  const railVisible = showRail;
+  const headerVisible = showHeader && !isCarte;
+
   return (
     <AudioSessionProvider value={audioSessionValue}>
       <View style={styles.appLayout}>
-        {showRail ? (
+        {railVisible ? (
           <NavigationRail currentIndex={index} onNavigate={setIndex} />
         ) : null}
         <View style={styles.mainContent}>
-          {showHeader ? <AnimatedHeader currentIndex={index} /> : null}
+          {headerVisible ? <AnimatedHeader currentIndex={index} /> : null}
           <SwipeTabs
             index={index}
             onIndexChange={setIndex}

@@ -563,34 +563,27 @@ export default function CarteTerrainScreen({
         ))}
       </MapLibreMap>
 
-      <View style={[styles.topBar, { paddingTop: insets.top + 8 }]}>
-        {!embedded && (
-          <Pressable style={styles.iconButton} onPress={() => router.back()}>
-            <Feather name="chevron-left" size={22} color={colors.text} />
-          </Pressable>
-        )}
-        <View style={styles.topTitle}>
-          <Text style={styles.title}>Carte terrain</Text>
-          <Text style={styles.subtitle}>
-            {movingLieu
-              ? `Touche la nouvelle position pour ${movingLieu.adresse}.`
-              : mode === "VISUALISATION"
-                ? "Consulte les reperes et ouvre leurs options."
-                : mode === "BATIMENT"
-                  ? "Pose un repere rouge sur le lieu a prospecter."
-                  : "Pose plusieurs reperes pour definir un quartier."}
-          </Text>
-        </View>
-        <Pressable style={styles.iconButton} onPress={centerOnCurrentLocation}>
-          {loadingLocation ? (
-            <ActivityIndicator size="small" color={colors.primary} />
-          ) : (
-            <Feather name="crosshair" size={18} color={colors.primary} />
-          )}
+      {!embedded && (
+        <Pressable
+          style={[styles.backFab, { top: insets.top + 10 }]}
+          onPress={() => router.back()}
+        >
+          <Feather name="chevron-left" size={22} color={colors.text} />
         </Pressable>
-      </View>
+      )}
 
-      <View style={[styles.modeSwitch, { top: insets.top + 78 }]}>
+      <Pressable
+        style={[styles.recenterFab, { bottom: insets.bottom + 24 }]}
+        onPress={centerOnCurrentLocation}
+      >
+        {loadingLocation ? (
+          <ActivityIndicator size="small" color={colors.primary} />
+        ) : (
+          <Feather name="crosshair" size={22} color={colors.primary} />
+        )}
+      </Pressable>
+
+      <View style={[styles.modeSwitch, { top: insets.top + 10 }]}>
         {(["VISUALISATION", "BATIMENT", "QUARTIER"] as TerrainMode[]).map((nextMode) => {
           const selected = mode === nextMode;
           return (
@@ -944,17 +937,39 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
-  topBar: {
+  backFab: {
     position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    flexDirection: "row",
+    left: 16,
+    width: 42,
+    height: 42,
+    borderRadius: 21,
     alignItems: "center",
-    gap: 12,
-    paddingHorizontal: 16,
-    paddingBottom: 10,
-    backgroundColor: "rgba(248,250,252,0.92)",
+    justifyContent: "center",
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  recenterFab: {
+    position: "absolute",
+    right: 16,
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.18,
+    shadowRadius: 10,
+    elevation: 8,
   },
   iconButton: {
     width: 42,
@@ -965,19 +980,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.border,
-  },
-  topTitle: {
-    flex: 1,
-  },
-  title: {
-    fontSize: 18,
-    fontWeight: "800",
-    color: colors.text,
-  },
-  subtitle: {
-    marginTop: 2,
-    fontSize: 12,
-    color: colors.textStrong,
   },
   modeSwitch: {
     position: "absolute",
