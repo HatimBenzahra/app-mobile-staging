@@ -1,9 +1,11 @@
 import { gql } from "@/services/core/graphql";
-import type { CreateImmeubleInput, Immeuble } from "@/types/api";
+import type { CreateImmeubleInput, CreateQuartierInput, Immeuble, Quartier } from "@/types/api";
 import {
   ADD_ETAGE_TO_IMMEUBLE,
   ADD_PORTE_TO_ETAGE,
   CREATE_IMMEUBLE,
+  CREATE_MAISON_FROM_IMMEUBLE_INPUT,
+  CREATE_QUARTIER,
   REMOVE_ETAGE_FROM_IMMEUBLE,
   REMOVE_PORTE_FROM_ETAGE,
 } from "./immeuble.mutations";
@@ -15,6 +17,22 @@ export const immeubleApi = {
       { createImmeubleInput: CreateImmeubleInput }
     >(CREATE_IMMEUBLE, { createImmeubleInput: input });
     return response.createImmeubleEmpty;
+  },
+
+  async createMaison(input: CreateImmeubleInput): Promise<Immeuble> {
+    const response = await gql<
+      { createMaisonFromImmeubleInput: Immeuble },
+      { createImmeubleInput: CreateImmeubleInput }
+    >(CREATE_MAISON_FROM_IMMEUBLE_INPUT, { createImmeubleInput: input });
+    return response.createMaisonFromImmeubleInput;
+  },
+
+  async createQuartier(input: CreateQuartierInput): Promise<Quartier> {
+    const response = await gql<
+      { createQuartier: Quartier },
+      { createQuartierInput: CreateQuartierInput }
+    >(CREATE_QUARTIER, { createQuartierInput: input });
+    return response.createQuartier;
   },
 
   async addEtageToImmeuble(id: number): Promise<Immeuble> {

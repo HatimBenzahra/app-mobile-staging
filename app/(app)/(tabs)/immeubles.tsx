@@ -7,6 +7,7 @@ import { colors, progressColors } from "@/constants/theme";
 import { authService } from "@/services/auth";
 import type { Immeuble } from "@/types/api";
 import { Feather } from "@expo/vector-icons";
+import { router } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Animated,
@@ -752,12 +753,20 @@ export default function ImmeublesScreen({
           }
         />
 
-        <Pressable
-          style={[styles.fab, { bottom: insets.bottom + 72 }]}
-          onPress={() => setIsAddOpen(true)}
-        >
-          <Feather name="plus" size={20} color={colors.textOnPrimary} />
-        </Pressable>
+        <View style={[styles.fabStack, { bottom: insets.bottom + 72 }]}>
+          <Pressable
+            style={[styles.fab, styles.mapFab]}
+            onPress={() => router.push("/carte-terrain")}
+          >
+            <Feather name="map-pin" size={20} color={colors.textOnPrimary} />
+          </Pressable>
+          <Pressable
+            style={styles.fab}
+            onPress={() => setIsAddOpen(true)}
+          >
+            <Feather name="plus" size={20} color={colors.textOnPrimary} />
+          </Pressable>
+        </View>
 
         <AddImmeubleSheet
           open={isAddOpen}
@@ -1059,9 +1068,12 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: colors.primary,
   },
-  fab: {
+  fabStack: {
     position: "absolute",
     right: 20,
+    gap: 12,
+  },
+  fab: {
     width: 52,
     height: 52,
     borderRadius: 26,
@@ -1073,6 +1085,9 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 6 },
     elevation: 6,
+  },
+  mapFab: {
+    backgroundColor: colors.success,
   },
   controlsSticky: {
     backgroundColor: colors.background,

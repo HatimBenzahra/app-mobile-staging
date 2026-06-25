@@ -7,12 +7,60 @@ export const CREATE_IMMEUBLE = `
       adresse
       nbEtages
       nbPortesParEtage
+      typeHabitat
       ascenseurPresent
       digitalCode
       latitude
       longitude
       createdAt
       updatedAt
+    }
+  }
+`;
+
+export const CREATE_MAISON_FROM_IMMEUBLE_INPUT = `
+  mutation CreateMaisonFromImmeubleInput($createImmeubleInput: CreateImmeubleInput!) {
+    createMaisonFromImmeubleInput(createImmeubleInput: $createImmeubleInput) {
+      id
+      adresse
+      nbEtages
+      nbPortesParEtage
+      typeHabitat
+      ascenseurPresent
+      digitalCode
+      latitude
+      longitude
+      createdAt
+      updatedAt
+    }
+  }
+`;
+
+export const CREATE_QUARTIER = `
+  mutation CreateQuartier($createQuartierInput: CreateQuartierInput!) {
+    createQuartier(createQuartierInput: $createQuartierInput) {
+      id
+      nom
+      latitude
+      longitude
+      commercialId
+      managerId
+      zoneId
+      createdAt
+      updatedAt
+      immeubles {
+        id
+        adresse
+        nbEtages
+        nbPortesParEtage
+        typeHabitat
+        nbMaisonsPrevu
+        latitude
+        longitude
+        quartierId
+        createdAt
+        updatedAt
+      }
     }
   }
 `;

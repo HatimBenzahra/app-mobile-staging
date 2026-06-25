@@ -12,8 +12,11 @@ export const GET_COMMERCIAL_FULL = `
         adresse
         nbEtages
         nbPortesParEtage
+        typeHabitat
         ascenseurPresent
         digitalCode
+        latitude
+        longitude
         commercialId
         zoneId
         updatedAt

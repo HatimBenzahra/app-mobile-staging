@@ -115,6 +115,11 @@ export type Immeuble = {
   adresse: SchemaImmeuble['adresse'];
   nbEtages: SchemaImmeuble['nbEtages'];
   nbPortesParEtage: SchemaImmeuble['nbPortesParEtage'];
+  typeHabitat?: TypeHabitat;
+  quartierId?: number | null;
+  nbMaisonsPrevu?: number | null;
+  latitude?: SchemaImmeuble['latitude'];
+  longitude?: SchemaImmeuble['longitude'];
   updatedAt?: SchemaImmeuble['updatedAt'];
   ascenseurPresent?: SchemaImmeuble['ascenseurPresent'] | null;
   digitalCode?: SchemaImmeuble['digitalCode'];
@@ -161,6 +166,9 @@ export type CreateImmeubleInput = {
   adresse: SchemaCreateImmeubleInput['adresse'];
   nbEtages: SchemaCreateImmeubleInput['nbEtages'];
   nbPortesParEtage: SchemaCreateImmeubleInput['nbPortesParEtage'];
+  typeHabitat?: TypeHabitat;
+  quartierId?: number | null;
+  nbMaisonsPrevu?: number | null;
   commercialId?: SchemaCreateImmeubleInput['commercialId'];
   managerId?: SchemaCreateImmeubleInput['managerId'];
   zoneId?: SchemaCreateImmeubleInput['zoneId'];
@@ -168,6 +176,39 @@ export type CreateImmeubleInput = {
   digitalCode?: SchemaCreateImmeubleInput['digitalCode'];
   latitude?: SchemaCreateImmeubleInput['latitude'];
   longitude?: SchemaCreateImmeubleInput['longitude'];
+};
+
+export type TypeHabitat = "IMMEUBLE" | "MAISON" | "PAVILLON";
+
+export type Quartier = {
+  id: number;
+  nom: string;
+  latitude?: number | null;
+  longitude?: number | null;
+  commercialId?: number | null;
+  managerId?: number | null;
+  zoneId?: number | null;
+  immeubles?: Immeuble[];
+  createdAt?: string;
+  updatedAt?: string;
+};
+
+export type CreateQuartierPointInput = {
+  adresse: string;
+  latitude: number;
+  longitude: number;
+  typeHabitat: TypeHabitat;
+  nbEtages?: number;
+  nbPortesParEtage?: number;
+  nbMaisonsPrevu?: number;
+};
+
+export type CreateQuartierInput = {
+  nom?: string;
+  commercialId?: number;
+  managerId?: number;
+  zoneId?: number;
+  points: CreateQuartierPointInput[];
 };
 
 export type Commercial = {
@@ -220,4 +261,3 @@ export type UpdatePorteInput = {
   commentaire?: SchemaUpdatePorteInput['commentaire'];
   derniereVisite?: SchemaUpdatePorteInput['derniereVisite'];
 };
-

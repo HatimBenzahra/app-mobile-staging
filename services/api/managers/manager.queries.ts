@@ -15,8 +15,11 @@ export const GET_MANAGER_PERSONAL = `
         adresse
         nbEtages
         nbPortesParEtage
+        typeHabitat
         ascenseurPresent
         digitalCode
+        latitude
+        longitude
         managerId
         updatedAt
         portes {
@@ -49,6 +52,9 @@ export const GET_MANAGER_PERSONAL = `
           adresse
           nbEtages
           nbPortesParEtage
+          typeHabitat
+          latitude
+          longitude
           updatedAt
         }
         statistics {
