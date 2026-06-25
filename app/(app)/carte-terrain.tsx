@@ -5,6 +5,7 @@ import { useWorkspaceProfile } from "@/hooks/api/use-workspace-profile";
 import { useQuartiers } from "@/hooks/api/use-quartiers";
 import { api } from "@/services/api";
 import { authService } from "@/services/auth";
+import { HabitatIcon } from "@/components/immeubles/habitat-icon";
 import type { CreateQuartierPointInput, Immeuble, TypeHabitat } from "@/types/api";
 import { Feather } from "@expo/vector-icons";
 import {
@@ -70,11 +71,10 @@ const MAP_STYLE_URL = "https://tiles.openfreemap.org/styles/liberty";
 const habitatOptions: {
   type: TypeHabitat;
   label: string;
-  icon: keyof typeof Feather.glyphMap;
 }[] = [
-  { type: "MAISON", label: "Maison", icon: "home" },
-  { type: "PAVILLON", label: "Pavillon", icon: "grid" },
-  { type: "IMMEUBLE", label: "Immeuble", icon: "layers" },
+  { type: "MAISON", label: "Maison" },
+  { type: "PAVILLON", label: "Pavillon" },
+  { type: "IMMEUBLE", label: "Immeuble" },
 ];
 
 function formatSuggestion(feature: AdresseFeature) {
@@ -529,7 +529,7 @@ export default function CarteTerrainScreen({
                 },
               ]}
             >
-              <Feather name="map-pin" size={18} color={colors.textOnPrimary} />
+              <HabitatIcon type={immeuble.typeHabitat} size={16} color={colors.textOnPrimary} />
             </View>
           </Marker>
         ))}
@@ -545,7 +545,7 @@ export default function CarteTerrainScreen({
             }}
           >
             <View style={styles.quartierBadgeMarker}>
-              <Feather name="map" size={14} color={colors.textOnPrimary} />
+              <HabitatIcon type="quartiers" size={14} color={colors.textOnPrimary} />
             </View>
           </Marker>
         ))}
@@ -736,8 +736,8 @@ export default function CarteTerrainScreen({
                   style={[styles.typeButton, selected && styles.typeButtonSelected]}
                   onPress={() => setEditingType(option.type)}
                 >
-                  <Feather
-                    name={option.icon}
+                  <HabitatIcon
+                    type={option.type}
                     size={16}
                     color={selected ? colors.textOnPrimary : colors.primary}
                   />
@@ -890,8 +890,8 @@ export default function CarteTerrainScreen({
                     style={[styles.typeButton, selected && styles.typeButtonSelected]}
                     onPress={() => updateActivePin({ typeHabitat: option.type })}
                   >
-                    <Feather
-                      name={option.icon}
+                    <HabitatIcon
+                      type={option.type}
                       size={16}
                       color={selected ? colors.textOnPrimary : colors.primary}
                     />

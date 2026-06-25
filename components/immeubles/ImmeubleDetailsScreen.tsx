@@ -12,6 +12,7 @@ import {
 } from "@/components/immeubles/prospection/status-display";
 import { useProspectionSession } from "@/hooks/prospection/use-prospection-session";
 import { effectiveTypeHabitat, getLieuTerms } from "@/components/immeubles/lieu-terms";
+import { getImmeubleProgress } from "@/components/immeubles/lieu-progress";
 import ActionToast from "@/components/immeubles/details/ActionToast";
 import DetailsHeader from "@/components/immeubles/details/DetailsHeader";
 import EditPorteSheet from "@/components/immeubles/details/EditPorteSheet";
@@ -740,13 +741,9 @@ function ImmeubleDetailsView({
   const porteSummary = useMemo(() => {
     const floorSet = new Set<number>();
     const counts: Record<string, number> = {};
-    let visited = 0;
 
     for (const porte of sortedPortes) {
       floorSet.add(porte.etage);
-      if (porte.statut && porte.statut !== "NON_VISITE") {
-        visited += 1;
-      }
 
       const key = getDisplayStatusKey(porte);
       if (key) {
@@ -758,32 +755,20 @@ function ImmeubleDetailsView({
       }
     }
 
-    // Utilise effectiveType pour les pavillons legacy (nbPortesParEtage > 1 → IMMEUBLE).
-    // MAISON : au moins 1 foyer, mais on accepte les portes réelles si >1.
-    // PAVILLON : nbMaisonsPrevu maisons = total.
-    // IMMEUBLE (incl. pavillon legacy) : nbEtages × nbPortesParEtage.
-    const realPortesCount = sortedPortes.filter((p) => p.id > 0).length;
-    let total: number;
-    if (effectiveType === "MAISON") {
-      total = Math.max(1, realPortesCount);
-    } else if (effectiveType === "PAVILLON") {
-      // Fallback sur nbEtages pour les pavillons créés avant le fix.
-      total = immeuble.nbMaisonsPrevu ?? immeuble.nbEtages ?? sortedPortes.length;
-    } else {
-      const theoreticalTotal =
-        (immeuble.nbEtages ?? 0) * (immeuble.nbPortesParEtage ?? 0);
-      total = theoreticalTotal > 0 ? theoreticalTotal : sortedPortes.length;
-    }
+    // Source unique de progression : getImmeubleProgress (même logique que
+    // la liste des lieux et les cartes de quartier).
+    const { total, prospectees } = getImmeubleProgress(immeuble);
+
     return {
       progress: {
         total,
-        visited,
-        percentage: total ? Math.round((visited / total) * 100) : 0,
+        visited: prospectees,
+        percentage: total ? Math.round((prospectees / total) * 100) : 0,
       },
       floors: Array.from(floorSet).sort((a, b) => b - a),
       statusCounts: counts,
     };
-  }, [sortedPortes, effectiveType, immeuble.nbEtages, immeuble.nbPortesParEtage, immeuble.nbMaisonsPrevu]);
+  }, [sortedPortes, immeuble]);
 
   const portesParEtage = useMemo(() => {
     if (!showFloorPlan) return [] as [number, Porte[]][];

@@ -2,11 +2,14 @@ import AddImmeubleSheet from "@/components/immeubles/AddImmeubleSheet";
 import { Card, Chip, ErrorState, PressableCard, StatTile } from "@/components/ui";
 import { useCreateImmeuble } from "@/hooks/api/use-create-immeuble";
 import { useWorkspaceProfile } from "@/hooks/api/use-workspace-profile";
+import { useQuartiers } from "@/hooks/api/use-quartiers";
 import { colors, progressColors } from "@/constants/theme";
 import { authService } from "@/services/auth";
 import { effectiveTypeHabitat } from "@/components/immeubles/lieu-terms";
 import { getImmeubleProgress } from "@/components/immeubles/lieu-progress";
-import type { Immeuble, TypeHabitat } from "@/types/api";
+import { HabitatIcon } from "@/components/immeubles/habitat-icon";
+import type { HabitatIconName } from "@/components/immeubles/habitat-icon";
+import type { Immeuble, Quartier, TypeHabitat } from "@/types/api";
 import { Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -30,21 +33,25 @@ type ImmeublesScreenProps = {
   onHeaderVisibilityChange?: (visible: boolean) => void;
 };
 
-type ListRow = { _type: "controls" } | Immeuble[];
+type ListRow = { _type: "controls" } | Immeuble[] | Quartier[];
+type TypeFilterKey = "all" | TypeHabitat | "quartiers";
 
 const CONTROLS_ROW_HEIGHT = 214;
 const DATA_ROW_HEIGHT = 208;
 
 const TYPE_CHIPS: {
-  key: "all" | TypeHabitat;
+  key: TypeFilterKey;
   label: string;
-  icon: keyof typeof Feather.glyphMap;
+  /** Feather icon for the "Tous" chip; undefined for habitat-type chips (uses MCI via mciIcon). */
+  icon?: keyof typeof Feather.glyphMap;
+  mciIcon?: HabitatIconName;
   color: string;
 }[] = [
   { key: "all", label: "Tous", icon: "map-pin", color: colors.primary },
-  { key: "MAISON", label: "Maisons", icon: "home", color: colors.success },
-  { key: "PAVILLON", label: "Pavillons", icon: "grid", color: "#F97316" },
-  { key: "IMMEUBLE", label: "Immeubles", icon: "layers", color: colors.primary },
+  { key: "MAISON", label: "Maisons", mciIcon: "home", color: colors.success },
+  { key: "PAVILLON", label: "Pavillons", mciIcon: "home-group", color: "#F97316" },
+  { key: "IMMEUBLE", label: "Immeubles", mciIcon: "office-building", color: colors.primary },
+  { key: "quartiers", label: "Quartiers", mciIcon: "map-marker-radius", color: "#7C3AED" },
 ];
 
 const FILTER_CHIPS: {
@@ -54,12 +61,7 @@ const FILTER_CHIPS: {
   color: string;
 }[] = [
   { key: "all", label: "Tous", icon: "layers", color: colors.primary },
-  {
-    key: "incomplete",
-    label: "En cours",
-    icon: "activity",
-    color: colors.primary,
-  },
+  { key: "incomplete", label: "En cours", icon: "activity", color: colors.primary },
   { key: "low", label: "0-35%", icon: "trending-down", color: progressColors.low },
   { key: "mid", label: "35-70%", icon: "bar-chart-2", color: progressColors.mid },
   { key: "high", label: "70-99%", icon: "trending-up", color: progressColors.high },
@@ -68,37 +70,22 @@ const FILTER_CHIPS: {
 
 function getLieuMeta(immeuble: Immeuble): {
   label: string;
-  icon: keyof typeof Feather.glyphMap;
+  mciIcon: HabitatIconName;
   color: string;
   detail: string;
 } {
   const effType = effectiveTypeHabitat(immeuble);
 
   if (effType === "MAISON") {
-    return {
-      label: "Maison",
-      icon: "home",
-      color: colors.success,
-      detail: "Maison individuelle",
-    };
+    return { label: "Maison", mciIcon: "home", color: colors.success, detail: "Maison individuelle" };
   }
 
   if (effType === "PAVILLON") {
     const maisons = immeuble.nbMaisonsPrevu ?? immeuble.nbEtages ?? 1;
-    return {
-      label: "Pavillon",
-      icon: "grid",
-      color: "#F97316",
-      detail: `${maisons} maisons prevues`,
-    };
+    return { label: "Pavillon", mciIcon: "home-group", color: "#F97316", detail: `${maisons} maisons prevues` };
   }
 
-  return {
-    label: "Immeuble",
-    icon: "layers",
-    color: colors.primary,
-    detail: `${immeuble.nbEtages} etages`,
-  };
+  return { label: "Immeuble", mciIcon: "office-building", color: colors.primary, detail: `${immeuble.nbEtages} etages` };
 }
 
 export default function ImmeublesScreen({
@@ -119,7 +106,7 @@ export default function ImmeublesScreen({
   const filterChipAnimsRef = useRef(new Map<string, Animated.Value>()).current;
   const [filtersVisible, setFiltersVisible] = useState(true);
   const [progressFilter, setProgressFilter] = useState("incomplete");
-  const [typeFilter, setTypeFilter] = useState<"all" | TypeHabitat>("all");
+  const [typeFilter, setTypeFilter] = useState<TypeFilterKey>("all");
   const [isAddOpen, setIsAddOpen] = useState(false);
   const cardAnimationsRef = useRef<Map<number, Animated.Value>>(new Map());
   const hasAnimatedOnce = useRef(false);
@@ -178,6 +165,7 @@ export default function ImmeublesScreen({
     error,
     refetch,
   } = useWorkspaceProfile(userId, role);
+  const { data: quartiersData } = useQuartiers();
   const {
     create,
     cancel: cancelCreate,
@@ -207,7 +195,9 @@ export default function ImmeublesScreen({
     () => (profile?.immeubles || []) as Immeuble[],
     [profile],
   );
+
   const filteredImmeubles = useMemo(() => {
+    if (typeFilter === "quartiers") return [];
     const byType =
       typeFilter === "all"
         ? immeubles
@@ -216,6 +206,14 @@ export default function ImmeublesScreen({
     const lower = query.toLowerCase();
     return byType.filter((imm) => imm.adresse.toLowerCase().includes(lower));
   }, [immeubles, query, typeFilter]);
+
+  const filteredQuartiers = useMemo((): Quartier[] => {
+    if (typeFilter !== "quartiers") return [];
+    const all = quartiersData ?? [];
+    if (!query.trim()) return all;
+    const lower = query.toLowerCase();
+    return all.filter((q) => (q.nom ?? "").toLowerCase().includes(lower));
+  }, [quartiersData, query, typeFilter]);
 
   const immeublesEnCours = useMemo(() => {
     const filtered = filteredImmeubles.filter((imm) => {
@@ -281,16 +279,26 @@ export default function ImmeublesScreen({
     return rows;
   }, [immeublesEnCours, columnsPerRow]);
 
-  const listData = useMemo<ListRow[]>(
-    () => [{ _type: "controls" }, ...immeubleRows],
-    [immeubleRows],
-  );
+  const quartierRows = useMemo((): Quartier[][] => {
+    const rows: Quartier[][] = [];
+    for (let i = 0; i < filteredQuartiers.length; i += columnsPerRow) {
+      rows.push(filteredQuartiers.slice(i, i + columnsPerRow));
+    }
+    return rows;
+  }, [filteredQuartiers, columnsPerRow]);
+
+  const listData = useMemo<ListRow[]>(() => {
+    if (typeFilter === "quartiers") {
+      return [{ _type: "controls" }, ...quartierRows];
+    }
+    return [{ _type: "controls" }, ...immeubleRows];
+  }, [typeFilter, immeubleRows, quartierRows]);
 
   const getRowKey = useCallback((row: ListRow, index: number) => {
     if (!Array.isArray(row)) {
       return `controls-${index}`;
     }
-    return row.map((immeuble) => String(immeuble.id)).join("-");
+    return row.map((item) => String(item.id)).join("-");
   }, []);
 
   const getItemLayout = useCallback(
@@ -331,6 +339,30 @@ export default function ImmeublesScreen({
     return entries;
   }, [immeublesEnCours]);
 
+  const quartierProgressById = useMemo(() => {
+    const entries: Record<number, { total: number; prospectees: number; percent: number; color: string }> = {};
+    for (const q of (quartiersData ?? [])) {
+      let total = 0;
+      let prospectees = 0;
+      for (const imm of (q.immeubles ?? [])) {
+        const p = getImmeubleProgress(imm);
+        total += p.total;
+        prospectees += p.prospectees;
+      }
+      const percent = total === 0 ? 0 : Math.round((prospectees / total) * 100);
+      const color =
+        percent < 35
+          ? progressColors.low
+          : percent < 70
+            ? progressColors.mid
+            : percent < 100
+              ? progressColors.high
+              : progressColors.complete;
+      entries[q.id] = { total, prospectees, percent, color };
+    }
+    return entries;
+  }, [quartiersData]);
+
   const handleOpenImmeuble = useCallback(
     (immeubleId: number) => {
       router.push(`/lieu/${immeubleId}`);
@@ -341,6 +373,8 @@ export default function ImmeublesScreen({
   const totalMaisonsLike = useMemo(() => {
     return immeubles.filter((imm) => imm.typeHabitat === "MAISON" || imm.typeHabitat === "PAVILLON").length;
   }, [immeubles]);
+
+  const totalQuartiers = useMemo(() => (quartiersData ?? []).length, [quartiersData]);
 
   const [refreshing, setRefreshing] = useState(false);
   const onRefresh = useCallback(async () => {
@@ -411,17 +445,28 @@ export default function ImmeublesScreen({
           ListHeaderComponent={
             <View style={styles.headerBlock}>
               <View style={styles.summaryRow}>
-                <StatTile
-                  icon="layers"
-                  label="Lieux a finir"
-                  value={immeublesEnCours.length}
-                  emphasis="primary"
-                />
-                <StatTile
-                  icon="home"
-                  label="Maisons/Pavillons"
-                  value={totalMaisonsLike}
-                />
+                {typeFilter === "quartiers" ? (
+                  <StatTile
+                    icon="users"
+                    label="Quartiers"
+                    value={totalQuartiers}
+                    emphasis="primary"
+                  />
+                ) : (
+                  <>
+                    <StatTile
+                      icon="layers"
+                      label="Lieux a finir"
+                      value={immeublesEnCours.length}
+                      emphasis="primary"
+                    />
+                    <StatTile
+                      icon="home"
+                      label="Maisons/Pavillons"
+                      value={totalMaisonsLike}
+                    />
+                  </>
+                )}
               </View>
 
               {loading && !profile && (
@@ -451,6 +496,7 @@ export default function ImmeublesScreen({
               <View style={styles.controlsSticky}>
                 {!isSearchFocused && filtersVisible && (
                   <View style={styles.filterStack}>
+                    {/* Type chips — habitat chips use MCI icon rendered inline before the Chip label */}
                     <View style={styles.filterRow}>
                       {TYPE_CHIPS.map((chip) => (
                         <Chip
@@ -463,48 +509,51 @@ export default function ImmeublesScreen({
                         />
                       ))}
                     </View>
-                    <View style={styles.filterRow}>
-                      {FILTER_CHIPS.map((chip) => {
-                        const selected = progressFilter === chip.key;
-                        const anim = getFilterChipAnim(chip.key);
-                        return (
-                          <Animated.View
-                            key={chip.key}
-                            style={{
-                              opacity: anim,
-                              transform: [
-                                {
-                                  translateY: anim.interpolate({
-                                    inputRange: [0, 1],
-                                    outputRange: [16, 0],
-                                  }),
-                                },
-                                {
-                                  translateX: anim.interpolate({
-                                    inputRange: [0, 1],
-                                    outputRange: [12, 0],
-                                  }),
-                                },
-                                {
-                                  scale: anim.interpolate({
-                                    inputRange: [0, 1],
-                                    outputRange: [0.9, 1],
-                                  }),
-                                },
-                              ],
-                            }}
-                          >
-                            <Chip
-                              label={chip.label}
-                              icon={chip.icon}
-                              selected={selected}
-                              accent={chip.color}
-                              onPress={() => setProgressFilter(chip.key)}
-                            />
-                          </Animated.View>
-                        );
-                      })}
-                    </View>
+                    {/* Progress chips — hidden when viewing quartiers */}
+                    {typeFilter !== "quartiers" && (
+                      <View style={styles.filterRow}>
+                        {FILTER_CHIPS.map((chip) => {
+                          const selected = progressFilter === chip.key;
+                          const anim = getFilterChipAnim(chip.key);
+                          return (
+                            <Animated.View
+                              key={chip.key}
+                              style={{
+                                opacity: anim,
+                                transform: [
+                                  {
+                                    translateY: anim.interpolate({
+                                      inputRange: [0, 1],
+                                      outputRange: [16, 0],
+                                    }),
+                                  },
+                                  {
+                                    translateX: anim.interpolate({
+                                      inputRange: [0, 1],
+                                      outputRange: [12, 0],
+                                    }),
+                                  },
+                                  {
+                                    scale: anim.interpolate({
+                                      inputRange: [0, 1],
+                                      outputRange: [0.9, 1],
+                                    }),
+                                  },
+                                ],
+                              }}
+                            >
+                              <Chip
+                                label={chip.label}
+                                icon={chip.icon}
+                                selected={selected}
+                                accent={chip.color}
+                                onPress={() => setProgressFilter(chip.key)}
+                              />
+                            </Animated.View>
+                          );
+                        })}
+                      </View>
+                    )}
                   </View>
                 )}
                 <View style={styles.searchWrapRow}>
@@ -567,9 +616,80 @@ export default function ImmeublesScreen({
                   )}
                 </View>
               </View>
-            ) : (
+            ) : typeFilter === "quartiers" ? (
+              /* ── Quartier cards — même template que les cartes bâtiment ── */
               <View style={styles.row}>
-                {row.map((immeuble) => {
+                {(row as Quartier[]).map((quartier) => {
+                  const qp = quartierProgressById[quartier.id] ?? {
+                    total: 0,
+                    prospectees: 0,
+                    percent: 0,
+                    color: progressColors.low,
+                  };
+                  const nbLieux = (quartier.immeubles ?? []).length;
+                  return (
+                    <View key={quartier.id} style={styles.cardWrap}>
+                      <PressableCard
+                        variant="outlined"
+                        padding="md"
+                        style={{ flex: 1 }}
+                        onPress={() => router.push(`/quartier/${quartier.id}`)}
+                      >
+                        {/* Header: icône + chip type — identique aux cartes bâtiment */}
+                        <View style={styles.cardHeader}>
+                          <View style={[styles.cardIcon, { backgroundColor: "#7C3AED1A" }]}>
+                            <HabitatIcon type="quartiers" size={18} color="#7C3AED" />
+                          </View>
+                          <Text style={[styles.cardChip, { color: "#7C3AED" }]}>
+                            Quartier
+                          </Text>
+                        </View>
+                        <View style={styles.cardContent}>
+                          <Text
+                            style={[
+                              styles.cardTitle,
+                              !isTablet && styles.cardTitleCompact,
+                            ]}
+                            numberOfLines={2}
+                          >
+                            {quartier.nom || `Quartier #${quartier.id}`}
+                          </Text>
+                          <View style={styles.cardMetaRow}>
+                            <Feather name="map-pin" size={11} color={colors.textStrong} />
+                            <Text style={styles.cardMeta}>
+                              {nbLieux} lieu{nbLieux !== 1 ? "x" : ""}
+                            </Text>
+                            <Text style={styles.cardMeta}>•</Text>
+                            <Text style={styles.cardMeta}>
+                              {qp.prospectees}/{qp.total} visités
+                            </Text>
+                          </View>
+                          <View style={styles.progressRow}>
+                            <View style={styles.progressTrack}>
+                              <View
+                                style={[
+                                  styles.progressFill,
+                                  { width: `${qp.percent}%`, backgroundColor: qp.color },
+                                ]}
+                              />
+                            </View>
+                            <Text style={[styles.progressText, { color: qp.color }]}>
+                              {qp.percent}%
+                            </Text>
+                          </View>
+                        </View>
+                      </PressableCard>
+                    </View>
+                  );
+                })}
+                {row.length < columnsPerRow && Array.from({ length: columnsPerRow - row.length }).map((_, i) => (
+                  <View key={`placeholder-${i}`} style={styles.cardPlaceholder} />
+                ))}
+              </View>
+            ) : (
+              /* ── Lieu (bâtiment) cards ── */
+              <View style={styles.row}>
+                {(row as Immeuble[]).map((immeuble) => {
                   const progress = progressByImmeubleId[immeuble.id] ?? {
                     total: 0,
                     prospectees: 0,
@@ -578,29 +698,28 @@ export default function ImmeublesScreen({
                   };
                   const meta = getLieuMeta(immeuble);
                   const anim = getCardAnimation(immeuble.id);
-                  const animValue = anim;
                   return (
                     <Animated.View
                       key={immeuble.id}
                       style={[
                         styles.cardWrap,
                         {
-                          opacity: animValue,
+                          opacity: anim,
                           transform: [
                             {
-                              translateY: animValue.interpolate({
+                              translateY: anim.interpolate({
                                 inputRange: [0, 1],
                                 outputRange: [16, 0],
                               }),
                             },
                             {
-                              translateX: animValue.interpolate({
+                              translateX: anim.interpolate({
                                 inputRange: [0, 1],
                                 outputRange: [12, 0],
                               }),
                             },
                             {
-                              scale: animValue.interpolate({
+                              scale: anim.interpolate({
                                 inputRange: [0, 1],
                                 outputRange: [0.96, 1],
                               }),
@@ -617,7 +736,7 @@ export default function ImmeublesScreen({
                       >
                         <View style={styles.cardHeader}>
                           <View style={[styles.cardIcon, { backgroundColor: `${meta.color}1A` }]}>
-                            <Feather name={meta.icon} size={18} color={meta.color} />
+                            <HabitatIcon type={effectiveTypeHabitat(immeuble)} size={18} color={meta.color} />
                           </View>
                           <Text style={[styles.cardChip, { color: meta.color }]}>
                             {meta.label}
@@ -638,12 +757,7 @@ export default function ImmeublesScreen({
                             <Text style={styles.cardMeta}>{meta.detail}</Text>
                             <Text style={styles.cardMeta}>•</Text>
                             <Text style={styles.cardMeta}>
-                              {(() => {
-                                const et = effectiveTypeHabitat(immeuble);
-                                if (et === "MAISON") return "1 foyer";
-                                if (et === "PAVILLON") return `${progress.total} maison${progress.total !== 1 ? "s" : ""}`;
-                                return `${progress.total} porte${progress.total !== 1 ? "s" : ""}`;
-                              })()}
+                              {progress.prospectees}/{progress.total} visités
                             </Text>
                           </View>
                           <View style={styles.progressRow}>
@@ -727,131 +841,9 @@ const styles = StyleSheet.create({
     gap: 14,
     marginBottom: 12,
   },
-  headerRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 12,
-  },
-  headerBadge: {
-    width: 40,
-    height: 40,
-    borderRadius: 14,
-    backgroundColor: colors.primarySoft,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  title: {
-    fontSize: 22,
-    fontWeight: "700",
-    color: colors.text,
-  },
-  subtitle: {
-    fontSize: 14,
-    color: colors.textStrong,
-  },
-  searchWrap: {
-    alignItems: "center",
-  },
-  searchBar: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    backgroundColor: colors.primarySoft,
-    borderRadius: 20,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  searchBarShadow: {
-    shadowColor: colors.text,
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 6 },
-    elevation: 3,
-  },
-  searchIconWrap: {
-    width: 36,
-    height: 36,
-    borderRadius: 14,
-    backgroundColor: colors.primaryMuted,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 14,
-    color: colors.text,
-    paddingVertical: 2,
-  },
   summaryRow: {
     flexDirection: "row",
     gap: 12,
-  },
-  summaryCardPrimary: {
-    flex: 1,
-    borderRadius: 18,
-    padding: 14,
-    backgroundColor: colors.primary,
-  },
-  summaryCardSecondary: {
-    flex: 1,
-    borderRadius: 18,
-    padding: 14,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  summaryIconPrimary: {
-    width: 30,
-    height: 30,
-    borderRadius: 10,
-    backgroundColor: colors.whiteAlpha20,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  summaryIconSecondary: {
-    width: 30,
-    height: 30,
-    borderRadius: 10,
-    backgroundColor: colors.primarySoft,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  summaryValue: {
-    marginTop: 10,
-    fontSize: 22,
-    fontWeight: "700",
-    color: colors.textOnPrimary,
-  },
-  summaryLabel: {
-    marginTop: 4,
-    fontSize: 13,
-    color: colors.primaryMuted,
-  },
-  summaryValueSecondary: {
-    marginTop: 10,
-    fontSize: 22,
-    fontWeight: "700",
-    color: colors.text,
-  },
-  summaryLabelSecondary: {
-    marginTop: 4,
-    fontSize: 13,
-    color: colors.textStrong,
-  },
-  filterRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-  },
-  filterStack: {
-    gap: 8,
-  },
-  filterRowAnimated: {
-    overflow: "hidden",
   },
   helper: {
     fontSize: 13,
@@ -1015,14 +1007,55 @@ const styles = StyleSheet.create({
     paddingBottom: 12,
     gap: 12,
   },
+  filterStack: {
+    gap: 8,
+  },
+  filterRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+  },
   searchWrapRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
   },
+  searchBar: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    backgroundColor: colors.primarySoft,
+    borderRadius: 20,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  searchBarShadow: {
+    shadowColor: colors.text,
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 3,
+  },
   searchBarFocused: {
     borderColor: colors.primary,
     backgroundColor: colors.surface,
+  },
+  searchIconWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: 14,
+    backgroundColor: colors.primaryMuted,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 14,
+    color: colors.text,
+    paddingVertical: 2,
   },
   clearButton: {
     width: 28,

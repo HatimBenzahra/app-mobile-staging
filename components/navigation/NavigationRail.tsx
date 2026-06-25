@@ -50,7 +50,7 @@ const NavItem = memo(function NavItem({
           <Feather
             name={icon}
             size={20}
-            color={isActive ? "#005BFF" : "#64748B"}
+            color={isActive ? "#FFFFFF" : "#64748B"}
           />
         </View>
         <Text
@@ -213,7 +213,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   navIconPillActive: {
-    backgroundColor: "#E5EEFF",
+    backgroundColor: "#005BFF",
   },
   navLabel: {
     fontSize: 10,
