@@ -9,6 +9,7 @@ import { StyleSheet, Text, View, Pressable, useWindowDimensions } from "react-na
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Card, Chip } from "@/components/ui";
 import { colors } from "@/constants/theme";
+import { APP_VERSION, APP_VERSION_LABEL } from "@/constants/version";
 
 type ProfileSheetProps = {
   userId: number | null;
@@ -170,6 +171,11 @@ const ProfileSheet = forwardRef<BottomSheetModal, ProfileSheetProps>(
               <Feather name="chevron-right" size={18} color="#FCA5A5" />
             </Pressable>
           )}
+
+          {/* Version (embarquee dans le bundle) */}
+          <Text style={styles.versionFooter}>
+            ProWin {APP_VERSION_LABEL} · {APP_VERSION.gitSha} · {APP_VERSION.channel}
+          </Text>
             </>
           )}
         </BottomSheetView>
@@ -340,5 +346,11 @@ const styles = StyleSheet.create({
     fontSize: 13.5,
     fontWeight: "700",
     color: colors.textOnPrimary,
+  },
+  versionFooter: {
+    marginTop: 16,
+    textAlign: "center",
+    fontSize: 11,
+    color: colors.textSubtle,
   },
 });
