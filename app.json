@@ -91,8 +91,6 @@
           }
         }
       ],
-      "@livekit/react-native-expo-plugin",
-      "@config-plugins/react-native-webrtc",
       "@react-native-community/datetimepicker"
     ],
     "experiments": {

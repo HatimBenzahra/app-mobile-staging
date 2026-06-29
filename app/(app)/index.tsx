@@ -2,7 +2,6 @@ import AnimatedHeader from "@/components/navigation/AnimatedHeader";
 import NavigationRail from "@/components/navigation/NavigationRail";
 import SwipeTabs, { buildRoutes } from "@/components/navigation/SwipeTabs";
 import ProfileSheet from "@/components/ProfileSheet";
-import { AudioSessionProvider } from "@/hooks/audio/use-audio-session";
 import {
   ProfileSheetProvider,
   useProfileSheet,
@@ -89,11 +88,6 @@ function AppContent() {
     };
   }, [router]);
 
-  const audioSessionValue = {
-    connectionDetails: null,
-    isConnected: false,
-  };
-
   // Navigation via la rail gauche (reco tablette : plus ergonomique en paysage,
   // 2 mains, qu'une barre en bas). Sur la Carte on masque juste le header pour
   // une carte immersive ; la rail reste pour naviguer (et sortir de la carte).
@@ -101,7 +95,7 @@ function AppContent() {
   const headerVisible = showHeader && !isCarte;
 
   return (
-    <AudioSessionProvider value={audioSessionValue}>
+    <>
       <View style={styles.appLayout}>
         {railVisible ? (
           <NavigationRail currentIndex={index} onNavigate={setIndex} />
@@ -117,7 +111,7 @@ function AppContent() {
         </View>
       </View>
       <ProfileSheet ref={sheetRef} userId={userId} role={role} />
-    </AudioSessionProvider>
+    </>
   );
 }
 

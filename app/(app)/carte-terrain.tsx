@@ -10,8 +10,10 @@ import type { CreateQuartierPointInput, Immeuble, TypeHabitat } from "@/types/ap
 import { Feather } from "@expo/vector-icons";
 import {
   Camera,
+  Layer,
   Map as MapLibreMap,
   Marker,
+  RasterSource,
   UserLocation,
   type CameraRef,
   type PressEvent,
@@ -67,6 +69,9 @@ const DEFAULT_REGION = {
 };
 
 const MAP_STYLE_URL = "https://tiles.openfreemap.org/styles/liberty";
+
+const ESRI_SATELLITE_TILE_URL =
+  "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}";
 
 const habitatOptions: {
   type: TypeHabitat;
@@ -132,6 +137,7 @@ export default function CarteTerrainScreen({
   const [editingType, setEditingType] = useState<TypeHabitat>("IMMEUBLE");
   const [editingNbMaisons, setEditingNbMaisons] = useState(1);
   const [updatingLieu, setUpdatingLieu] = useState(false);
+  const [satellite, setSatellite] = useState(false);
   const navigatingRef = useRef(false);
   // Remet le garde à zéro dès que le panneau marqueur se ferme.
   useEffect(() => {
@@ -497,6 +503,16 @@ export default function CarteTerrainScreen({
         preferredFramesPerSecond={30}
         androidView="surface"
       >
+        {satellite && (
+          <RasterSource
+            id="esri-satellite"
+            tiles={[ESRI_SATELLITE_TILE_URL]}
+            tileSize={256}
+            maxzoom={19}
+          >
+            <Layer id="esri-satellite-layer" type="raster" source="esri-satellite" />
+          </RasterSource>
+        )}
         <Camera
           ref={cameraRef}
           initialViewState={{
@@ -591,6 +607,13 @@ export default function CarteTerrainScreen({
           <Feather name="chevron-left" size={22} color={colors.text} />
         </Pressable>
       )}
+
+      <Pressable
+        style={[styles.recenterFab, { bottom: insets.bottom + 84 }, satellite && styles.recenterFabActive]}
+        onPress={() => setSatellite((s) => !s)}
+      >
+        <Feather name="layers" size={22} color={satellite ? colors.textOnPrimary : colors.primary} />
+      </Pressable>
 
       <Pressable
         style={[styles.recenterFab, { bottom: insets.bottom + 24 }]}
@@ -992,6 +1015,10 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.18,
     shadowRadius: 10,
     elevation: 8,
+  },
+  recenterFabActive: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
   },
   iconButton: {
     width: 42,
