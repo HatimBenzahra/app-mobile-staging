@@ -1,12 +1,10 @@
 // AUTO-GÉNÉRÉ par scripts/deploy-mobile.sh — ne pas éditer à la main.
-// La version est embarquée dans le bundle JS (donc visible en interne) et
-// affichée dans l'UI (profil) pour savoir exactement quelle build tourne.
 export const APP_VERSION = {
-  versionName: "1.1.1",
-  versionCode: 10,
-  gitSha: "dev",
-  channel: "dev",
-  buildDate: "",
+  versionName: "1.1.3",
+  versionCode: 12,
+  gitSha: "1a0f390-dirty",
+  channel: "staging",
+  buildDate: "2026-06-29T11:25:07Z",
 } as const;
 
-export const APP_VERSION_LABEL = `v${APP_VERSION.versionName} (${APP_VERSION.versionCode})`;
+export const APP_VERSION_LABEL = "v" + APP_VERSION.versionName + " (" + APP_VERSION.versionCode + ")";
