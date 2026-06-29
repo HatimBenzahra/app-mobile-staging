@@ -241,6 +241,9 @@ export default function LoginScreen() {
               </Text>
               <Text style={styles.versionText}>
                 v{Constants.expoConfig?.version ?? "1.0.0"}
+                {Constants.expoConfig?.android?.versionCode
+                  ? ` (build ${Constants.expoConfig.android.versionCode})`
+                  : ""}
               </Text>
             </View>
           </View>

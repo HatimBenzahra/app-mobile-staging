@@ -2,7 +2,6 @@ import { useHamburgerMenu } from "@/hooks/use-hamburger-menu";
 import { authService } from "@/services/auth";
 import { Feather } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
-import Constants from "expo-constants";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Animated, Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -284,11 +283,6 @@ export default function HamburgerMenuOverlay({
             />
           ))}
         </View>
-
-        <View style={styles.footer}>
-          <View style={styles.footerDivider} />
-          <Text style={styles.versionText}>Pro-Win v{Constants.expoConfig?.version ?? "1.0.0"}</Text>
-        </View>
       </Animated.View>
     </View>
   );
@@ -456,20 +450,4 @@ const styles = StyleSheet.create({
     left: 0,
   },
 
-  footer: {
-    paddingHorizontal: 16,
-    paddingBottom: 8,
-  },
-  footerDivider: {
-    height: 1,
-    backgroundColor: "#E2E8F0",
-    marginHorizontal: 4,
-    marginBottom: 12,
-  },
-  versionText: {
-    fontSize: 11,
-    color: "#94A3B8",
-    textAlign: "center",
-    marginTop: 12,
-  },
 });

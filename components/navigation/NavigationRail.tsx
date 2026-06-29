@@ -1,6 +1,5 @@
 import { authService } from "@/services/auth";
 import { Feather } from "@expo/vector-icons";
-import Constants from "expo-constants";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Animated, Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -161,8 +160,6 @@ export default function NavigationRail({
           />
         ))}
       </View>
-
-      <Text style={styles.version}>v{Constants.expoConfig?.version ?? "1.0.0"}</Text>
     </View>
   );
 }
@@ -225,9 +222,5 @@ const styles = StyleSheet.create({
   navLabelActive: {
     color: "#005BFF",
     fontWeight: "700",
-  },
-  version: {
-    fontSize: 10,
-    color: "#94A3B8",
   },
 });
