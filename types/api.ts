@@ -127,6 +127,10 @@ export type Immeuble = {
   managerId?: SchemaImmeuble['managerId'];
   zoneId?: SchemaImmeuble['zoneId'];
   portes?: Porte[];
+  /** Stamped client-side: who owns this building on the field map. */
+  ownership?: "MINE" | "TEAM";
+  /** Stamped client-side for TEAM buildings: parent commercial display name. */
+  creatorName?: string;
 };
 
 export type CommercialInfo = {

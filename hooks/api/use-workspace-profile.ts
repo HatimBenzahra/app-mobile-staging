@@ -17,6 +17,7 @@ export function useWorkspaceProfile(userId: number | null, role: string | null) 
     {
       cacheKey: `workspace-profile:${role ?? "unknown"}:${userId ?? 0}`,
       cacheTimeMs: 60_000,
+      persist: true,
     },
   );
 }

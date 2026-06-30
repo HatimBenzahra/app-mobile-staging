@@ -29,6 +29,7 @@ export function useQuartiers() {
     {
       cacheKey: `quartiers:${role ?? "unknown"}:${userId ?? 0}`,
       cacheTimeMs: 60_000,
+      persist: true,
     },
   );
 }

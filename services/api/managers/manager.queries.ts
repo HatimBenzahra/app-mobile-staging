@@ -56,6 +56,19 @@ export const GET_MANAGER_PERSONAL = `
           latitude
           longitude
           updatedAt
+          portes {
+            id
+            numero
+            nomPersonnalise
+            etage
+            statut
+            nbRepassages
+            nbContrats
+            rdvDate
+            rdvTime
+            commentaire
+            derniereVisite
+          }
         }
         statistics {
           id

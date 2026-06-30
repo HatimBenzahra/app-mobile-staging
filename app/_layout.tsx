@@ -1,4 +1,5 @@
 import { OfflineBanner, ToastProvider } from "@/components/ui";
+import { configureMapTileCache } from "@/services/offline/map-tile-cache.service";
 import { enableOfflineQueueAutoSync } from "@/services/offline/offline-queue.service";
 import { enableUploadQueueAutoSync } from "@/services/audio/recordings/upload-queue.service";
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
@@ -13,6 +14,7 @@ export default function RootLayout() {
   useEffect(() => {
     enableOfflineQueueAutoSync();
     void enableUploadQueueAutoSync();
+    void configureMapTileCache();
   }, []);
 
   return (

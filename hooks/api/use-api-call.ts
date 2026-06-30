@@ -1,4 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  readPersistentCache,
+  writePersistentCache,
+} from "@/services/offline/persistent-cache.service";
 
 export type UseApiState<T> = {
   data: T | null;
@@ -23,6 +27,7 @@ type CacheSubscriber = () => void;
 export type UseApiCallOptions = {
   cacheKey?: string;
   cacheTimeMs?: number;
+  persist?: boolean;
 };
 
 const DEFAULT_CACHE_TTL_MS = 30_000;
@@ -112,6 +117,7 @@ export function useApiCall<T>(
 ): UseApiState<T> {
   const cacheKey = options?.cacheKey;
   const cacheTimeMs = options?.cacheTimeMs ?? DEFAULT_CACHE_TTL_MS;
+  const persist = options?.persist ?? false;
   const cachedData = readCache<T>(cacheKey);
   const depsHash = deps.map(stringifyDep).join("|");
 
@@ -165,6 +171,9 @@ export function useApiCall<T>(
       if (cacheKey) {
         writeCache(cacheKey, result, cacheTimeMs);
       }
+      if (persist && cacheKey) {
+        void writePersistentCache(cacheKey, result);
+      }
       setState({
         data: result,
         loading: false,
@@ -175,17 +184,63 @@ export function useApiCall<T>(
         return;
       }
       const message = err instanceof Error ? err.message : "Erreur inconnue";
+      if (persist && cacheKey) {
+        void readPersistentCache<T>(cacheKey).then((payload) => {
+          if (!mountedRef.current || requestId !== requestIdRef.current) {
+            return;
+          }
+          setState((prev) => {
+            if (prev.data !== null) {
+              return prev;
+            }
+            if (!payload) {
+              return prev;
+            }
+            return {
+              data: payload.data,
+              loading: false,
+              error: message,
+            };
+          });
+        });
+      }
       setState((prev) => ({
         data: prev.data,
         loading: false,
         error: message,
       }));
     }
-  }, [cacheKey, cacheTimeMs, depsHash, fn]);
+  }, [cacheKey, cacheTimeMs, depsHash, fn, persist]);
 
   useEffect(() => {
     void run();
   }, [run]);
+
+  useEffect(() => {
+    if (!persist || !cacheKey) return;
+    let active = true;
+    void readPersistentCache<T>(cacheKey).then((payload) => {
+      if (!active || !mountedRef.current || !payload) {
+        return;
+      }
+      if (readCache<T>(cacheKey) !== null) {
+        return;
+      }
+      setState((prev) => {
+        if (prev.data !== null) {
+          return prev;
+        }
+        return {
+          data: payload.data,
+          loading: prev.loading,
+          error: prev.error,
+        };
+      });
+    });
+    return () => {
+      active = false;
+    };
+  }, [cacheKey, persist]);
 
   useEffect(() => {
     if (!cacheKey) return;
