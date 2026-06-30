@@ -6,6 +6,8 @@ import {
   ProfileSheetProvider,
   useProfileSheet,
 } from "@/hooks/use-profile-sheet";
+import { useWorkspaceProfile } from "@/hooks/api/use-workspace-profile";
+import { sendOperator } from "@/modules/kiosk-bridge";
 import { authService } from "@/services/auth";
 import { useRouter } from "expo-router";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -46,6 +48,16 @@ function AppContent() {
     };
     void loadIdentity();
   }, []);
+
+  // App-start / session-restore: once the commercial profile is known, tell the
+  // companion kiosk app (com.prowin.kiosk) who is logged in, with the real name.
+  // Shares useWorkspaceProfile's cache with ProfileSheet (no extra network call).
+  const { data: profile } = useWorkspaceProfile(userId, role);
+  useEffect(() => {
+    if (!userId || !profile) return;
+    const fullName = `${profile.prenom ?? ""} ${profile.nom ?? ""}`.trim();
+    sendOperator(String(userId), fullName);
+  }, [userId, profile]);
 
   useEffect(() => {
     let cancelled = false;

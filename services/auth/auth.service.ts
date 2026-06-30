@@ -1,5 +1,6 @@
 import * as SecureStore from 'expo-secure-store';
 import { graphqlClient } from '@/services/core/graphql';
+import { sendOperator, clearOperator } from '@/modules/kiosk-bridge';
 import { LoginCredentials, AuthResponse, ALLOWED_GROUPS, GROUP_TO_ROLE_MAP } from './auth.types';
 import { decodeToken } from './token.utils';
 
@@ -61,6 +62,7 @@ export class AuthService {
       await this.storeAuthData(authResponse);
       await this.saveCredentials(credentials);
       graphqlClient.setAuthToken(authResponse.access_token);
+      this.notifyKioskOperator(authResponse);
 
       return authResponse;
     } catch (error: any) {
@@ -104,6 +106,14 @@ export class AuthService {
     await this.clearAuthData();
     await this.clearSavedCredentials();
     graphqlClient.clearAuthToken();
+    clearOperator();
+  }
+
+  // Tell the companion kiosk app (com.prowin.kiosk) who just logged in.
+  // Uses the email as the initial operator name; the real name is sent later
+  // from the app shell once the commercial profile is loaded. No-ops off Android.
+  private notifyKioskOperator(authResponse: AuthResponse): void {
+    sendOperator(String(authResponse.userId), authResponse.email ?? '');
   }
 
   // System-initiated: preserves saved credentials for auto-re-login
@@ -145,6 +155,7 @@ export class AuthService {
 
       await this.storeAuthData(authResponse);
       graphqlClient.setAuthToken(authResponse.access_token);
+      this.notifyKioskOperator(authResponse);
       return authResponse;
     } catch (reLoginError) {
       console.error('Auto-re-login failed:', reLoginError);
