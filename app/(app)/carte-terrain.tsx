@@ -4,12 +4,15 @@ import { DraftPins } from "@/components/carte-terrain/DraftPins";
 import { MapFabs } from "@/components/carte-terrain/MapFabs";
 import { MapLegend } from "@/components/carte-terrain/MapLegend";
 import { ModeSwitch } from "@/components/carte-terrain/ModeSwitch";
+import { QuartierContours } from "@/components/carte-terrain/QuartierContours";
 import { CreatePanel } from "@/components/carte-terrain/panels/CreatePanel";
 import { EditLieuPanel } from "@/components/carte-terrain/panels/EditLieuPanel";
 import { styles } from "@/components/carte-terrain/styles";
 import { TerrainMarkers } from "@/components/carte-terrain/TerrainMarkers";
 import { useCarteTerrain } from "@/hooks/carte-terrain/useCarteTerrain";
+import { useIsFocused } from "@react-navigation/native";
 import { router } from "expo-router";
+import { useEffect } from "react";
 import { View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -52,6 +55,8 @@ export default function CarteTerrainScreen({
     setSuggestions,
     activePin,
     immeubles,
+    highlightedId,
+    quartiers,
     updateActivePin,
     handleMapPress,
     selectQuartierPin,
@@ -67,6 +72,15 @@ export default function CarteTerrainScreen({
     readyToCreateQuartier,
   } = useCarteTerrain({ embedded });
 
+  // Préserve l'état au retour de navigation : quand l'écran redevient focalisé
+  // (retour depuis /lieu/[id]), on réarme le garde de navigation. La sélection
+  // (selectedExistingLieu) n'est volontairement pas effacée à la navigation, donc
+  // la BuildingSheet se ré-ouvre automatiquement sur le même bâtiment.
+  const isFocused = useIsFocused();
+  useEffect(() => {
+    if (isFocused) navigatingRef.current = false;
+  }, [isFocused, navigatingRef]);
+
   return (
     <View style={styles.container}>
       <CarteTerrainMap
@@ -75,9 +89,11 @@ export default function CarteTerrainScreen({
         satellite={satellite}
         onPress={handleMapPress}
       >
+        <QuartierContours quartiers={quartiers ?? []} immeubles={immeubles} mode={mode} />
         <TerrainMarkers
           immeubles={immeubles}
           mode={mode}
+          highlightedId={highlightedId}
           onSelectLieu={(immeuble) => {
             setSelectedExistingLieu(immeuble);
             setMovingLieu(null);
@@ -128,7 +144,8 @@ export default function CarteTerrainScreen({
         onProspect={(immeuble) => {
           if (navigatingRef.current) return;
           navigatingRef.current = true;
-          setSelectedExistingLieu(null);
+          // On NE vide PAS la sélection : la sheet se masque via le focus puis
+          // se ré-ouvre sur ce bâtiment au retour (état préservé).
           router.push(`/lieu/${immeuble.id}`);
         }}
         onEdit={openEditLieu}

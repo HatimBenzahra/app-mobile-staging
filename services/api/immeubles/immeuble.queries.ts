@@ -5,6 +5,7 @@ export const GET_QUARTIERS = `
       nom
       latitude
       longitude
+      createdAt
       immeubles {
         id
         adresse

@@ -6,6 +6,7 @@ function invalidateWorkspaceCaches(): void {
   invalidateApiCacheByPrefix("commercial-activity:");
   invalidateApiCacheByPrefix("commercial-statistics:");
   invalidateApiCacheByPrefix("commercial-timeline:");
+  invalidateApiCacheByPrefix("quartiers:");
 }
 
 export function syncWorkspaceMutation(

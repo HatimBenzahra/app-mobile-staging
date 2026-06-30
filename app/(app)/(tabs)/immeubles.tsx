@@ -1,11 +1,12 @@
 import AddImmeubleSheet from "@/components/immeubles/AddImmeubleSheet";
 import { Card, Chip, ErrorState, PressableCard, StatTile } from "@/components/ui";
 import { useCreateImmeuble } from "@/hooks/api/use-create-immeuble";
+import { useMapFocus } from "@/hooks/use-map-focus";
 import { useWorkspaceProfile } from "@/hooks/api/use-workspace-profile";
 import { useQuartiers } from "@/hooks/api/use-quartiers";
 import { colors, progressColors } from "@/constants/theme";
 import { authService } from "@/services/auth";
-import { effectiveTypeHabitat } from "@/components/immeubles/lieu-terms";
+import { effectiveTypeHabitat, getLieuTerms } from "@/components/immeubles/lieu-terms";
 import { getImmeubleProgress } from "@/components/immeubles/lieu-progress";
 import { HabitatIcon } from "@/components/immeubles/habitat-icon";
 import type { HabitatIconName } from "@/components/immeubles/habitat-icon";
@@ -33,8 +34,27 @@ type ImmeublesScreenProps = {
   onHeaderVisibilityChange?: (visible: boolean) => void;
 };
 
-type ListRow = { _type: "controls" } | Immeuble[] | Quartier[];
+type LieuxItem =
+  | { kind: "quartier"; quartier: Quartier }
+  | { kind: "lieu"; immeuble: Immeuble };
+type ListRow = { _type: "controls" } | Immeuble[] | Quartier[] | LieuxItem[];
 type TypeFilterKey = "all" | TypeHabitat | "quartiers";
+
+/**
+ * Recency score (ms) for sorting "most recent first". Uses the max of
+ * createdAt/updatedAt so a recently-modified old item still ranks high.
+ * Falls back to the autoincrement id when neither timestamp is parseable.
+ */
+function recencyMs(item: {
+  createdAt?: string | null;
+  updatedAt?: string | null;
+  id: number;
+}): number {
+  const c = item.createdAt ? Date.parse(item.createdAt) : NaN;
+  const u = item.updatedAt ? Date.parse(item.updatedAt) : NaN;
+  const t = Math.max(Number.isNaN(c) ? -Infinity : c, Number.isNaN(u) ? -Infinity : u);
+  return Number.isFinite(t) ? t : item.id;
+}
 
 const CONTROLS_ROW_HEIGHT = 214;
 const DATA_ROW_HEIGHT = 208;
@@ -75,23 +95,41 @@ function getLieuMeta(immeuble: Immeuble): {
   detail: string;
 } {
   const effType = effectiveTypeHabitat(immeuble);
+  const terms = getLieuTerms(effType);
 
   if (effType === "MAISON") {
-    return { label: "Maison", mciIcon: "home", color: colors.success, detail: "Maison individuelle" };
+    const foyers = immeuble.nbMaisonsPrevu ?? 1;
+    return {
+      label: "Maison",
+      mciIcon: "home",
+      color: colors.success,
+      detail: `${foyers} ${foyers > 1 ? terms.unitLabelPlural : terms.unitLabel.toLowerCase()}`,
+    };
   }
 
   if (effType === "PAVILLON") {
     const maisons = immeuble.nbMaisonsPrevu ?? immeuble.nbEtages ?? 1;
-    return { label: "Pavillon", mciIcon: "home-group", color: "#F97316", detail: `${maisons} maisons prevues` };
+    return {
+      label: "Pavillon",
+      mciIcon: "home-group",
+      color: "#F97316",
+      detail: `${maisons} ${terms.unitLabelPlural}`,
+    };
   }
 
-  return { label: "Immeuble", mciIcon: "office-building", color: colors.primary, detail: `${immeuble.nbEtages} etages` };
+  return {
+    label: "Immeuble",
+    mciIcon: "office-building",
+    color: colors.primary,
+    detail: `${immeuble.nbEtages} ${terms.unitLabelPlural} · ${immeuble.nbPortesParEtage ?? 1} portes`,
+  };
 }
 
 export default function ImmeublesScreen({
   isActive = true,
 }: ImmeublesScreenProps) {
   const router = useRouter();
+  const { focusOnMap } = useMapFocus();
   const insets = useSafeAreaInsets();
   const { width, height: screenHeight } = useWindowDimensions();
   const isLandscape = width > screenHeight;
@@ -196,23 +234,37 @@ export default function ImmeublesScreen({
     [profile],
   );
 
+  // Les immeubles enfants d'un quartier sont aussi présents dans
+  // `profile.immeubles`. On les dédoublonne pour qu'ils n'apparaissent que sous
+  // leur quartier (catégorie "Quartiers") et jamais comme cartes autonomes.
+  const quartierMemberIds = useMemo(() => {
+    const s = new Set<number>();
+    for (const q of quartiersData ?? [])
+      for (const imm of q.immeubles ?? []) s.add(imm.id);
+    return s;
+  }, [quartiersData]);
+
   const filteredImmeubles = useMemo(() => {
     if (typeFilter === "quartiers") return [];
+    const standalone = immeubles.filter((imm) => !quartierMemberIds.has(imm.id));
     const byType =
       typeFilter === "all"
-        ? immeubles
-        : immeubles.filter((imm) => imm.typeHabitat === typeFilter);
+        ? standalone
+        : standalone.filter((imm) => imm.typeHabitat === typeFilter);
     if (!query.trim()) return byType;
     const lower = query.toLowerCase();
     return byType.filter((imm) => imm.adresse.toLowerCase().includes(lower));
-  }, [immeubles, query, typeFilter]);
+  }, [immeubles, query, typeFilter, quartierMemberIds]);
 
   const filteredQuartiers = useMemo((): Quartier[] => {
     if (typeFilter !== "quartiers") return [];
     const all = quartiersData ?? [];
-    if (!query.trim()) return all;
-    const lower = query.toLowerCase();
-    return all.filter((q) => (q.nom ?? "").toLowerCase().includes(lower));
+    const matched = !query.trim()
+      ? all
+      : all.filter((q) =>
+          (q.nom ?? "").toLowerCase().includes(query.toLowerCase()),
+        );
+    return [...matched].sort((a, b) => recencyMs(b) - recencyMs(a));
   }, [quartiersData, query, typeFilter]);
 
   const immeublesEnCours = useMemo(() => {
@@ -226,11 +278,7 @@ export default function ImmeublesScreen({
       if (progressFilter === "complete") return percent === 100;
       return true;
     });
-    return [...filtered].sort((a, b) => {
-      const aTime = a.updatedAt ? Date.parse(a.updatedAt) : 0;
-      const bTime = b.updatedAt ? Date.parse(b.updatedAt) : 0;
-      return bTime - aTime;
-    });
+    return [...filtered].sort((a, b) => recencyMs(b) - recencyMs(a));
   }, [filteredImmeubles, progressFilter]);
 
   const getCardAnimation = (id: number) => {
@@ -287,18 +335,55 @@ export default function ImmeublesScreen({
     return rows;
   }, [filteredQuartiers, columnsPerRow]);
 
+  // "Tous" — quartiers (search-filtered) + standalone buildings, mixed and
+  // sorted together by recency (most recent first). Buildings come from
+  // immeublesEnCours so they stay progress-filtered and dedup-excluded.
+  const mixedRows = useMemo((): LieuxItem[][] => {
+    if (typeFilter !== "all") return [];
+    const matchedQuartiers = !query.trim()
+      ? (quartiersData ?? [])
+      : (quartiersData ?? []).filter((q) =>
+          (q.nom ?? "").toLowerCase().includes(query.toLowerCase()),
+        );
+    const items: LieuxItem[] = [
+      ...matchedQuartiers.map((quartier): LieuxItem => ({ kind: "quartier", quartier })),
+      ...immeublesEnCours.map((immeuble): LieuxItem => ({ kind: "lieu", immeuble })),
+    ];
+    items.sort((a, b) => {
+      const ra = a.kind === "quartier" ? recencyMs(a.quartier) : recencyMs(a.immeuble);
+      const rb = b.kind === "quartier" ? recencyMs(b.quartier) : recencyMs(b.immeuble);
+      return rb - ra;
+    });
+    const rows: LieuxItem[][] = [];
+    for (let i = 0; i < items.length; i += columnsPerRow) {
+      rows.push(items.slice(i, i + columnsPerRow));
+    }
+    return rows;
+  }, [typeFilter, query, quartiersData, immeublesEnCours, columnsPerRow]);
+
   const listData = useMemo<ListRow[]>(() => {
     if (typeFilter === "quartiers") {
       return [{ _type: "controls" }, ...quartierRows];
     }
+    if (typeFilter === "all") {
+      return [{ _type: "controls" }, ...mixedRows];
+    }
     return [{ _type: "controls" }, ...immeubleRows];
-  }, [typeFilter, immeubleRows, quartierRows]);
+  }, [typeFilter, immeubleRows, quartierRows, mixedRows]);
 
   const getRowKey = useCallback((row: ListRow, index: number) => {
     if (!Array.isArray(row)) {
       return `controls-${index}`;
     }
-    return row.map((item) => String(item.id)).join("-");
+    return row
+      .map((item) =>
+        "kind" in item
+          ? item.kind === "quartier"
+            ? `q${item.quartier.id}`
+            : `l${item.immeuble.id}`
+          : String(item.id),
+      )
+      .join("-");
   }, []);
 
   const getItemLayout = useCallback(
@@ -370,9 +455,198 @@ export default function ImmeublesScreen({
     [router],
   );
 
+  const renderQuartierCard = useCallback(
+    (quartier: Quartier) => {
+      const qp = quartierProgressById[quartier.id] ?? {
+        total: 0,
+        prospectees: 0,
+        percent: 0,
+        color: progressColors.low,
+      };
+      const nbLieux = (quartier.immeubles ?? []).length;
+      return (
+        <View key={`q${quartier.id}`} style={styles.cardWrap}>
+          <PressableCard
+            variant="outlined"
+            padding="md"
+            style={{ flex: 1 }}
+            onPress={() => router.push(`/quartier/${quartier.id}`)}
+          >
+            {/* Header: icône + chip type — identique aux cartes bâtiment */}
+            <View style={styles.cardHeader}>
+              <View style={[styles.cardIcon, { backgroundColor: "#7C3AED1A" }]}>
+                <HabitatIcon type="quartiers" size={18} color="#7C3AED" />
+              </View>
+              <Text style={[styles.cardChip, { color: "#7C3AED" }]}>
+                Quartier
+              </Text>
+            </View>
+            <View style={styles.cardContent}>
+              <Text
+                style={[
+                  styles.cardTitle,
+                  !isTablet && styles.cardTitleCompact,
+                ]}
+                numberOfLines={2}
+              >
+                {quartier.nom || `Quartier #${quartier.id}`}
+              </Text>
+              <View style={styles.cardMetaRow}>
+                <Feather name="map-pin" size={11} color={colors.textStrong} />
+                <Text style={styles.cardMeta}>
+                  {nbLieux} lieu{nbLieux !== 1 ? "x" : ""}
+                </Text>
+                <Text style={styles.cardMeta}>•</Text>
+                <Text style={styles.cardMeta}>
+                  {qp.prospectees}/{qp.total} visités
+                </Text>
+              </View>
+              <View style={styles.progressRow}>
+                <View style={styles.progressTrack}>
+                  <View
+                    style={[
+                      styles.progressFill,
+                      { width: `${qp.percent}%`, backgroundColor: qp.color },
+                    ]}
+                  />
+                </View>
+                <Text style={[styles.progressText, { color: qp.color }]}>
+                  {qp.percent}%
+                </Text>
+              </View>
+            </View>
+          </PressableCard>
+        </View>
+      );
+    },
+    [quartierProgressById, isTablet, router],
+  );
+
+  const renderLieuCard = useCallback(
+    (immeuble: Immeuble) => {
+      const progress = progressByImmeubleId[immeuble.id] ?? {
+        total: 0,
+        prospectees: 0,
+        progressPercent: 0,
+        progressColor: progressColors.high,
+      };
+      const meta = getLieuMeta(immeuble);
+      const anim = getCardAnimation(immeuble.id);
+      return (
+        <Animated.View
+          key={`l${immeuble.id}`}
+          style={[
+            styles.cardWrap,
+            {
+              opacity: anim,
+              transform: [
+                {
+                  translateY: anim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [16, 0],
+                  }),
+                },
+                {
+                  translateX: anim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [12, 0],
+                  }),
+                },
+                {
+                  scale: anim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [0.96, 1],
+                  }),
+                },
+              ],
+            },
+          ]}
+        >
+          <PressableCard
+            variant="outlined"
+            padding="md"
+            style={{ flex: 1 }}
+            onPress={() => handleOpenImmeuble(immeuble.id)}
+          >
+            <View style={styles.cardHeader}>
+              <View style={[styles.cardIcon, { backgroundColor: `${meta.color}1A` }]}>
+                <HabitatIcon type={effectiveTypeHabitat(immeuble)} size={18} color={meta.color} />
+              </View>
+              <View style={styles.cardHeaderRight}>
+                <Text style={[styles.cardChip, { color: meta.color }]}>
+                  {meta.label}
+                </Text>
+                {immeuble.latitude != null && immeuble.longitude != null ? (
+                  <Pressable
+                    style={styles.mapButton}
+                    hitSlop={8}
+                    accessibilityRole="button"
+                    accessibilityLabel="Voir sur la carte"
+                    onPress={(event) => {
+                      // Empêche l'ouverture du détail (tap principal de la carte).
+                      event.stopPropagation();
+                      focusOnMap(immeuble);
+                    }}
+                  >
+                    <Feather name="map-pin" size={15} color={colors.primary} />
+                  </Pressable>
+                ) : null}
+              </View>
+            </View>
+            <View style={styles.cardContent}>
+              <Text
+                style={[
+                  styles.cardTitle,
+                  !isTablet && styles.cardTitleCompact,
+                ]}
+                numberOfLines={2}
+              >
+                {immeuble.adresse}
+              </Text>
+              <View style={styles.cardMetaRow}>
+                <Feather name="grid" size={11} color={colors.textStrong} />
+                <Text style={styles.cardMeta}>{meta.detail}</Text>
+                <Text style={styles.cardMeta}>•</Text>
+                <Text style={styles.cardMeta}>
+                  {progress.prospectees}/{progress.total} visités
+                </Text>
+              </View>
+              <View style={styles.progressRow}>
+                <View style={styles.progressTrack}>
+                  <View
+                    style={[
+                      styles.progressFill,
+                      {
+                        width: `${progress.progressPercent}%`,
+                        backgroundColor: progress.progressColor,
+                      },
+                    ]}
+                  />
+                </View>
+                <Text
+                  style={[
+                    styles.progressText,
+                    { color: progress.progressColor },
+                  ]}
+                >
+                  {progress.progressPercent}%
+                </Text>
+              </View>
+            </View>
+          </PressableCard>
+        </Animated.View>
+      );
+    },
+    [progressByImmeubleId, isTablet, handleOpenImmeuble, focusOnMap],
+  );
+
   const totalMaisonsLike = useMemo(() => {
-    return immeubles.filter((imm) => imm.typeHabitat === "MAISON" || imm.typeHabitat === "PAVILLON").length;
-  }, [immeubles]);
+    return immeubles.filter(
+      (imm) =>
+        !quartierMemberIds.has(imm.id) &&
+        (imm.typeHabitat === "MAISON" || imm.typeHabitat === "PAVILLON"),
+    ).length;
+  }, [immeubles, quartierMemberIds]);
 
   const totalQuartiers = useMemo(() => (quartiersData ?? []).length, [quartiersData]);
 
@@ -452,6 +726,20 @@ export default function ImmeublesScreen({
                     value={totalQuartiers}
                     emphasis="primary"
                   />
+                ) : typeFilter === "all" ? (
+                  <>
+                    <StatTile
+                      icon="layers"
+                      label="Lieux a finir"
+                      value={immeublesEnCours.length}
+                      emphasis="primary"
+                    />
+                    <StatTile
+                      icon="users"
+                      label="Quartiers"
+                      value={totalQuartiers}
+                    />
+                  </>
                 ) : (
                   <>
                     <StatTile
@@ -619,69 +907,19 @@ export default function ImmeublesScreen({
             ) : typeFilter === "quartiers" ? (
               /* ── Quartier cards — même template que les cartes bâtiment ── */
               <View style={styles.row}>
-                {(row as Quartier[]).map((quartier) => {
-                  const qp = quartierProgressById[quartier.id] ?? {
-                    total: 0,
-                    prospectees: 0,
-                    percent: 0,
-                    color: progressColors.low,
-                  };
-                  const nbLieux = (quartier.immeubles ?? []).length;
-                  return (
-                    <View key={quartier.id} style={styles.cardWrap}>
-                      <PressableCard
-                        variant="outlined"
-                        padding="md"
-                        style={{ flex: 1 }}
-                        onPress={() => router.push(`/quartier/${quartier.id}`)}
-                      >
-                        {/* Header: icône + chip type — identique aux cartes bâtiment */}
-                        <View style={styles.cardHeader}>
-                          <View style={[styles.cardIcon, { backgroundColor: "#7C3AED1A" }]}>
-                            <HabitatIcon type="quartiers" size={18} color="#7C3AED" />
-                          </View>
-                          <Text style={[styles.cardChip, { color: "#7C3AED" }]}>
-                            Quartier
-                          </Text>
-                        </View>
-                        <View style={styles.cardContent}>
-                          <Text
-                            style={[
-                              styles.cardTitle,
-                              !isTablet && styles.cardTitleCompact,
-                            ]}
-                            numberOfLines={2}
-                          >
-                            {quartier.nom || `Quartier #${quartier.id}`}
-                          </Text>
-                          <View style={styles.cardMetaRow}>
-                            <Feather name="map-pin" size={11} color={colors.textStrong} />
-                            <Text style={styles.cardMeta}>
-                              {nbLieux} lieu{nbLieux !== 1 ? "x" : ""}
-                            </Text>
-                            <Text style={styles.cardMeta}>•</Text>
-                            <Text style={styles.cardMeta}>
-                              {qp.prospectees}/{qp.total} visités
-                            </Text>
-                          </View>
-                          <View style={styles.progressRow}>
-                            <View style={styles.progressTrack}>
-                              <View
-                                style={[
-                                  styles.progressFill,
-                                  { width: `${qp.percent}%`, backgroundColor: qp.color },
-                                ]}
-                              />
-                            </View>
-                            <Text style={[styles.progressText, { color: qp.color }]}>
-                              {qp.percent}%
-                            </Text>
-                          </View>
-                        </View>
-                      </PressableCard>
-                    </View>
-                  );
-                })}
+                {(row as Quartier[]).map((quartier) => renderQuartierCard(quartier))}
+                {row.length < columnsPerRow && Array.from({ length: columnsPerRow - row.length }).map((_, i) => (
+                  <View key={`placeholder-${i}`} style={styles.cardPlaceholder} />
+                ))}
+              </View>
+            ) : typeFilter === "all" ? (
+              /* ── "Tous" — quartiers + bâtiments mélangés, triés par récence ── */
+              <View style={styles.row}>
+                {(row as LieuxItem[]).map((item) =>
+                  item.kind === "quartier"
+                    ? renderQuartierCard(item.quartier)
+                    : renderLieuCard(item.immeuble),
+                )}
                 {row.length < columnsPerRow && Array.from({ length: columnsPerRow - row.length }).map((_, i) => (
                   <View key={`placeholder-${i}`} style={styles.cardPlaceholder} />
                 ))}
@@ -689,103 +927,7 @@ export default function ImmeublesScreen({
             ) : (
               /* ── Lieu (bâtiment) cards ── */
               <View style={styles.row}>
-                {(row as Immeuble[]).map((immeuble) => {
-                  const progress = progressByImmeubleId[immeuble.id] ?? {
-                    total: 0,
-                    prospectees: 0,
-                    progressPercent: 0,
-                    progressColor: progressColors.high,
-                  };
-                  const meta = getLieuMeta(immeuble);
-                  const anim = getCardAnimation(immeuble.id);
-                  return (
-                    <Animated.View
-                      key={immeuble.id}
-                      style={[
-                        styles.cardWrap,
-                        {
-                          opacity: anim,
-                          transform: [
-                            {
-                              translateY: anim.interpolate({
-                                inputRange: [0, 1],
-                                outputRange: [16, 0],
-                              }),
-                            },
-                            {
-                              translateX: anim.interpolate({
-                                inputRange: [0, 1],
-                                outputRange: [12, 0],
-                              }),
-                            },
-                            {
-                              scale: anim.interpolate({
-                                inputRange: [0, 1],
-                                outputRange: [0.96, 1],
-                              }),
-                            },
-                          ],
-                        },
-                      ]}
-                    >
-                      <PressableCard
-                        variant="outlined"
-                        padding="md"
-                        style={{ flex: 1 }}
-                        onPress={() => handleOpenImmeuble(immeuble.id)}
-                      >
-                        <View style={styles.cardHeader}>
-                          <View style={[styles.cardIcon, { backgroundColor: `${meta.color}1A` }]}>
-                            <HabitatIcon type={effectiveTypeHabitat(immeuble)} size={18} color={meta.color} />
-                          </View>
-                          <Text style={[styles.cardChip, { color: meta.color }]}>
-                            {meta.label}
-                          </Text>
-                        </View>
-                        <View style={styles.cardContent}>
-                          <Text
-                            style={[
-                              styles.cardTitle,
-                              !isTablet && styles.cardTitleCompact,
-                            ]}
-                            numberOfLines={2}
-                          >
-                            {immeuble.adresse}
-                          </Text>
-                          <View style={styles.cardMetaRow}>
-                            <Feather name="grid" size={11} color={colors.textStrong} />
-                            <Text style={styles.cardMeta}>{meta.detail}</Text>
-                            <Text style={styles.cardMeta}>•</Text>
-                            <Text style={styles.cardMeta}>
-                              {progress.prospectees}/{progress.total} visités
-                            </Text>
-                          </View>
-                          <View style={styles.progressRow}>
-                            <View style={styles.progressTrack}>
-                              <View
-                                style={[
-                                  styles.progressFill,
-                                  {
-                                    width: `${progress.progressPercent}%`,
-                                    backgroundColor: progress.progressColor,
-                                  },
-                                ]}
-                              />
-                            </View>
-                            <Text
-                              style={[
-                                styles.progressText,
-                                { color: progress.progressColor },
-                              ]}
-                            >
-                              {progress.progressPercent}%
-                            </Text>
-                          </View>
-                        </View>
-                      </PressableCard>
-                    </Animated.View>
-                  );
-                })}
+                {(row as Immeuble[]).map((immeuble) => renderLieuCard(immeuble))}
                 {row.length < columnsPerRow && Array.from({ length: columnsPerRow - row.length }).map((_, i) => (
                   <View key={`placeholder-${i}`} style={styles.cardPlaceholder} />
                 ))}
@@ -931,6 +1073,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  cardHeaderRight: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
   cardChip: {
     paddingHorizontal: 12,
     paddingVertical: 6,
@@ -939,6 +1086,14 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: colors.textStrong,
     fontWeight: "600",
+  },
+  mapButton: {
+    width: 30,
+    height: 30,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.primarySoft,
   },
   cardContent: {
     gap: 6,

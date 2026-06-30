@@ -81,10 +81,21 @@ export default function QuartierDetailScreen() {
     return { totalPortes, prospectees, percent };
   }, [immeubles]);
 
-  if (loading && !quartier) {
+  if (loading || quartiers == null) {
     return (
       <View style={[styles.centered, { paddingTop: insets.top }]}>
         <ActivityIndicator size="large" color={colors.primary} />
+      </View>
+    );
+  }
+
+  if (!loading && (quartiers?.length ?? 0) > 0 && !quartier) {
+    return (
+      <View style={[styles.centered, { paddingTop: insets.top }]}>
+        <Text style={styles.notFoundText}>Quartier introuvable.</Text>
+        <Pressable style={styles.backButton} onPress={() => router.back()}>
+          <Text style={styles.backButtonText}>Retour</Text>
+        </Pressable>
       </View>
     );
   }

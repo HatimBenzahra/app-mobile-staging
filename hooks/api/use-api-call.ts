@@ -28,6 +28,7 @@ export type UseApiCallOptions = {
   cacheKey?: string;
   cacheTimeMs?: number;
   persist?: boolean;
+  skipPersistEmpty?: boolean;
 };
 
 const DEFAULT_CACHE_TTL_MS = 30_000;
@@ -118,6 +119,7 @@ export function useApiCall<T>(
   const cacheKey = options?.cacheKey;
   const cacheTimeMs = options?.cacheTimeMs ?? DEFAULT_CACHE_TTL_MS;
   const persist = options?.persist ?? false;
+  const skipPersistEmpty = options?.skipPersistEmpty ?? false;
   const cachedData = readCache<T>(cacheKey);
   const depsHash = deps.map(stringifyDep).join("|");
 
@@ -171,7 +173,8 @@ export function useApiCall<T>(
       if (cacheKey) {
         writeCache(cacheKey, result, cacheTimeMs);
       }
-      if (persist && cacheKey) {
+      const isEmptyArray = Array.isArray(result) && result.length === 0;
+      if (persist && cacheKey && !(skipPersistEmpty && isEmptyArray)) {
         void writePersistentCache(cacheKey, result);
       }
       setState({
@@ -210,7 +213,7 @@ export function useApiCall<T>(
         error: message,
       }));
     }
-  }, [cacheKey, cacheTimeMs, depsHash, fn, persist]);
+  }, [cacheKey, cacheTimeMs, depsHash, fn, persist, skipPersistEmpty]);
 
   useEffect(() => {
     void run();

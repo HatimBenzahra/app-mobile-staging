@@ -1,4 +1,6 @@
 import { useCreateMaison } from "@/hooks/api/use-create-maison";
+import { useMapFocus } from "@/hooks/use-map-focus";
+import { useQuartiers } from "@/hooks/api/use-quartiers";
 import { useWorkspaceProfile } from "@/hooks/api/use-workspace-profile";
 import { api } from "@/services/api";
 import { authService } from "@/services/auth";
@@ -56,6 +58,8 @@ export function useCarteTerrain({ embedded = false }: UseCarteTerrainParams = {}
   const [satellite, setSatellite] = useState(false);
   // Affichage des bâtiments de l'équipe (managers uniquement). Désactivé par défaut.
   const [showTeam, setShowTeam] = useState(false);
+  // Bâtiment mis en avant (badge agrandi + pulsation) après un "Voir sur la carte".
+  const [highlightedId, setHighlightedId] = useState<number | null>(null);
   const navigatingRef = useRef(false);
   // Garde anti-doublon du téléchargement offline auto (1 pack max par zone).
   const offlineRequestedAreasRef = useRef<Set<string>>(new Set());
@@ -65,7 +69,52 @@ export function useCarteTerrain({ embedded = false }: UseCarteTerrainParams = {}
   }, [selectedExistingLieu]);
 
   const { data: profile, refetch } = useWorkspaceProfile(userId, role);
+  const { data: quartiers } = useQuartiers();
   const { createMaison, loading: creatingMaison } = useCreateMaison();
+  const { focusTarget, clearFocus } = useMapFocus();
+
+  // "Voir sur la carte" : dès qu'une cible arrive, on centre la caméra et on
+  // arme le highlight (via highlightedId), puis on CONSOMME la cible (clearFocus)
+  // pour ne pas re-déclencher au remontage lazy de l'onglet. L'onglet Carte étant
+  // monté de façon lazy par le TabView, `cameraRef.current` peut être null au
+  // premier focus ; on retente alors une fois ~300 ms plus tard.
+  useEffect(() => {
+    if (!focusTarget) return;
+
+    const target = focusTarget;
+    let retryTimer: ReturnType<typeof setTimeout> | undefined;
+
+    const ease = () => {
+      if (!cameraRef.current) return false;
+      cameraRef.current.easeTo({
+        center: [target.longitude, target.latitude],
+        zoom: 17,
+        duration: 600,
+      });
+      return true;
+    };
+
+    if (!ease()) {
+      // Caméra pas encore montée : nouvelle tentative unique après un court délai.
+      retryTimer = setTimeout(ease, 300);
+    }
+
+    setHighlightedId(target.id);
+    clearFocus();
+
+    return () => {
+      if (retryTimer) clearTimeout(retryTimer);
+    };
+  }, [focusTarget, clearFocus]);
+
+  // Retrait automatique du highlight ~3,5 s après son armement. Effet séparé
+  // (clé highlightedId) pour que la consommation synchrone de focusTarget
+  // ci-dessus ne déclenche pas le nettoyage de ce timer.
+  useEffect(() => {
+    if (highlightedId == null) return;
+    const clearTimer = setTimeout(() => setHighlightedId(null), 3500);
+    return () => clearTimeout(clearTimer);
+  }, [highlightedId]);
 
   const activePin = useMemo(() => {
     if (mode === "VISUALISATION") return null;
@@ -499,6 +548,8 @@ export function useCarteTerrain({ embedded = false }: UseCarteTerrainParams = {}
     setSuggestions,
     activePin,
     immeubles,
+    highlightedId,
+    quartiers,
     updateActivePin,
     handleMapPress,
     selectQuartierPin,

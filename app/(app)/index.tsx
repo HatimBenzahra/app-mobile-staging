@@ -6,6 +6,7 @@ import {
   ProfileSheetProvider,
   useProfileSheet,
 } from "@/hooks/use-profile-sheet";
+import { MapFocusProvider, useMapFocus } from "@/hooks/use-map-focus";
 import { useWorkspaceProfile } from "@/hooks/api/use-workspace-profile";
 import { sendOperator } from "@/modules/kiosk-bridge";
 import { authService } from "@/services/auth";
@@ -21,6 +22,7 @@ function AppContent() {
   const [showHeader, setShowHeader] = useState(true);
   const [showRail, setShowRail] = useState(true);
   const { sheetRef } = useProfileSheet();
+  const { focusTarget } = useMapFocus();
   const didSetInitialTab = useRef(false);
 
   const isManager = role === "manager";
@@ -38,6 +40,15 @@ function AppContent() {
       if (carteIdx >= 0) setIndex(carteIdx);
     }
   }, [role, isCommercial, routes]);
+
+  // "Voir sur la carte" : dès qu'une cible de focus est posée (depuis l'onglet
+  // Lieux), on bascule sur l'onglet Carte. On NE vide PAS focusTarget ici : la
+  // carte le consomme (centrage + highlight) puis le réinitialise elle-même.
+  useEffect(() => {
+    if (!focusTarget) return;
+    const carteIdx = routes.findIndex((r) => r.key === "carte");
+    if (carteIdx >= 0) setIndex(carteIdx);
+  }, [focusTarget, routes]);
 
   useEffect(() => {
     const loadIdentity = async () => {
@@ -130,9 +141,11 @@ function AppContent() {
 export default function AppIndex() {
   return (
     <ProfileSheetProvider>
-      <View style={styles.container}>
-        <AppContent />
-      </View>
+      <MapFocusProvider>
+        <View style={styles.container}>
+          <AppContent />
+        </View>
+      </MapFocusProvider>
     </ProfileSheetProvider>
   );
 }
