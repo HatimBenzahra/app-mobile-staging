@@ -76,10 +76,11 @@ export default function CarteTerrainScreen({
     readyToCreateQuartier,
   } = useCarteTerrain({ embedded });
 
-  // Préserve l'état au retour de navigation : quand l'écran redevient focalisé
-  // (retour depuis /lieu/[id]), on réarme le garde de navigation. La sélection
-  // (selectedExistingLieu) n'est volontairement pas effacée à la navigation, donc
-  // la BuildingSheet se ré-ouvre automatiquement sur le même bâtiment.
+  // La BuildingSheet est une Card interne à l'écran : sa visibilité dépend
+  // uniquement de `selectedExistingLieu`. En allant sur /lieu/[id], la carte est
+  // recouverte par l'écran empilé (Stack) puis réapparaît telle quelle au retour,
+  // sélection conservée. Cet effet ne sert donc plus qu'à réarmer le garde
+  // anti-double-navigation (`navigatingRef`) quand l'écran redevient focalisé.
   const isFocused = useIsFocused();
   useEffect(() => {
     if (isFocused) navigatingRef.current = false;
@@ -117,8 +118,8 @@ export default function CarteTerrainScreen({
     (immeuble: Immeuble) => {
       if (navigatingRef.current) return;
       navigatingRef.current = true;
-      // On NE vide PAS la sélection : la sheet se masque via le focus puis
-      // se ré-ouvre sur ce bâtiment au retour (état préservé).
+      // On NE vide PAS la sélection : l'écran /lieu/[id] recouvre la carte, puis
+      // la Card de consultation réapparaît sur ce bâtiment au retour (état préservé).
       router.push(`/lieu/${immeuble.id}`);
     },
     [navigatingRef],
@@ -160,17 +161,19 @@ export default function CarteTerrainScreen({
         />
       </CarteTerrainMap>
 
-      <MapFabs
-        embedded={embedded}
-        insets={insets}
-        satellite={satellite}
-        loadingLocation={loadingLocation}
-        showTeamToggle={role === "manager"}
-        showTeam={showTeam}
-        onToggleSatellite={handleToggleSatellite}
-        onToggleTeam={toggleShowTeam}
-        onRecenter={centerOnCurrentLocation}
-      />
+      {!selectedExistingLieu && (
+        <MapFabs
+          embedded={embedded}
+          insets={insets}
+          satellite={satellite}
+          loadingLocation={loadingLocation}
+          showTeamToggle={role === "manager"}
+          showTeam={showTeam}
+          onToggleSatellite={handleToggleSatellite}
+          onToggleTeam={toggleShowTeam}
+          onRecenter={centerOnCurrentLocation}
+        />
+      )}
 
       {mode === "VISUALISATION" && !selectedExistingLieu && <MapLegend insets={insets} role={role} />}
 
