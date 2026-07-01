@@ -132,15 +132,23 @@ export function CreatePanel({
 
   const cardStyle = [styles.panel, { paddingBottom: Math.max(insets.bottom, 12) }];
 
-  // ─────────────────────────── Mode QUARTIER (inchangé) ───────────────────────────
+  // ────────────────────── Mode QUARTIER (assistant multi-lieux) ──────────────────────
   if (mode === "QUARTIER") {
+    const totalLieux = quartierPins.length;
+    const totalDoors = quartierPins.reduce((sum, pin) => sum + totalPortes(pin), 0);
+    const lieuxLabel = totalLieux > 1 ? "lieux" : "lieu";
+    const activeIndex = quartierPins.findIndex((pin) => pin.id === activeQuartierPinId);
     return (
       <Card variant="elevated" padding="md" style={cardStyle}>
         <View style={styles.panelHeader}>
           <View style={styles.panelTitleBlock}>
-            <Text style={styles.panelTitle}>{`Quartier (${quartierPins.length})`}</Text>
+            <Text style={styles.panelTitle}>{`Quartier · ${totalLieux} ${lieuxLabel}`}</Text>
             <Text style={styles.panelHint}>
-              {activePin ? "Choisis l'adresse puis le type." : "Touche la carte pour ajouter un pin."}
+              {activePin
+                ? `Lieu ${activeIndex + 1} — choisis le type et l'adresse.`
+                : totalLieux > 0
+                  ? "Choisis un lieu ci-dessus ou touche la carte pour en ajouter."
+                  : "Touche la carte pour poser les lieux du quartier."}
             </Text>
           </View>
           {activeQuartierPinId ? (
@@ -154,7 +162,7 @@ export function CreatePanel({
           )}
         </View>
 
-        {quartierPins.length > 0 && (
+        {totalLieux > 0 && (
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
@@ -182,64 +190,25 @@ export function CreatePanel({
           </ScrollView>
         )}
 
-        {loadingSuggestions ? (
-          <View style={styles.loadingRow}>
-            <ActivityIndicator color={colors.primary} />
-            <Text style={styles.helper}>Recherche des adresses proches...</Text>
-          </View>
-        ) : suggestions.length > 0 ? (
-          <FlatList
-            horizontal
-            data={suggestions}
-            keyExtractor={(item, index) => item.properties.id ?? `${item.properties.label}-${index}`}
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.suggestionsList}
-            renderItem={({ item }) => {
-              const formatted = formatSuggestion(item);
-              const selected =
-                activePin?.selectedAddress?.properties.label === item.properties.label;
-              return (
-                <Pressable
-                  style={[styles.suggestionCard, selected && styles.suggestionCardSelected]}
-                  onPress={() => onUpdateActivePin({ selectedAddress: item })}
-                >
-                  <Text style={styles.suggestionTitle} numberOfLines={1}>
-                    {formatted.title}
-                  </Text>
-                  <Text style={styles.suggestionSubtitle} numberOfLines={1}>
-                    {formatted.subtitle || item.properties.label}
-                  </Text>
-                </Pressable>
-              );
-            }}
-          />
-        ) : (
-          <Text style={styles.helper}>
-            {activePin
-              ? "Aucune adresse proche trouvee. Replace le pin legerement."
-              : "Aucun pin actif."}
-          </Text>
-        )}
-
         {activePin && (
           <>
-            <View style={styles.typeRow}>
+            <View style={styles.typeCardList}>
               {habitatOptions.map((option) => {
                 const selected = activePin.typeHabitat === option.type;
                 return (
                   <Pressable
                     key={option.type}
-                    style={[styles.typeButton, selected && styles.typeButtonSelected]}
+                    style={[styles.typeCard, selected && styles.typeCardSelected]}
                     onPress={() => onUpdateActivePin({ typeHabitat: option.type })}
                   >
-                    <HabitatIcon
-                      type={option.type}
-                      size={16}
-                      color={selected ? colors.textOnPrimary : colors.primary}
-                    />
-                    <Text style={[styles.typeLabel, selected && styles.typeLabelSelected]}>
-                      {option.label}
-                    </Text>
+                    <View style={[styles.typeCardIcon, selected && styles.typeCardIconSelected]}>
+                      <HabitatIcon type={option.type} size={18} color={colors.primary} />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.typeCardName}>{option.label}</Text>
+                      <Text style={styles.typeCardDesc}>{TYPE_DESC[option.type]}</Text>
+                    </View>
+                    {selected && <Text style={styles.typeCardRank}>{typeRank(activePin)}</Text>}
                   </Pressable>
                 );
               })}
@@ -247,12 +216,89 @@ export function CreatePanel({
 
             {activePin.typeHabitat === "PAVILLON" && (
               <Stepper
-                label="Maisons prevues"
+                label="Nombre de maisons"
                 value={activePin.nbMaisonsPrevu}
                 onChange={(next) => onUpdateActivePin({ nbMaisonsPrevu: next })}
               />
             )}
+            {activePin.typeHabitat === "IMMEUBLE" && (
+              <>
+                <Stepper
+                  label="Étages"
+                  value={activePin.nbEtages}
+                  onChange={(next) => onUpdateActivePin({ nbEtages: next })}
+                />
+                <Stepper
+                  label="Portes / étage"
+                  value={activePin.nbPortesParEtage}
+                  onChange={(next) => onUpdateActivePin({ nbPortesParEtage: next })}
+                />
+              </>
+            )}
+
+            <View style={styles.searchField}>
+              <Feather name="search" size={16} color={colors.textMuted} />
+              <TextInput
+                style={styles.searchInput}
+                value={query}
+                onChangeText={setQuery}
+                onSubmitEditing={() => onSearchAddress(query)}
+                returnKeyType="search"
+                placeholder="Rechercher une adresse…"
+                placeholderTextColor={colors.textSubtle}
+              />
+              {query.length > 0 && (
+                <Pressable onPress={() => setQuery("")}>
+                  <Feather name="x" size={16} color={colors.textMuted} />
+                </Pressable>
+              )}
+            </View>
+
+            {loadingSuggestions ? (
+              <View style={styles.loadingRow}>
+                <ActivityIndicator color={colors.primary} />
+                <Text style={styles.helper}>Recherche des adresses...</Text>
+              </View>
+            ) : suggestions.length > 0 ? (
+              <FlatList
+                horizontal
+                data={suggestions}
+                keyExtractor={(item, index) =>
+                  item.properties.id ?? `${item.properties.label}-${index}`
+                }
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.suggestionsList}
+                renderItem={({ item }) => {
+                  const formatted = formatSuggestion(item);
+                  const selected =
+                    activePin.selectedAddress?.properties.label === item.properties.label;
+                  return (
+                    <Pressable
+                      style={[styles.suggestionCard, selected && styles.suggestionCardSelected]}
+                      onPress={() => onPickAddress(item)}
+                    >
+                      <Text style={styles.suggestionTitle} numberOfLines={1}>
+                        {formatted.title}
+                      </Text>
+                      <Text style={styles.suggestionSubtitle} numberOfLines={1}>
+                        {formatted.subtitle || item.properties.label}
+                      </Text>
+                    </Pressable>
+                  );
+                }}
+              />
+            ) : (
+              <Text style={styles.helper}>
+                Aucune adresse proche. Cherche ci-dessus ou replace le repère.
+              </Text>
+            )}
           </>
+        )}
+
+        {totalLieux > 0 && (
+          <Text style={styles.wizardHint}>
+            {`${totalLieux} ${lieuxLabel} · ${totalDoors} portes à prospecter`}
+          </Text>
         )}
 
         <Pressable
@@ -264,7 +310,7 @@ export function CreatePanel({
             <ActivityIndicator size="small" color={colors.textOnPrimary} />
           ) : (
             <>
-              <Text style={styles.createText}>Creer le quartier</Text>
+              <Text style={styles.createText}>Créer le quartier</Text>
               <Feather name="arrow-right" size={16} color={colors.textOnPrimary} />
             </>
           )}

@@ -1,5 +1,5 @@
 import { Card } from "@/components/ui";
-import { colors } from "@/constants/theme";
+import { colors, fontWeight, ownership } from "@/constants/theme";
 import { Feather } from "@expo/vector-icons";
 import { useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
@@ -48,9 +48,9 @@ export function MapLegend({ insets, role }: MapLegendProps) {
       </View>
 
       <Text style={styles.sectionLabel}>Propriétaire</Text>
-      <LegendRow swatch={<View style={[styles.dot, { backgroundColor: "#0D9488" }]} />} label="Mes lieux" />
+      <LegendRow swatch={<View style={[styles.dot, { backgroundColor: ownership.mine.accent }]} />} label="Mes lieux" />
       {role === "manager" && (
-        <LegendRow swatch={<View style={[styles.dot, { backgroundColor: "#D97706" }]} />} label="Lieux de l'équipe" />
+        <LegendRow swatch={<View style={[styles.dot, { backgroundColor: ownership.team.accent }]} />} label="Lieux de l'équipe" />
       )}
 
       <Text style={styles.sectionLabel}>Type d&apos;habitat</Text>
@@ -91,7 +91,7 @@ const styles = StyleSheet.create({
   },
   pillText: {
     fontSize: 12,
-    fontWeight: "800",
+    fontWeight: fontWeight.extrabold,
     color: colors.primary,
   },
   panel: {
@@ -108,7 +108,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 14,
-    fontWeight: "800",
+    fontWeight: fontWeight.extrabold,
     color: colors.text,
   },
   closeButton: {
@@ -122,7 +122,7 @@ const styles = StyleSheet.create({
   sectionLabel: {
     marginTop: 6,
     fontSize: 10,
-    fontWeight: "800",
+    fontWeight: fontWeight.extrabold,
     letterSpacing: 0.4,
     textTransform: "uppercase",
     color: colors.textMuted,

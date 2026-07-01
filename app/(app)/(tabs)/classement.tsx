@@ -4,6 +4,7 @@ import { RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   BadgeCard,
+  ContractRow,
   LeaderboardRow,
   NextBadgeRow,
   RankTierBadge,
@@ -20,7 +21,7 @@ import type { BadgeCategory, RankPeriod } from "@/types/graphql-schema";
 import { badgeProgress, buildContractCounts } from "@/utils/business/badgeProgress";
 import { contractPeriodField, periodKeyFor } from "@/utils/business/periods";
 
-type Section = "classement" | "badges";
+type Section = "classement" | "badges" | "contrats";
 type Role = "commercial" | "manager";
 
 const PERIODS: { key: RankPeriod; label: string }[] = [
@@ -111,6 +112,18 @@ export default function ClassementScreen() {
     return { contrats: periodContracts.length, points, badges };
   }, [contracts, myBadges, period]);
 
+  // Contrats de la période sélectionnée, triés du plus récent au plus ancien.
+  const periodContracts = useMemo(() => {
+    const key = periodKeyFor(period);
+    const field = contractPeriodField(period);
+    return (contracts ?? [])
+      .filter((c) => c[field] === key)
+      .slice()
+      .sort((a, b) =>
+        (b.dateValidation ?? "").localeCompare(a.dateValidation ?? ""),
+      );
+  }, [contracts, period]);
+
   const contractCounts = useMemo(
     () => buildContractCounts(contracts ?? [], offres ?? []),
     [contracts, offres],
@@ -184,6 +197,12 @@ export default function ClassementScreen() {
           selected={section === "badges"}
           onPress={() => setSection("badges")}
         />
+        <Chip
+          label="Contrats"
+          icon="file-text"
+          selected={section === "contrats"}
+          onPress={() => setSection("contrats")}
+        />
       </View>
 
       {section === "classement" ? (
@@ -244,7 +263,7 @@ export default function ClassementScreen() {
             <EmptyHint icon="users" text="Aucun classement d'équipe pour cette période." />
           )}
         </>
-      ) : (
+      ) : section === "badges" ? (
         <>
           {/* Bandeau : tier + stats (badges · contrats · pts), comme le web */}
           <ScrollView
@@ -351,6 +370,40 @@ export default function ClassementScreen() {
             </>
           ) : (
             <EmptyHint icon="star" text="Aucun badge disponible." />
+          )}
+        </>
+      ) : (
+        <>
+          {/* Sélecteur de période */}
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.periodRow}
+          >
+            {PERIODS.map((p) => (
+              <Chip
+                key={p.key}
+                label={p.label}
+                selected={period === p.key}
+                onPress={() => setPeriod(p.key)}
+              />
+            ))}
+          </ScrollView>
+
+          {periodContracts.length > 0 ? (
+            <>
+              <Text style={styles.sectionTitle}>
+                {periodStats.contrats} contrat{periodStats.contrats > 1 ? "s" : ""} ·{" "}
+                {periodStats.points} pts
+              </Text>
+              <Card variant="outlined" padding="sm">
+                {periodContracts.map((c) => (
+                  <ContractRow key={c.id} contrat={c} />
+                ))}
+              </Card>
+            </>
+          ) : (
+            <EmptyHint icon="file-text" text="Aucun contrat signé sur cette période." />
           )}
         </>
       )}

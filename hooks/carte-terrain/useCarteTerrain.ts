@@ -63,6 +63,9 @@ export function useCarteTerrain({ embedded = false }: UseCarteTerrainParams = {}
   const navigatingRef = useRef(false);
   // Garde anti-doublon du téléchargement offline auto (1 pack max par zone).
   const offlineRequestedAreasRef = useRef<Set<string>>(new Set());
+  // Jeton de séquence : `suggestions` est partagé entre tous les pins, une réponse
+  // arrivée en retard (switch rapide de pin) ne doit pas écraser la liste courante.
+  const suggestionsRequestRef = useRef(0);
   // Remet le garde à zéro dès que le panneau marqueur se ferme.
   useEffect(() => {
     if (selectedExistingLieu === null) navigatingRef.current = false;
@@ -183,20 +186,23 @@ export function useCarteTerrain({ embedded = false }: UseCarteTerrainParams = {}
   const toggleShowTeam = useCallback(() => setShowTeam((current) => !current), []);
 
   const fetchAddressSuggestions = useCallback(async (point: TerrainPoint) => {
+    const requestId = ++suggestionsRequestRef.current;
     setLoadingSuggestions(true);
     try {
       const url = `https://api-adresse.data.gouv.fr/reverse/?lon=${point.longitude}&lat=${point.latitude}&limit=5`;
       const response = await fetch(url);
+      if (suggestionsRequestRef.current !== requestId) return; // réponse périmée
       if (!response.ok) {
         setSuggestions([]);
         return;
       }
       const data = await response.json();
+      if (suggestionsRequestRef.current !== requestId) return; // réponse périmée
       setSuggestions((data?.features as AdresseFeature[]) || []);
     } catch {
-      setSuggestions([]);
+      if (suggestionsRequestRef.current === requestId) setSuggestions([]);
     } finally {
-      setLoadingSuggestions(false);
+      if (suggestionsRequestRef.current === requestId) setLoadingSuggestions(false);
     }
   }, []);
 
@@ -204,20 +210,23 @@ export function useCarteTerrain({ embedded = false }: UseCarteTerrainParams = {}
   // geocoding pour ne jamais rester bloqué quand aucune adresse proche n'est trouvée.
   const searchAddresses = useCallback(async (query: string) => {
     if (query.trim().length < 3) return;
+    const requestId = ++suggestionsRequestRef.current;
     setLoadingSuggestions(true);
     try {
       const url = `https://api-adresse.data.gouv.fr/search/?q=${encodeURIComponent(query)}&limit=6`;
       const response = await fetch(url);
+      if (suggestionsRequestRef.current !== requestId) return; // réponse périmée
       if (!response.ok) {
         setSuggestions([]);
         return;
       }
       const data = await response.json();
+      if (suggestionsRequestRef.current !== requestId) return; // réponse périmée
       setSuggestions((data?.features as AdresseFeature[]) || []);
     } catch {
-      setSuggestions([]);
+      if (suggestionsRequestRef.current === requestId) setSuggestions([]);
     } finally {
-      setLoadingSuggestions(false);
+      if (suggestionsRequestRef.current === requestId) setLoadingSuggestions(false);
     }
   }, []);
 
@@ -424,6 +433,14 @@ export function useCarteTerrain({ embedded = false }: UseCarteTerrainParams = {}
   const selectQuartierPin = useCallback(
     (pin: DraftPin) => {
       setActiveQuartierPinId(pin.id);
+      if (pin.selectedAddress) {
+        // Pin déjà adressé : on affiche l'adresse committée (et on invalide toute
+        // recherche en vol) au lieu de relancer un reverse-geocoding qui la masquerait.
+        suggestionsRequestRef.current += 1;
+        setSuggestions([pin.selectedAddress]);
+        setLoadingSuggestions(false);
+        return;
+      }
       void fetchAddressSuggestions(pin);
     },
     [fetchAddressSuggestions],
@@ -477,16 +494,21 @@ export function useCarteTerrain({ embedded = false }: UseCarteTerrainParams = {}
 
     setCreatingLieu(true);
     try {
-      const points: CreateQuartierPointInput[] = quartierPins.map((pin) => ({
-        adresse: pin.selectedAddress!.properties.label,
-        latitude: pin.latitude,
-        longitude: pin.longitude,
-        typeHabitat: pin.typeHabitat,
-        // PAVILLON = N maisons (1 foyer chacune) → N étages × 1 porte.
-        nbEtages: pin.typeHabitat === "PAVILLON" ? pin.nbMaisonsPrevu : 1,
-        nbPortesParEtage: 1,
-        nbMaisonsPrevu: pin.typeHabitat === "PAVILLON" ? pin.nbMaisonsPrevu : 1,
-      }));
+      const points: CreateQuartierPointInput[] = quartierPins.map((pin) => {
+        const isImmeuble = pin.typeHabitat === "IMMEUBLE";
+        const isPavillon = pin.typeHabitat === "PAVILLON";
+        return {
+          adresse: pin.selectedAddress!.properties.label,
+          latitude: pin.latitude,
+          longitude: pin.longitude,
+          typeHabitat: pin.typeHabitat,
+          // Immeuble : structure réellement saisie par lieu (plus de coquille vide).
+          // Pavillon : N maisons (1 foyer chacune) → N étages × 1 porte.
+          nbEtages: isImmeuble ? pin.nbEtages : isPavillon ? pin.nbMaisonsPrevu : 1,
+          nbPortesParEtage: isImmeuble ? pin.nbPortesParEtage : 1,
+          nbMaisonsPrevu: isPavillon ? pin.nbMaisonsPrevu : 1,
+        };
+      });
 
       const result = await api.immeubles.createQuartier({
         commercialId: role === "commercial" ? (userId ?? undefined) : undefined,

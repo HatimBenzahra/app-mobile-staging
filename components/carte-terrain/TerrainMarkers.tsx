@@ -1,5 +1,5 @@
 import { HabitatIcon } from "@/components/immeubles/habitat-icon";
-import { colors } from "@/constants/theme";
+import { colors, ownership } from "@/constants/theme";
 import type { TerrainMode } from "@/hooks/carte-terrain/types";
 import type { Immeuble, TypeHabitat } from "@/types/api";
 import { Marker } from "@maplibre/maplibre-react-native";
@@ -17,7 +17,7 @@ import { styles } from "./styles";
 /**
  * Marqueurs terrain rendus en overlay React (`<Marker>`), choix connu-fonctionnel
  * sur device. Deux axes visuels indépendants :
- *  - COULEUR du badge = propriétaire → teal (#0D9488) MINE / amber (#D97706) TEAM.
+ *  - COULEUR du badge = propriétaire → teal MINE / amber TEAM (cf. `ownership` du thème).
  *  - ICÔNE d'habitat (HabitatIcon) → office-building / home / home-group, etc.
  * Les immeubles créés via un quartier apparaissent comme des marqueurs bâtiment
  * standards (ils portent commercialId/managerId), il n'y a plus de badge dédié.
@@ -26,8 +26,8 @@ import { styles } from "./styles";
  * son badge s'agrandit et pulse (halo + scale) tant qu'il reste mis en avant.
  */
 
-const OWNERSHIP_MINE = "#0D9488";
-const OWNERSHIP_TEAM = "#D97706";
+const OWNERSHIP_MINE = ownership.mine.accent;
+const OWNERSHIP_TEAM = ownership.team.accent;
 
 type TerrainMarkersProps = {
   immeubles: Immeuble[];

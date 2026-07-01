@@ -9,7 +9,7 @@ import {
   getDisplayStatusKey,
   type StatusOption,
 } from "@/components/immeubles/prospection/status-display";
-import { colors, fontSize, fontWeight, radius, shadows, spacing } from "@/constants/theme";
+import { colors, fontSize, fontWeight, ownership, radius, shadows, spacing } from "@/constants/theme";
 import { getHabitatLabel } from "@/hooks/carte-terrain/helpers";
 import {
   effectiveTypeHabitat,
@@ -36,13 +36,6 @@ import {
   useWindowDimensions,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-
-// Ownership accents — kept in sync with the map markers (MINE teal, TEAM amber)
-// so the sheet reads as a continuation of the marker the user tapped.
-const OWNERSHIP = {
-  MINE: { accent: "#0D9488", soft: "#F0FDFA", ring: "#CCFBF1" },
-  TEAM: { accent: "#D97706", soft: "#FFFBEB", ring: "#FEF3C7" },
-} as const;
 
 type BuildingSheetProps = {
   immeuble: Immeuble | null;
@@ -316,7 +309,7 @@ export default function BuildingSheet({
   );
 
   const isMine = immeuble?.ownership === "MINE";
-  const own = isMine ? OWNERSHIP.MINE : OWNERSHIP.TEAM;
+  const own = isMine ? ownership.mine : ownership.team;
   const progress = immeuble ? getImmeubleProgress(immeuble) : null;
   const portes = useMemo(() => immeuble?.portes ?? [], [immeuble]);
   const terms = useMemo(
@@ -837,14 +830,14 @@ const styles = StyleSheet.create({
   },
   kpiPercent: {
     fontSize: 34,
-    fontWeight: "800",
+    fontWeight: fontWeight.extrabold,
     letterSpacing: -1,
     fontVariant: ["tabular-nums"],
     lineHeight: 38,
   },
   kpiPercentSign: {
     fontSize: fontSize.lg,
-    fontWeight: "800",
+    fontWeight: fontWeight.extrabold,
     marginLeft: 2,
   },
   progressMeta: {
@@ -852,7 +845,7 @@ const styles = StyleSheet.create({
   },
   progressLabel: {
     fontSize: 10.5,
-    fontWeight: "800",
+    fontWeight: fontWeight.extrabold,
     color: colors.textSubtle,
     letterSpacing: 1,
     textTransform: "uppercase",
@@ -891,13 +884,13 @@ const styles = StyleSheet.create({
   },
   kpiTileValue: {
     fontSize: fontSize["3xl"],
-    fontWeight: "800",
+    fontWeight: fontWeight.extrabold,
     letterSpacing: -0.5,
     fontVariant: ["tabular-nums"],
   },
   kpiTileLabel: {
     fontSize: 10.5,
-    fontWeight: "800",
+    fontWeight: fontWeight.extrabold,
     color: colors.textStrong,
     letterSpacing: 0.6,
     textTransform: "uppercase",
@@ -938,7 +931,7 @@ const styles = StyleSheet.create({
   },
   sectionLabel: {
     fontSize: fontSize.xs,
-    fontWeight: "800",
+    fontWeight: fontWeight.extrabold,
     color: colors.textSubtle,
     letterSpacing: 1,
     textTransform: "uppercase",
@@ -983,7 +976,7 @@ const styles = StyleSheet.create({
   },
   filterChipCountText: {
     fontSize: fontSize.xs,
-    fontWeight: "800",
+    fontWeight: fontWeight.extrabold,
     fontVariant: ["tabular-nums"],
   },
 
@@ -998,14 +991,14 @@ const styles = StyleSheet.create({
   },
   floorHeaderText: {
     fontSize: fontSize.xs,
-    fontWeight: "800",
+    fontWeight: fontWeight.extrabold,
     color: colors.textStrong,
     letterSpacing: 0.8,
     textTransform: "uppercase",
   },
   floorHeaderCount: {
     fontSize: fontSize.xs,
-    fontWeight: "800",
+    fontWeight: fontWeight.extrabold,
     color: colors.textSubtle,
     fontVariant: ["tabular-nums"],
   },

@@ -101,7 +101,10 @@ export const GET_CONTRATS_BY_COMMERCIAL = `
       offreExternalId
       offreCategorie
       offreNom
+      offreFournisseur
+      offreLogoUrl
       offrePoints
+      dateValidation
       periodDay
       periodWeek
       periodMonth
@@ -119,7 +122,10 @@ export const GET_CONTRATS_BY_MANAGER = `
       offreExternalId
       offreCategorie
       offreNom
+      offreFournisseur
+      offreLogoUrl
       offrePoints
+      dateValidation
       periodDay
       periodWeek
       periodMonth

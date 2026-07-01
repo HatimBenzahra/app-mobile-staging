@@ -149,6 +149,8 @@ export const fontWeight = {
   medium: "500",
   semibold: "600",
   bold: "700",
+  extrabold: "800",
+  black: "900",
 } satisfies Record<string, TextStyle["fontWeight"]>;
 
 // Pre-built shadow styles (RN cross-platform)
@@ -194,6 +196,20 @@ export const progressColors = {
   complete: "#16A34A",
 } as const;
 
+// Ownership accents — carte terrain. Le marqueur, la légende et la sheet de
+// consultation partagent ces teintes pour qu'un lieu tapé "prolonge" la couleur
+// de son marqueur. Volontairement hors palette de marque (comme `podium`) : MINE
+// (teal) et TEAM (amber = échelle warning) se lisent comme une propriété, pas une
+// couleur de marque.
+export const ownership = {
+  mine: { accent: "#0D9488", soft: "#F0FDFA", ring: "#CCFBF1" },
+  team: {
+    accent: palette.warning[600],
+    soft: palette.warning[50],
+    ring: palette.warning[100],
+  },
+} as const;
+
 export const theme = {
   colors,
   palette,
@@ -204,6 +220,7 @@ export const theme = {
   shadows,
   podium,
   progressColors,
+  ownership,
 } as const;
 
 export type Theme = typeof theme;
