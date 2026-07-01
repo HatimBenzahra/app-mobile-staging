@@ -11,7 +11,7 @@ import { useWorkspaceProfile } from "@/hooks/api/use-workspace-profile";
 import { sendOperator } from "@/modules/kiosk-bridge";
 import { authService } from "@/services/auth";
 import { useRouter } from "expo-router";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { StyleSheet, View } from "react-native";
 
 function AppContent() {
@@ -24,6 +24,37 @@ function AppContent() {
   const { sheetRef } = useProfileSheet();
   const { focusTarget } = useMapFocus();
   const didSetInitialTab = useRef(false);
+  const currentIndexRef = useRef(0);
+  const targetIndexRef = useRef(0);
+  const settlingRef = useRef(false);
+
+  useEffect(() => {
+    currentIndexRef.current = index;
+  }, [index]);
+
+  // Navigation d'onglet volontaire (rail, focus carte). On mémorise la cible et
+  // on marque la transition « en cours » : react-native-pager-view peut émettre
+  // un onPageSelected parasite avec l'ANCIEN index pendant le montage lazy de la
+  // scène de destination (et la bascule de scrollEnabled en quittant la Carte).
+  // Ce callback réécrivait l'index -> l'onglet Carte « flashait » avant de
+  // revenir sur la bonne scène. On ignore donc tout onIndexChange qui ne
+  // correspond pas à la cible tant que la transition n'est pas stabilisée.
+  const goToTab = useCallback((next: number) => {
+    if (next === currentIndexRef.current) return;
+    targetIndexRef.current = next;
+    settlingRef.current = true;
+    setIndex(next);
+  }, []);
+
+  const handleIndexChange = useCallback((next: number) => {
+    if (settlingRef.current) {
+      if (next !== targetIndexRef.current) return; // callback parasite -> ignoré
+      settlingRef.current = false; // cible atteinte, transition terminée
+    } else {
+      targetIndexRef.current = next; // swipe utilisateur : la cible suit
+    }
+    setIndex(next);
+  }, []);
 
   const isManager = role === "manager";
   const isCommercial = role != null && !isManager;
@@ -37,9 +68,9 @@ function AppContent() {
     didSetInitialTab.current = true;
     if (isCommercial) {
       const carteIdx = routes.findIndex((r) => r.key === "carte");
-      if (carteIdx >= 0) setIndex(carteIdx);
+      if (carteIdx >= 0) goToTab(carteIdx);
     }
-  }, [role, isCommercial, routes]);
+  }, [role, isCommercial, routes, goToTab]);
 
   // "Voir sur la carte" : dès qu'une cible de focus est posée (depuis l'onglet
   // Lieux), on bascule sur l'onglet Carte. On NE vide PAS focusTarget ici : la
@@ -47,8 +78,8 @@ function AppContent() {
   useEffect(() => {
     if (!focusTarget) return;
     const carteIdx = routes.findIndex((r) => r.key === "carte");
-    if (carteIdx >= 0) setIndex(carteIdx);
-  }, [focusTarget, routes]);
+    if (carteIdx >= 0) goToTab(carteIdx);
+  }, [focusTarget, routes, goToTab]);
 
   useEffect(() => {
     const loadIdentity = async () => {
@@ -121,13 +152,13 @@ function AppContent() {
     <>
       <View style={styles.appLayout}>
         {railVisible ? (
-          <NavigationRail currentIndex={index} onNavigate={setIndex} />
+          <NavigationRail currentIndex={index} onNavigate={goToTab} />
         ) : null}
         <View style={styles.mainContent}>
           {headerVisible ? <AnimatedHeader currentIndex={index} /> : null}
           <SwipeTabs
             index={index}
-            onIndexChange={setIndex}
+            onIndexChange={handleIndexChange}
             onHeaderVisibilityChange={setShowHeader}
             onRailVisibilityChange={setShowRail}
           />

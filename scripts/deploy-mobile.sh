@@ -21,9 +21,11 @@ shift 2>/dev/null || true
 #   --version X.Y.Z   force le versionName (sinon bump auto)
 #   --major|--minor|--patch   partie a bumper (defaut: patch)
 #   --message "..."   message de release (defaut: dernier sujet de commit)
+#   --local           build en local (secours si le serveur est indisponible)
 OVERRIDE_VERSION=""
 MESSAGE=""
 BUMP_PART="patch"
+BUILD_HOST="server"   # "server" (defaut) | "local"
 while [ $# -gt 0 ]; do
   case "$1" in
     --version) OVERRIDE_VERSION="${2:-}"; shift 2 ;;
@@ -31,9 +33,14 @@ while [ $# -gt 0 ]; do
     --major)   BUMP_PART="major"; shift ;;
     --minor)   BUMP_PART="minor"; shift ;;
     --patch)   BUMP_PART="patch"; shift ;;
+    --local)   BUILD_HOST="local"; shift ;;
     *) shift ;;
   esac
 done
+
+# ── Serveur de build (surchargeable via .env.local) ──────────────────────
+#   DEPLOY_SERVER_SSH=user@host   (defaut: le data-center Finanssor via Tailscale)
+SERVER_SSH_DEFAULT="hbenzahra@100.69.243.67"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
@@ -51,12 +58,14 @@ case "${ENV}" in
   staging)
     API_URL="https://api-staging.pro-win.app"
     KIOSK_URL="https://kiosk-staging.pro-win.app"
+    KIOSK_PORT="3370"   # port du conteneur kiosk-staging sur le serveur (upload en localhost)
     APP_NAME="ProWin Staging"
     ;;
   prod|production)
     ENV="prod"
     API_URL="https://api.pro-win.app"
     KIOSK_URL="https://kiosk-ota.winaity.com"
+    KIOSK_PORT="3320"   # port du conteneur kiosk-ota sur le serveur (upload en localhost)
     APP_NAME="ProWin"
     ;;
   *)
@@ -64,13 +73,19 @@ case "${ENV}" in
     ;;
 esac
 
+# Dossier de build distant (isole par cible)
+REMOTE_DIR="prowin-apk-build-${ENV}"
+
 # ── Credentials kiosk (hors git) ─────────────────────────────────────────
 # Mettre dans .env.local (gitignore) :
 #   KIOSK_USER=admin
 #   KIOSK_PASS=...
+#   DEPLOY_SERVER_SSH=user@host   (optionnel : surcharge le serveur de build)
 [ -f .env.local ] && set -a && . ./.env.local && set +a
 KIOSK_USER="${KIOSK_USER:-}"
 KIOSK_PASS="${KIOSK_PASS:-}"
+# Serveur SSH resolu APRES .env.local pour honorer un eventuel override
+SERVER_SSH="${DEPLOY_SERVER_SSH:-${SERVER_SSH_DEFAULT}}"
 [ -n "${KIOSK_USER}" ] && [ -n "${KIOSK_PASS}" ] || \
   fail "KIOSK_USER/KIOSK_PASS absents. Ajoute-les dans ${ROOT}/.env.local"
 
@@ -140,57 +155,152 @@ export const APP_VERSION_LABEL = "v" + APP_VERSION.versionName + " (" + APP_VERS
 EOF
 ok "Version bumpee + version.ts genere"
 
-# ── Build APK (backend injecte, l'emporte sur .env via @expo/env) ────────
-export EXPO_PUBLIC_API_URL="${API_URL}"
-log "Build APK release (backend = ${API_URL})..."
-log "Nettoyage caches Android sensibles aux chemins absolus..."
+if [ "${BUILD_HOST}" = "local" ]; then
+  # ═══════════════════════════════════════════════════════════════════════
+  #  BUILD LOCAL (secours) — build sur cette machine + upload vers kiosk public
+  # ═══════════════════════════════════════════════════════════════════════
+  export EXPO_PUBLIC_API_URL="${API_URL}"
+  log "Build APK release EN LOCAL (backend = ${API_URL})..."
+  log "Nettoyage caches Android sensibles aux chemins absolus..."
+  rm -rf android/.gradle android/build/generated/autolinking android/app/build
+
+  set_gradle_property() {
+    local key="$1"
+    local value="$2"
+    local file="android/gradle.properties"
+    local tmp
+    tmp="$(mktemp)"
+    awk -v key="${key}" -v value="${value}" '
+      index($0, key "=") == 1 { print key "=" value; done = 1; next }
+      { print }
+      END { if (!done) print key "=" value }
+    ' "${file}" > "${tmp}"
+    mv "${tmp}" "${file}"
+  }
+
+  log "Configuration memoire Gradle pour le build release..."
+  set_gradle_property "org.gradle.jvmargs" "-Xmx4096m -XX:MaxMetaspaceSize=2048m -XX:+HeapDumpOnOutOfMemoryError -Dfile.encoding=UTF-8"
+  set_gradle_property "kotlin.daemon.jvmargs" "-Xmx2048m -XX:MaxMetaspaceSize=1024m -Dfile.encoding=UTF-8"
+  set_gradle_property "org.gradle.workers.max" "2"
+
+  ( cd android && ./gradlew :app:assembleRelease ) || fail "Build gradle echoue"
+
+  APK="$(find android/app/build/outputs -name '*.apk' -type f | head -1)"
+  [ -n "${APK}" ] || fail "Aucun APK trouve apres le build"
+  ok "APK builde : ${APK}"
+
+  log "Inspection de l'APK par le kiosk..."
+  META="$(curl -sf -u "${KIOSK_USER}:${KIOSK_PASS}" -X POST "${KIOSK_URL}/api/releases/inspect" -F apk=@"${APK}")" \
+    || fail "Inspect kiosk echoue (verifie credentials/URL)"
+  PKG="$(echo "${META}"   | python3 -c "import sys,json; print(json.load(sys.stdin)['metadata']['packageName'])")"
+  VCODE="$(echo "${META}" | python3 -c "import sys,json; print(json.load(sys.stdin)['metadata']['versionCode'])")"
+  VNAME="$(echo "${META}" | python3 -c "import sys,json; print(json.load(sys.stdin)['metadata']['versionName'])")"
+  log "Package=${PKG}  version=${VNAME} (${VCODE})"
+
+  log "Upload de la release sur le kiosk..."
+  curl -sf -u "${KIOSK_USER}:${KIOSK_PASS}" -X POST "${KIOSK_URL}/api/releases" \
+    -F apk=@"${APK}" \
+    -F packageName="${PKG}" \
+    -F versionCode="${VCODE}" \
+    -F versionName="${VNAME}" \
+    -F appName="${APP_NAME}" \
+    -F gitSha="${GIT_SHA}" \
+    -F gitMessage="${MESSAGE}" \
+    -F channel="${ENV}" > /dev/null \
+    || fail "Upload kiosk echoue (APK builde mais non publie)"
+
+else
+  # ═══════════════════════════════════════════════════════════════════════
+  #  BUILD SERVEUR (defaut) — compile sur le data-center, upload kiosk localhost
+  #  Le Mac se contente d'orchestrer : sync du code -> build distant -> commit.
+  # ═══════════════════════════════════════════════════════════════════════
+  command -v rsync >/dev/null 2>&1 || fail "rsync introuvable"
+  ssh -o ConnectTimeout=15 -o BatchMode=yes "${SERVER_SSH}" 'true' 2>/dev/null \
+    || fail "Serveur injoignable en SSH (${SERVER_SSH}). Utilise --local pour builder ici, ou verifie le VPN/Tailscale."
+
+  log "Sync du code vers le serveur (${SERVER_SSH}:~/${REMOTE_DIR})..."
+  rsync -az --delete \
+    --exclude='.git/' \
+    --exclude='node_modules/' \
+    --exclude='.expo/' \
+    --exclude='dist/' \
+    --exclude='ios/' \
+    --exclude='*.apk' \
+    --exclude='.DS_Store' \
+    --exclude='.omc/' \
+    --exclude='.claude/' \
+    --exclude='.sisyphus/' \
+    --exclude='android/.gradle/' \
+    --exclude='android/build/' \
+    --exclude='android/app/build/' \
+    --exclude='android/app/.cxx/' \
+    --exclude='android/.kotlin/' \
+    -e "ssh -o BatchMode=yes" \
+    "${ROOT}/" "${SERVER_SSH}:${REMOTE_DIR}/" \
+    || fail "Sync rsync vers le serveur echoue"
+  ok "Code synchronise (avec android/ + keystore)"
+
+  # Message de release transporte en base64 (robuste aux quotes/accents)
+  MSG_B64="$(printf '%s' "${MESSAGE}" | base64 | tr -d '\n')"
+
+  log "Build APK sur le serveur (backend = ${API_URL})... [~6 min au 1er build]"
+  ssh -o BatchMode=yes "${SERVER_SSH}" \
+    "REMOTE_DIR='${REMOTE_DIR}' API_URL='${API_URL}' \
+     KIOSK_PORT='${KIOSK_PORT}' KU='${KIOSK_USER}' KP='${KIOSK_PASS}' \
+     APP_NAME='${APP_NAME}' RENV='${ENV}' GIT_SHA='${GIT_SHA}' MSG_B64='${MSG_B64}' bash -s" <<'REMOTE' || fail "Build/upload serveur echoue"
+set -euo pipefail
+export JAVA_HOME="$HOME/jdk-17"
+export ANDROID_HOME="$HOME/android-sdk"
+export ANDROID_SDK_ROOT="$HOME/android-sdk"
+export PATH="$JAVA_HOME/bin:$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH"
+cd "$HOME/$REMOTE_DIR"
+echo "sdk.dir=$ANDROID_HOME" > android/local.properties
+
+echo "[serveur] npm ci..."
+npm ci --no-audit --no-fund >/dev/null 2>&1 || { echo "[serveur] npm ci echoue" >&2; exit 1; }
+
+# Memoire Gradle adaptee au serveur (48 coeurs / 125 Go)
+props=android/gradle.properties
+setprop() { local k="$1" v="$2" t; t="$(mktemp)"; awk -v k="$k" -v v="$v" 'index($0,k"=")==1{print k"="v;d=1;next}{print}END{if(!d)print k"="v}' "$props" > "$t"; mv "$t" "$props"; }
+setprop "org.gradle.jvmargs" "-Xmx8192m -XX:MaxMetaspaceSize=2048m -Dfile.encoding=UTF-8"
+setprop "org.gradle.workers.max" "12"
+
+export EXPO_PUBLIC_API_URL="$API_URL"
+
+# Clean identique au build local (evite un bundle JS perime)
 rm -rf android/.gradle android/build/generated/autolinking android/app/build
 
-set_gradle_property() {
-  local key="$1"
-  local value="$2"
-  local file="android/gradle.properties"
-  local tmp
-  tmp="$(mktemp)"
-  awk -v key="${key}" -v value="${value}" '
-    index($0, key "=") == 1 { print key "=" value; done = 1; next }
-    { print }
-    END { if (!done) print key "=" value }
-  ' "${file}" > "${tmp}"
-  mv "${tmp}" "${file}"
-}
-
-log "Configuration memoire Gradle pour le build release..."
-set_gradle_property "org.gradle.jvmargs" "-Xmx4096m -XX:MaxMetaspaceSize=2048m -XX:+HeapDumpOnOutOfMemoryError -Dfile.encoding=UTF-8"
-set_gradle_property "kotlin.daemon.jvmargs" "-Xmx2048m -XX:MaxMetaspaceSize=1024m -Dfile.encoding=UTF-8"
-set_gradle_property "org.gradle.workers.max" "2"
-
-( cd android && ./gradlew :app:assembleRelease ) || fail "Build gradle echoue"
+echo "[serveur] gradle assembleRelease..."
+( cd android && ./gradlew :app:assembleRelease --no-daemon ) || { echo "[serveur] build gradle echoue" >&2; exit 1; }
 
 APK="$(find android/app/build/outputs -name '*.apk' -type f | head -1)"
-[ -n "${APK}" ] || fail "Aucun APK trouve apres le build"
-ok "APK builde : ${APK}"
+[ -n "$APK" ] || { echo "[serveur] aucun APK trouve" >&2; exit 1; }
+echo "[serveur] APK builde : $APK"
 
-# ── Push kiosk OTA ───────────────────────────────────────────────────────
-log "Inspection de l'APK par le kiosk..."
-META="$(curl -sf -u "${KIOSK_USER}:${KIOSK_PASS}" -X POST "${KIOSK_URL}/api/releases/inspect" -F apk=@"${APK}")" \
-  || fail "Inspect kiosk echoue (verifie credentials/URL)"
-PKG="$(echo "${META}"   | python3 -c "import sys,json; print(json.load(sys.stdin)['metadata']['packageName'])")"
-VCODE="$(echo "${META}" | python3 -c "import sys,json; print(json.load(sys.stdin)['metadata']['versionCode'])")"
-VNAME="$(echo "${META}" | python3 -c "import sys,json; print(json.load(sys.stdin)['metadata']['versionName'])")"
-log "Package=${PKG}  version=${VNAME} (${VCODE})"
-
-log "Upload de la release sur le kiosk..."
-curl -sf -u "${KIOSK_USER}:${KIOSK_PASS}" -X POST "${KIOSK_URL}/api/releases" \
-  -F apk=@"${APK}" \
-  -F packageName="${PKG}" \
-  -F versionCode="${VCODE}" \
-  -F versionName="${VNAME}" \
-  -F appName="${APP_NAME}" \
-  -F gitSha="${GIT_SHA}" \
-  -F gitMessage="${MESSAGE}" \
-  -F channel="${ENV}" > /dev/null \
-  || fail "Upload kiosk echoue (APK builde mais non publie)"
+# ── Upload kiosk en localhost (transfert local, instantane) ──
+KIOSK="http://localhost:$KIOSK_PORT"
+echo "[serveur] inspection APK par le kiosk ($KIOSK)..."
+META="$(curl -sf -u "$KU:$KP" -X POST "$KIOSK/api/releases/inspect" -F apk=@"$APK")" \
+  || { echo "[serveur] inspect kiosk echoue" >&2; exit 1; }
+PKG="$(echo "$META"   | python3 -c "import sys,json;print(json.load(sys.stdin)['metadata']['packageName'])")"
+VCODE="$(echo "$META" | python3 -c "import sys,json;print(json.load(sys.stdin)['metadata']['versionCode'])")"
+VNAME="$(echo "$META" | python3 -c "import sys,json;print(json.load(sys.stdin)['metadata']['versionName'])")"
+MSG="$(printf '%s' "$MSG_B64" | base64 -d)"
+echo "[serveur] publish $PKG v$VNAME ($VCODE) ..."
+curl -sf -u "$KU:$KP" -X POST "$KIOSK/api/releases" \
+  -F apk=@"$APK" \
+  -F packageName="$PKG" \
+  -F versionCode="$VCODE" \
+  -F versionName="$VNAME" \
+  -F appName="$APP_NAME" \
+  -F gitSha="$GIT_SHA" \
+  -F gitMessage="$MSG" \
+  -F channel="$RENV" > /dev/null \
+  || { echo "[serveur] upload kiosk echoue (APK builde mais non publie)" >&2; exit 1; }
+echo "[serveur] OK release publiee sur le kiosk"
+REMOTE
+  ok "APK builde + publie sur le kiosk (via le serveur)"
+fi
 
 # ── Commit + tag de version (tracabilite git) ────────────────────────────
 log "Commit + tag de version..."
