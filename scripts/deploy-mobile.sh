@@ -314,6 +314,12 @@ else
   warn "Commit + tag ${TAG} crees en local (push manuel a faire si besoin)"
 fi
 
+# En mode serveur, PKG/VNAME/VCODE sont resolus dans la session SSH distante :
+# on retombe sur ce que le Mac connait deja (bump + package d'app.json).
+PKG="${PKG:-$(node -p "require('./app.json').expo.android.package" 2>/dev/null || echo '?')}"
+VNAME="${VNAME:-${NEW_NAME}}"
+VCODE="${VCODE:-${NEW_CODE}}"
+
 echo ""
 echo "${GREEN}${BOLD}  ✓ Deploye sur ${ENV} → ${KIOSK_URL}${NC}"
 echo "  App : ${APP_NAME}  |  ${PKG} v${VNAME} (${VCODE})  |  ${GIT_SHA}"

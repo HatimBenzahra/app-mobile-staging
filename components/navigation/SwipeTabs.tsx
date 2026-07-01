@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { type ReactNode, useCallback, useEffect, useMemo, useState } from "react";
 import { StyleSheet, View } from "react-native";
 import { TabView } from "react-native-tab-view";
 import AgendaScreen from "@/app/(app)/(tabs)/agenda";
@@ -31,6 +31,7 @@ export const buildRoutes = (isManager: boolean): TabRoute[] => {
 type SwipeTabsProps = {
   index: number;
   onIndexChange: (index: number) => void;
+  headerHeight?: number;
   onHeaderVisibilityChange?: (visible: boolean) => void;
   onRailVisibilityChange?: (visible: boolean) => void;
 };
@@ -38,6 +39,7 @@ type SwipeTabsProps = {
 export default function SwipeTabs({
   index,
   onIndexChange,
+  headerHeight = 0,
   onHeaderVisibilityChange,
   onRailVisibilityChange,
 }: SwipeTabsProps) {
@@ -70,8 +72,18 @@ export default function SwipeTabs({
 
   const renderScene = useCallback(
     ({ route }: { route: { key: string } }) => {
+      // La Carte est plein écran (le header est un overlay géré au-dessus).
+      if (route.key === "carte") {
+        return <CarteTerrainScreen embedded />;
+      }
+
+      // Les autres scènes sont décalées sous le header d'une hauteur CONSTANTE
+      // (paddingTop = hauteur du header). Comme ce padding ne dépend pas de
+      // l'onglet actif, aucune scène n'est redimensionnée lors d'un changement
+      // d'onglet : le header se contente de fondre par-dessus.
+      let scene: ReactNode;
       if (route.key === "immeubles") {
-        return (
+        scene = (
           <ImmeublesScreen
             isActive={tabRoutes[index]?.key === "immeubles"}
             onSwipeLockChange={handleSwipeLockChange}
@@ -79,25 +91,21 @@ export default function SwipeTabs({
             onHeaderVisibilityChange={onHeaderVisibilityChange}
           />
         );
+      } else if (route.key === "historique") {
+        scene = <HistoriqueScreen />;
+      } else if (route.key === "equipe") {
+        scene = <EquipeScreen />;
+      } else if (route.key === "agenda") {
+        scene = <AgendaScreen onNavigateToImmeuble={handleNavigateToImmeuble} />;
+      } else if (route.key === "statistiques") {
+        scene = <StatistiquesScreen onNavigateToImmeuble={handleNavigateToImmeuble} />;
+      } else {
+        scene = <DashboardScreen />;
       }
-      if (route.key === "carte") {
-        return <CarteTerrainScreen embedded />;
-      }
-      if (route.key === "historique") {
-        return <HistoriqueScreen />;
-      }
-      if (route.key === "equipe") {
-        return <EquipeScreen />;
-      }
-      if (route.key === "agenda") {
-        return <AgendaScreen onNavigateToImmeuble={handleNavigateToImmeuble} />;
-      }
-      if (route.key === "statistiques") {
-        return <StatistiquesScreen onNavigateToImmeuble={handleNavigateToImmeuble} />;
-      }
-      return <DashboardScreen />;
+
+      return <View style={{ flex: 1, paddingTop: headerHeight }}>{scene}</View>;
     },
-    [handleNavigateToImmeuble, handleSwipeLockChange, index, onHeaderVisibilityChange, onRailVisibilityChange, tabRoutes],
+    [handleNavigateToImmeuble, handleSwipeLockChange, headerHeight, index, onHeaderVisibilityChange, onRailVisibilityChange, tabRoutes],
   );
 
   return (

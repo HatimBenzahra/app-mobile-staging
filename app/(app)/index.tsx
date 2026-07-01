@@ -12,10 +12,12 @@ import { sendOperator } from "@/modules/kiosk-bridge";
 import { authService } from "@/services/auth";
 import { useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { StyleSheet, View } from "react-native";
+import { Animated, StyleSheet, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 function AppContent() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const [index, setIndex] = useState(0);
   const [userId, setUserId] = useState<number | null>(null);
   const [role, setRole] = useState<string | null>(null);
@@ -61,6 +63,23 @@ function AppContent() {
   const routes = useMemo(() => buildRoutes(isManager), [isManager]);
   const activeKey = routes[index]?.key;
   const isCarte = activeKey === "carte";
+
+  // Header rendu en OVERLAY absolu (voir le rendu plus bas) : sa présence ne
+  // participe plus au flux, donc entrer/sortir de la Carte ne redimensionne plus
+  // les scènes (fini le reflow de la map). On l'anime en opacité (fondu) au lieu
+  // de le monter/démonter, et les scènes non-carte reçoivent un paddingTop égal
+  // à sa hauteur (mesurée) pour rester exactement à la même place qu'avant.
+  const headerShown = showHeader && !isCarte;
+  const [headerHeight, setHeaderHeight] = useState(insets.top + 64);
+  const headerAnim = useRef(new Animated.Value(headerShown ? 1 : 0)).current;
+
+  useEffect(() => {
+    Animated.timing(headerAnim, {
+      toValue: headerShown ? 1 : 0,
+      duration: 220,
+      useNativeDriver: true,
+    }).start();
+  }, [headerShown, headerAnim]);
 
   // Le commercial atterrit directement sur la carte plein écran.
   useEffect(() => {
@@ -146,7 +165,6 @@ function AppContent() {
   // 2 mains, qu'une barre en bas). Sur la Carte on masque juste le header pour
   // une carte immersive ; la rail reste pour naviguer (et sortir de la carte).
   const railVisible = showRail;
-  const headerVisible = showHeader && !isCarte;
 
   return (
     <>
@@ -155,13 +173,38 @@ function AppContent() {
           <NavigationRail currentIndex={index} onNavigate={goToTab} />
         ) : null}
         <View style={styles.mainContent}>
-          {headerVisible ? <AnimatedHeader currentIndex={index} /> : null}
           <SwipeTabs
             index={index}
             onIndexChange={handleIndexChange}
+            headerHeight={headerHeight}
             onHeaderVisibilityChange={setShowHeader}
             onRailVisibilityChange={setShowRail}
           />
+          {/* Overlay header : hors flux, animé en fondu. Ne redimensionne jamais
+              les scènes -> pas de reflow de la map à l'ouverture de la Carte. */}
+          <Animated.View
+            pointerEvents={headerShown ? "auto" : "none"}
+            onLayout={(e) => {
+              const h = e.nativeEvent.layout.height;
+              if (h > 0) setHeaderHeight(h);
+            }}
+            style={[
+              styles.headerOverlay,
+              {
+                opacity: headerAnim,
+                transform: [
+                  {
+                    translateY: headerAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [-8, 0],
+                    }),
+                  },
+                ],
+              },
+            ]}
+          >
+            <AnimatedHeader currentIndex={index} />
+          </Animated.View>
         </View>
       </View>
       <ProfileSheet ref={sheetRef} userId={userId} role={role} />
@@ -192,5 +235,12 @@ const styles = StyleSheet.create({
   },
   mainContent: {
     flex: 1,
+  },
+  headerOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 10,
   },
 });
