@@ -10,13 +10,14 @@ type AnimatedHeaderProps = {
   currentIndex: number;
 };
 
-const BASE_TITLES = ["Tableau", "Carte", "Lieux", "Agenda", "Stats", "Historique"];
+const BASE_TITLES = ["Tableau", "Carte", "Lieux", "Agenda", "Stats", "Classement", "Historique"];
 const MANAGER_TITLES = [
   "Tableau",
   "Carte",
   "Lieux",
   "Agenda",
   "Stats",
+  "Classement",
   "Équipe",
   "Historique",
 ];
@@ -41,10 +42,12 @@ export default function AnimatedHeader({ currentIndex }: AnimatedHeaderProps) {
     new Animated.Value(0),
     new Animated.Value(0),
     new Animated.Value(0),
+    new Animated.Value(0),
   ]).current;
 
   const translateAnims = useRef([
     new Animated.Value(0),
+    new Animated.Value(20),
     new Animated.Value(20),
     new Animated.Value(20),
     new Animated.Value(20),

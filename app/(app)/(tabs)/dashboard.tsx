@@ -1,9 +1,10 @@
 import { useCommercialActivity } from "@/hooks/api/use-commercial-activity";
 import { useCommercialTimeline } from "@/hooks/api/use-commercial-timeline";
+import { useLeaderboard } from "@/hooks/api/use-leaderboard";
 import { useWorkspaceProfile } from "@/hooks/api/use-workspace-profile";
 import { authService } from "@/services/auth";
 import type { Commercial, Manager } from "@/types/api";
-import { calculateRank, RANKS } from "@/utils/business/ranks";
+import { tierProgress } from "@/utils/business/rankTiers";
 import {
   findBestDay,
   getNextRdvCountdown,
@@ -107,71 +108,43 @@ export default function DashboardScreen() {
   const { data: profile, loading, error, refetch } = useWorkspaceProfile(userId, role);
   const { rdvToday } = useCommercialActivity();
   const timeline = useCommercialTimeline(userId);
+  const { data: monthlyLeaderboard, refetch: leaderboardRefetch } = useLeaderboard("MONTHLY");
 
   const [refreshing, setRefreshing] = useState(false);
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     try {
-      await Promise.all([refetch(), rdvToday.refetch?.(), timeline.refetch?.()]);
+      await Promise.all([refetch(), rdvToday.refetch?.(), timeline.refetch?.(), leaderboardRefetch()]);
     } finally {
       setRefreshing(false);
     }
-  }, [refetch, rdvToday, timeline]);
+  }, [refetch, rdvToday, timeline, leaderboardRefetch]);
 
   const isManager = role === "manager";
 
-  const stats = useMemo(() => {
-    if (!profile) {
-      return { contratsSignes: 0, immeublesVisites: 0, rendezVousPris: 0 };
-    }
-
-    const statsArray = isManager
-      ? (profile as Manager).personalStatistics ||
-        (profile as Manager).statistics ||
-        []
-      : (profile as Commercial).statistics || [];
-
-    return statsArray.reduce(
-      (acc, stat) => ({
-        contratsSignes: acc.contratsSignes + (stat.contratsSignes || 0),
-        immeublesVisites: acc.immeublesVisites + (stat.immeublesVisites || 0),
-        rendezVousPris: acc.rendezVousPris + (stat.rendezVousPris || 0),
-      }),
-      { contratsSignes: 0, immeublesVisites: 0, rendezVousPris: 0 },
+  // Rang & points issus du classement mensuel serveur (source de vérité gamification).
+  const myRankEntry = useMemo(() => {
+    if (!monthlyLeaderboard || !userId) return null;
+    return (
+      monthlyLeaderboard.find((e) =>
+        isManager ? e.managerId === userId : e.commercialId === userId,
+      ) ?? null
     );
-  }, [profile, isManager]);
+  }, [monthlyLeaderboard, userId, isManager]);
 
   const rankInfo = useMemo(() => {
-    const result = calculateRank(
-      stats.contratsSignes,
-      stats.rendezVousPris,
-      stats.immeublesVisites,
-    );
-    const currentRankIndex = RANKS.findIndex(
-      (r) => r.name === result.rank.name,
-    );
-    const nextRank = RANKS[currentRankIndex + 1];
-    const isMaxRank = !nextRank;
-
-    let progressPercent = 0;
-    let pointsToNext = 0;
-
-    if (nextRank) {
-      const pointsInCurrent = result.points - result.rank.minPoints;
-      const pointsTotal = nextRank.minPoints - result.rank.minPoints;
-      progressPercent = Math.min((pointsInCurrent / pointsTotal) * 100, 100);
-      pointsToNext = nextRank.minPoints - result.points;
-    }
-
+    const points = myRankEntry?.points ?? 0;
+    const prog = tierProgress(points);
     return {
-      ...result,
-      name: result.rank.name,
-      isMaxRank,
-      progressPercent,
-      pointsToNext,
-      nextRank,
+      points,
+      name: myRankEntry?.rankTierLabel ?? prog.current.label,
+      tierKey: myRankEntry?.rankTierKey ?? prog.current.key,
+      isMaxRank: prog.isMax,
+      progressPercent: prog.progressPercent,
+      pointsToNext: prog.pointsToNext,
+      nextRank: prog.next ? { name: prog.next.label } : null,
     };
-  }, [stats]);
+  }, [myRankEntry]);
 
   const nextRank = rankInfo.nextRank;
 

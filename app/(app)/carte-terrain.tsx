@@ -60,6 +60,8 @@ export default function CarteTerrainScreen({
     highlightedId,
     quartiers,
     updateActivePin,
+    searchAddresses,
+    applyAddressToActivePin,
     handleMapPress,
     selectQuartierPin,
     removeActiveQuartierPin,
@@ -217,6 +219,8 @@ export default function CarteTerrainScreen({
           onRemoveActiveQuartierPin={removeActiveQuartierPin}
           onSelectQuartierPin={selectQuartierPin}
           onUpdateActivePin={updateActivePin}
+          onSearchAddress={searchAddresses}
+          onPickAddress={applyAddressToActivePin}
           onCreateBatiment={handleCreateBatiment}
           onCreateQuartier={handleCreateQuartier}
         />

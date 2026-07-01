@@ -16,6 +16,11 @@ export function makeDraftPin(point: TerrainPoint): DraftPin {
     selectedAddress: null,
     typeHabitat: "MAISON",
     nbMaisonsPrevu: 2,
+    // Valeurs par défaut sensées : l'utilisateur ajuste, il ne part pas de zéro.
+    nbEtages: 3,
+    nbPortesParEtage: 4,
+    ascenseur: false,
+    digitalCode: null,
   };
 }
 
@@ -36,15 +41,19 @@ export function createBuildingInput(
   role: string | null,
   userId: number | null,
 ) {
+  const isImmeuble = draft.typeHabitat === "IMMEUBLE";
+  const isPavillon = draft.typeHabitat === "PAVILLON";
+  const code = draft.digitalCode?.trim();
   return {
     adresse: draft.selectedAddress!.properties.label,
     latitude: draft.latitude,
     longitude: draft.longitude,
-    nbEtages: draft.typeHabitat === "PAVILLON" ? draft.nbMaisonsPrevu : 1,
-    nbPortesParEtage: 1,
-    nbMaisonsPrevu: draft.typeHabitat === "PAVILLON" ? draft.nbMaisonsPrevu : 1,
-    ascenseurPresent: false,
-    digitalCode: null,
+    // Immeuble : structure réellement saisie. Pavillon : N maisons = N étages × 1 porte.
+    nbEtages: isImmeuble ? draft.nbEtages : isPavillon ? draft.nbMaisonsPrevu : 1,
+    nbPortesParEtage: isImmeuble ? draft.nbPortesParEtage : 1,
+    nbMaisonsPrevu: isPavillon ? draft.nbMaisonsPrevu : 1,
+    ascenseurPresent: isImmeuble ? draft.ascenseur : false,
+    digitalCode: isImmeuble && code ? code : null,
     commercialId: role === "commercial" ? (userId ?? undefined) : undefined,
     managerId: role === "manager" ? (userId ?? undefined) : undefined,
     typeHabitat: draft.typeHabitat,

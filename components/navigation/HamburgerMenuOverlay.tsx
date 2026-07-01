@@ -148,14 +148,21 @@ export default function HamburgerMenuOverlay({
         targetIndex: 4,
         isActive: currentIndex === 4,
       },
+      {
+        key: "classement",
+        icon: "award" as keyof typeof Feather.glyphMap,
+        label: "Classement",
+        targetIndex: 5,
+        isActive: currentIndex === 5,
+      },
       ...(isManager
         ? [
             {
               key: "equipe",
               icon: "users" as keyof typeof Feather.glyphMap,
               label: "Équipe",
-              targetIndex: 5,
-              isActive: currentIndex === 5,
+              targetIndex: 6,
+              isActive: currentIndex === 6,
             },
           ]
         : []),
@@ -163,8 +170,8 @@ export default function HamburgerMenuOverlay({
         key: "historique",
         icon: "clock" as keyof typeof Feather.glyphMap,
         label: "Historique",
-        targetIndex: isManager ? 6 : 5,
-        isActive: currentIndex === (isManager ? 6 : 5),
+        targetIndex: isManager ? 7 : 6,
+        isActive: currentIndex === (isManager ? 7 : 6),
       },
     ],
     [currentIndex, isManager],

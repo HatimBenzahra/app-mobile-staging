@@ -3,6 +3,7 @@ import { StyleSheet, View } from "react-native";
 import { TabView } from "react-native-tab-view";
 import AgendaScreen from "@/app/(app)/(tabs)/agenda";
 import CarteTerrainScreen from "@/app/(app)/carte-terrain";
+import ClassementScreen from "@/app/(app)/(tabs)/classement";
 import DashboardScreen from "@/app/(app)/(tabs)/dashboard";
 import ImmeublesScreen from "@/app/(app)/(tabs)/immeubles";
 import StatistiquesScreen from "@/app/(app)/(tabs)/statistiques";
@@ -20,6 +21,7 @@ export const buildRoutes = (isManager: boolean): TabRoute[] => {
     { key: "immeubles", title: "Lieux", icon: "map-pin" },
     { key: "agenda", title: "Agenda", icon: "book-open" },
     { key: "statistiques", title: "Stats", icon: "trending-up" },
+    { key: "classement", title: "Classement", icon: "award" },
   ];
   if (isManager) {
     baseRoutes.push({ key: "equipe", title: "Équipe", icon: "users" });
@@ -95,6 +97,8 @@ export default function SwipeTabs({
         );
       } else if (route.key === "historique") {
         scene = <HistoriqueScreen />;
+      } else if (route.key === "classement") {
+        scene = <ClassementScreen />;
       } else if (route.key === "equipe") {
         scene = <EquipeScreen />;
       } else if (route.key === "agenda") {

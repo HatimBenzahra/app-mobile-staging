@@ -1,11 +1,12 @@
 import { useCommercials } from "@/hooks/api/use-commercials";
 import { useApiCall } from "@/hooks/api/use-api-call";
+import { useLeaderboard } from "@/hooks/api/use-leaderboard";
 import { useTeamPerformanceTimeline } from "@/hooks/api/use-team-performance-timeline";
 import { useWorkspaceProfile } from "@/hooks/api/use-workspace-profile";
 import { authService } from "@/services/auth";
 import { api } from "@/services/api";
 import type { Commercial, Manager, Statistic } from "@/types/api";
-import { calculateRank } from "@/utils/business/ranks";
+import type { RankPeriod, RankSnapshotType } from "@/types/graphql-schema";
 import { Feather } from "@expo/vector-icons";
 import {
   memo,
@@ -30,6 +31,7 @@ import {
 import { LineChart } from "react-native-gifted-charts";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Card, ErrorState, IconBadge, Chip } from "@/components/ui";
+import { RankTierBadge } from "@/components/gamification";
 import { colors, podium, progressColors } from "@/constants/theme";
 
 type PeriodKey = "7d" | "30d" | "all";
@@ -108,8 +110,10 @@ const sumStats = (stats: Statistic[]) =>
 
 type TeamSnapshot = Commercial & {
   stats: typeof INITIAL_STATS;
-  rank: { name: string };
+  /** Points & tier issus du classement serveur (renseignés après fusion). */
   points: number;
+  tierKey: string | null;
+  tierLabel: string | null;
   zoneCount: number;
   immeubleCount: number;
 };
@@ -162,17 +166,14 @@ const computeTeamSnapshot = (
 
   totals.nbImmeublesProspectes = visitedImmeubles.size;
   totals.immeublesVisites = visitedImmeubles.size;
-  const { rank, points } = calculateRank(
-    totals.contratsSignes,
-    totals.rendezVousPris,
-    totals.immeublesVisites,
-  );
   const zones = detailedCommercial.zones || [];
   return {
     ...detailedCommercial,
     stats: totals,
-    rank,
-    points,
+    // Renseignés depuis le classement serveur dans teamSnapshots.
+    points: 0,
+    tierKey: null,
+    tierLabel: null,
     zoneCount: zones.length,
     immeubleCount: immeubles.length,
   };
@@ -296,7 +297,7 @@ const TeamListItem = memo(function TeamListItem({
           </Text>
         </View>
         <View style={styles.listHeaderRight}>
-          <Chip tone="primary" label={commercial.rank.name} />
+          <RankTierBadge tierKey={commercial.tierKey} label={commercial.tierLabel} size="sm" />
           <Chip
             tone="warning"
             icon="zap"
@@ -615,17 +616,37 @@ export default function EquipeScreen() {
     [isTablet, performanceChartWidth, teamChartData.rdvData.length],
   );
 
+  // Fenêtre glissante (equipe) → période calendaire (gamification serveur).
+  const rankPeriod: RankPeriod =
+    period === "7d" ? "WEEKLY" : period === "30d" ? "MONTHLY" : "YEARLY";
+  const { data: leaderboard } = useLeaderboard(rankPeriod);
+
+  const rankByCommercial = useMemo(() => {
+    const map = new Map<number, RankSnapshotType>();
+    for (const entry of leaderboard ?? []) {
+      if (entry.commercialId != null) map.set(entry.commercialId, entry);
+    }
+    return map;
+  }, [leaderboard]);
+
   const teamSnapshots = useMemo<TeamSnapshot[]>(() => {
-    return team.map((commercial) =>
-      computeTeamSnapshot(
+    return team.map((commercial) => {
+      const activity = computeTeamSnapshot(
         commercial,
         period,
         periodStartKey,
         periodEndKey,
         teamCommercialDetails,
-      ),
-    );
-  }, [period, periodEndKey, periodStartKey, team, teamCommercialDetails]);
+      );
+      const server = rankByCommercial.get(commercial.id);
+      return {
+        ...activity,
+        points: server?.points ?? 0,
+        tierKey: server?.rankTierKey ?? null,
+        tierLabel: server?.rankTierLabel ?? null,
+      };
+    });
+  }, [period, periodEndKey, periodStartKey, team, teamCommercialDetails, rankByCommercial]);
 
   const orderedTeamSnapshots = useMemo(
     () =>

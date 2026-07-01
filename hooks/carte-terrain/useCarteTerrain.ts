@@ -200,10 +200,34 @@ export function useCarteTerrain({ embedded = false }: UseCarteTerrainParams = {}
     }
   }, []);
 
+  // Recherche d'adresse "en avant" (l'utilisateur tape) — complète le reverse
+  // geocoding pour ne jamais rester bloqué quand aucune adresse proche n'est trouvée.
+  const searchAddresses = useCallback(async (query: string) => {
+    if (query.trim().length < 3) return;
+    setLoadingSuggestions(true);
+    try {
+      const url = `https://api-adresse.data.gouv.fr/search/?q=${encodeURIComponent(query)}&limit=6`;
+      const response = await fetch(url);
+      if (!response.ok) {
+        setSuggestions([]);
+        return;
+      }
+      const data = await response.json();
+      setSuggestions((data?.features as AdresseFeature[]) || []);
+    } catch {
+      setSuggestions([]);
+    } finally {
+      setLoadingSuggestions(false);
+    }
+  }, []);
+
   const setBuildingActivePin = useCallback(
     (point: TerrainPoint) => {
-      const nextPin = makeDraftPin(point);
-      setBuildingPin(nextPin);
+      // Repositionnement : on conserve type + structure déjà choisis (l'assistant
+      // ne repart pas de zéro), seule l'adresse est réinitialisée car elle change.
+      setBuildingPin((current) =>
+        current ? { ...current, ...point, selectedAddress: null } : makeDraftPin(point),
+      );
       void fetchAddressSuggestions(point);
     },
     [fetchAddressSuggestions],
@@ -315,6 +339,26 @@ export function useCarteTerrain({ embedded = false }: UseCarteTerrainParams = {}
       );
     },
     [mode, activeQuartierPinId],
+  );
+
+  // Sélection d'une adresse : on la mémorise ET on recale le pin sur ses coordonnées
+  // (snap au bâtiment réel), qu'elle vienne du reverse geocoding ou de la recherche.
+  const applyAddressToActivePin = useCallback(
+    (feature: AdresseFeature) => {
+      const coords = feature.geometry?.coordinates;
+      const patch: Partial<DraftPin> = { selectedAddress: feature };
+      if (coords && coords.length === 2) {
+        patch.longitude = coords[0];
+        patch.latitude = coords[1];
+        cameraRef.current?.easeTo({
+          center: [coords[0], coords[1]],
+          zoom: 17,
+          duration: 400,
+        });
+      }
+      updateActivePin(patch);
+    },
+    [updateActivePin],
   );
 
   const handleMoveLieu = useCallback(
@@ -566,6 +610,8 @@ export function useCarteTerrain({ embedded = false }: UseCarteTerrainParams = {}
     highlightedId,
     quartiers,
     updateActivePin,
+    searchAddresses,
+    applyAddressToActivePin,
     handleMapPress,
     selectQuartierPin,
     removeActiveQuartierPin,

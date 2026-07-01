@@ -27,4 +27,11 @@ export type DraftPin = TerrainPoint & {
   selectedAddress: AdresseFeature | null;
   typeHabitat: TypeHabitat;
   nbMaisonsPrevu: number;
+  // Structure saisie dès la création (immeuble surtout). Évite la coquille vide.
+  nbEtages: number;
+  nbPortesParEtage: number;
+  ascenseur: boolean;
+  digitalCode: string | null;
 };
+
+export type CreateStep = "type" | "adresse" | "apercu";

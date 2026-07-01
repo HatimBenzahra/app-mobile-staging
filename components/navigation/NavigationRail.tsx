@@ -115,13 +115,19 @@ export default function NavigationRail({
         label: "Stats",
         targetIndex: 4,
       },
+      {
+        key: "classement",
+        icon: "award" as keyof typeof Feather.glyphMap,
+        label: "Classement",
+        targetIndex: 5,
+      },
       ...(isManager
         ? [
             {
               key: "equipe",
               icon: "users" as keyof typeof Feather.glyphMap,
               label: "Équipe",
-              targetIndex: 5,
+              targetIndex: 6,
             },
           ]
         : []),
@@ -129,7 +135,7 @@ export default function NavigationRail({
         key: "historique",
         icon: "clock" as keyof typeof Feather.glyphMap,
         label: "Historique",
-        targetIndex: isManager ? 6 : 5,
+        targetIndex: isManager ? 7 : 6,
       },
     ],
     [isManager],
