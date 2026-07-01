@@ -110,12 +110,25 @@ export function CreatePanel({
   const [step, setStep] = useState<CreateStep>("type");
   const [query, setQuery] = useState("");
   const activePinId = activePin?.id ?? null;
+  const activeLat = activePin?.latitude ?? null;
+  const activeLng = activePin?.longitude ?? null;
+  const hasAddress = !!activePin?.selectedAddress;
 
-  // Nouveau repère (ou changement de mode) → l'assistant repart de l'étape "type".
+  // Nouveau repère (id différent) → l'assistant repart de l'étape "type".
   useEffect(() => {
     setStep("type");
-    setQuery("");
   }, [activePinId]);
+
+  // Repositionnement OU application d'une adresse → la recherche saisie n'a plus
+  // de sens (elle ciblait l'ancienne position), on la vide.
+  useEffect(() => {
+    setQuery("");
+  }, [activePinId, activeLat, activeLng]);
+
+  // Le repositionnement préserve volontairement l'id du pin (le type reste choisi),
+  // donc l'effet ci-dessus ne se déclenche pas : si l'adresse a été perdue on ne peut
+  // plus rester sur "apercu" (crash) ni afficher une adresse fantôme → on clampe.
+  const effectiveStep: CreateStep = step !== "type" && !hasAddress ? "adresse" : step;
 
   const cardStyle = [styles.panel, { paddingBottom: Math.max(insets.bottom, 12) }];
 
@@ -278,8 +291,8 @@ export function CreatePanel({
   }
 
   const progressLabel =
-    step === "type" ? "1 · Quoi" : step === "adresse" ? "2 · Où" : "Aperçu";
-  const secondDotOn = step !== "type";
+    effectiveStep === "type" ? "1 · Quoi" : effectiveStep === "adresse" ? "2 · Où" : "Aperçu";
+  const secondDotOn = effectiveStep !== "type";
 
   return (
     <Card variant="elevated" padding="md" style={cardStyle}>
@@ -289,7 +302,7 @@ export function CreatePanel({
         <View style={[styles.wizardDot, secondDotOn && styles.wizardDotOn]} />
       </View>
 
-      {step === "type" && (
+      {effectiveStep === "type" && (
         <>
           <Text style={styles.panelTitle}>Que crées-tu ?</Text>
           <View style={styles.typeCardList}>
@@ -363,7 +376,7 @@ export function CreatePanel({
         </>
       )}
 
-      {step === "adresse" && (
+      {effectiveStep === "adresse" && (
         <>
           <Text style={styles.panelTitle}>Adresse du lieu</Text>
           <Text style={styles.panelHint}>{"Déplace le repère ou cherche l'adresse."}</Text>
@@ -443,7 +456,7 @@ export function CreatePanel({
         </>
       )}
 
-      {step === "apercu" && (
+      {effectiveStep === "apercu" && (
         <>
           <Text style={styles.panelTitle}>Prêt à créer</Text>
           <View style={styles.recapCard}>
