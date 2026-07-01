@@ -2,7 +2,7 @@ import type { TerrainMode } from "@/hooks/carte-terrain/types";
 import type { Immeuble, Quartier } from "@/types/api";
 import { GeoJSONSource, Layer } from "@maplibre/maplibre-react-native";
 import type { Feature, FeatureCollection, Polygon } from "geojson";
-import { useMemo } from "react";
+import { memo, useMemo } from "react";
 import type { NativeSyntheticEvent } from "react-native";
 import { router } from "expo-router";
 import { buildQuartierFeature } from "./geo-hull";
@@ -25,7 +25,11 @@ type QuartierContoursProps = {
   mode: TerrainMode;
 };
 
-export function QuartierContours({ quartiers, immeubles, mode }: QuartierContoursProps) {
+export const QuartierContours = memo(function QuartierContours({
+  quartiers,
+  immeubles,
+  mode,
+}: QuartierContoursProps) {
   // Ids des bâtiments visibles : un quartier n'est contouré que sur ces bâtiments.
   // Quand le toggle équipe est OFF, les bâtiments d'équipe disparaissent de cette
   // liste → le contour du quartier d'équipe disparaît implicitement.
@@ -70,4 +74,4 @@ export function QuartierContours({ quartiers, immeubles, mode }: QuartierContour
       />
     </GeoJSONSource>
   );
-}
+});

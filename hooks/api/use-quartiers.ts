@@ -1,7 +1,7 @@
 import { api } from "@/services/api";
 import { authService } from "@/services/auth";
 import type { Quartier } from "@/types/api";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useApiCall } from "./use-api-call";
 
 export function useQuartiers() {
@@ -20,11 +20,13 @@ export function useQuartiers() {
     void load();
   }, []);
 
+  const fetchQuartiers = useCallback(async (): Promise<Quartier[]> => {
+    if (!userId || userId <= 0) return [];
+    return api.immeubles.getQuartiers();
+  }, [userId, role]);
+
   return useApiCall<Quartier[]>(
-    async () => {
-      if (!userId || userId <= 0) return [];
-      return api.immeubles.getQuartiers();
-    },
+    fetchQuartiers,
     [userId, role],
     {
       cacheKey: `quartiers:${role ?? "unknown"}:${userId ?? 0}`,

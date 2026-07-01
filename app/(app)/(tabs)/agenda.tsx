@@ -7,7 +7,7 @@ import { Card, Chip, ErrorState, PressableCard, StatTile } from "@/components/ui
 import { colors } from "@/constants/theme";
 import { Feather } from "@expo/vector-icons";
 import { useIsFocused } from "@react-navigation/native";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Animated,
   Easing,
@@ -66,6 +66,127 @@ function formatEtage(etage: number): string {
   return `${etage}${etage === 1 ? "er" : "ème"} étage`;
 }
 
+type RdvCardProps = {
+  item: RdvItem;
+  onPress: (immeubleId: number, porteId: number) => void;
+};
+
+const RdvCard = memo(function RdvCard({ item, onPress }: RdvCardProps) {
+  const handlePress = useCallback(() => {
+    onPress(item.immeubleId, item.porteId);
+  }, [onPress, item.immeubleId, item.porteId]);
+
+  return (
+    <PressableCard
+      variant="outlined"
+      padding="sm"
+      style={styles.cardRdvBorder}
+      onPress={handlePress}
+    >
+      <View style={styles.cardInner}>
+        <View style={styles.cardLeft}>
+          <Chip
+            label={formatTime(item.rdvTime)}
+            icon="clock"
+            tone="primary"
+          />
+        </View>
+        <View style={styles.cardCenter}>
+          <Text style={styles.cardTitle} numberOfLines={1}>
+            Porte {item.numero}
+            {item.nomPersonnalise ? ` · ${item.nomPersonnalise}` : ""}
+          </Text>
+          <Text style={styles.cardEtage}>{formatEtage(item.etage)}</Text>
+          <View style={styles.cardAddressRow}>
+            <Feather name="map-pin" size={11} color={colors.textSubtle} />
+            <Text style={styles.cardAddress} numberOfLines={1}>
+              {item.adresse}
+            </Text>
+          </View>
+          {item.commentaire ? (
+            <Text style={styles.cardComment} numberOfLines={2}>
+              {item.commentaire}
+            </Text>
+          ) : null}
+        </View>
+        <View style={styles.cardChevron}>
+          <Feather name="chevron-right" size={16} color={colors.borderStrong} />
+        </View>
+      </View>
+    </PressableCard>
+  );
+});
+
+type RepassageCardProps = {
+  item: RepassageItem;
+  onPress: (immeubleId: number, porteId: number) => void;
+};
+
+const RepassageCard = memo(function RepassageCard({ item, onPress }: RepassageCardProps) {
+  const handlePress = useCallback(() => {
+    onPress(item.immeubleId, item.porteId);
+  }, [onPress, item.immeubleId, item.porteId]);
+
+  const isAbsent = item.statut === "ABSENT";
+  const accentColor = isAbsent ? colors.danger : colors.warning;
+
+  return (
+    <PressableCard
+      variant="outlined"
+      padding="sm"
+      style={{ borderLeftWidth: 3, borderLeftColor: accentColor }}
+      onPress={handlePress}
+    >
+      <View style={styles.cardInner}>
+        <View style={styles.cardLeft}>
+          <View style={[styles.repassageBadge, { backgroundColor: isAbsent ? colors.dangerSoft : colors.warningSoft }]}>
+            <Feather
+              name={isAbsent ? "user-x" : "refresh-cw"}
+              size={13}
+              color={accentColor}
+            />
+          </View>
+        </View>
+        <View style={styles.cardCenter}>
+          <Text style={styles.cardTitle} numberOfLines={1}>
+            Porte {item.numero}
+            {item.nomPersonnalise ? ` · ${item.nomPersonnalise}` : ""}
+          </Text>
+          <Text style={styles.cardEtage}>{formatEtage(item.etage)}</Text>
+          <View style={styles.cardAddressRow}>
+            <Feather name="map-pin" size={11} color={colors.textSubtle} />
+            <Text style={styles.cardAddress} numberOfLines={1}>
+              {item.adresse}
+            </Text>
+          </View>
+          <View style={styles.cardStatusRow}>
+            <Chip
+              label={STATUS_LABELS[item.statut] ?? item.statut}
+              tone={isAbsent ? "danger" : "warning"}
+            />
+            {item.derniereVisite ? (
+              <Text style={styles.cardLastVisit}>
+                {new Date(item.derniereVisite).toLocaleDateString("fr-FR", {
+                  day: "2-digit",
+                  month: "short",
+                })}
+              </Text>
+            ) : null}
+          </View>
+          {item.commentaire ? (
+            <Text style={styles.cardComment} numberOfLines={2}>
+              {item.commentaire}
+            </Text>
+          ) : null}
+        </View>
+        <View style={styles.cardChevron}>
+          <Feather name="chevron-right" size={16} color={colors.borderStrong} />
+        </View>
+      </View>
+    </PressableCard>
+  );
+});
+
 export default function AgendaScreen({
   onNavigateToImmeuble,
 }: AgendaScreenProps = {}) {
@@ -117,7 +238,8 @@ export default function AgendaScreen({
       shouldRefetchOnFocusRef.current = true;
     });
     return unsubscribe;
-  }, [isFocused, modified, rdvToday, workspaceState]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isFocused]);
 
   useEffect(() => {
     if (!isFocused) {
@@ -131,7 +253,8 @@ export default function AgendaScreen({
     void workspaceState.refetch();
     void rdvToday.refetch();
     void modified.refetch();
-  }, [isFocused, modified, rdvToday, workspaceState]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isFocused]);
 
   const [refreshing, setRefreshing] = useState(false);
   const onRefresh = useCallback(async () => {
@@ -145,7 +268,8 @@ export default function AgendaScreen({
     } finally {
       setRefreshing(false);
     }
-  }, [workspaceState, rdvToday, modified]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const todayKey = useMemo(() => new Date().toISOString().slice(0, 10), []);
 
@@ -410,105 +534,11 @@ export default function AgendaScreen({
             <View style={styles.cardList}>
               {activeSection === "rdv"
                 ? todayRdvs.map((item) => (
-                    <PressableCard
-                      key={`rdv-${item.porteId}`}
-                      variant="outlined"
-                      padding="sm"
-                      style={styles.cardRdvBorder}
-                      onPress={() => handleCardPress(item.immeubleId, item.porteId)}
-                    >
-                      <View style={styles.cardInner}>
-                        <View style={styles.cardLeft}>
-                          <Chip
-                            label={formatTime(item.rdvTime)}
-                            icon="clock"
-                            tone="primary"
-                          />
-                        </View>
-                        <View style={styles.cardCenter}>
-                          <Text style={styles.cardTitle} numberOfLines={1}>
-                            Porte {item.numero}
-                            {item.nomPersonnalise ? ` · ${item.nomPersonnalise}` : ""}
-                          </Text>
-                          <Text style={styles.cardEtage}>{formatEtage(item.etage)}</Text>
-                          <View style={styles.cardAddressRow}>
-                            <Feather name="map-pin" size={11} color={colors.textSubtle} />
-                            <Text style={styles.cardAddress} numberOfLines={1}>
-                              {item.adresse}
-                            </Text>
-                          </View>
-                          {item.commentaire ? (
-                            <Text style={styles.cardComment} numberOfLines={2}>
-                              {item.commentaire}
-                            </Text>
-                          ) : null}
-                        </View>
-                        <View style={styles.cardChevron}>
-                          <Feather name="chevron-right" size={16} color={colors.borderStrong} />
-                        </View>
-                      </View>
-                    </PressableCard>
+                    <RdvCard key={`rdv-${item.porteId}`} item={item} onPress={handleCardPress} />
                   ))
-                : repassageItems.map((item) => {
-                    const isAbsent = item.statut === "ABSENT";
-                    const accentColor = isAbsent ? colors.danger : colors.warning;
-                    return (
-                      <PressableCard
-                        key={`rep-${item.porteId}`}
-                        variant="outlined"
-                        padding="sm"
-                        style={{ borderLeftWidth: 3, borderLeftColor: accentColor }}
-                        onPress={() => handleCardPress(item.immeubleId, item.porteId)}
-                      >
-                        <View style={styles.cardInner}>
-                          <View style={styles.cardLeft}>
-                            <View style={[styles.repassageBadge, { backgroundColor: isAbsent ? colors.dangerSoft : colors.warningSoft }]}>
-                              <Feather
-                                name={isAbsent ? "user-x" : "refresh-cw"}
-                                size={13}
-                                color={accentColor}
-                              />
-                            </View>
-                          </View>
-                          <View style={styles.cardCenter}>
-                            <Text style={styles.cardTitle} numberOfLines={1}>
-                              Porte {item.numero}
-                              {item.nomPersonnalise ? ` · ${item.nomPersonnalise}` : ""}
-                            </Text>
-                            <Text style={styles.cardEtage}>{formatEtage(item.etage)}</Text>
-                            <View style={styles.cardAddressRow}>
-                              <Feather name="map-pin" size={11} color={colors.textSubtle} />
-                              <Text style={styles.cardAddress} numberOfLines={1}>
-                                {item.adresse}
-                              </Text>
-                            </View>
-                            <View style={styles.cardStatusRow}>
-                              <Chip
-                                label={STATUS_LABELS[item.statut] ?? item.statut}
-                                tone={isAbsent ? "danger" : "warning"}
-                              />
-                              {item.derniereVisite ? (
-                                <Text style={styles.cardLastVisit}>
-                                  {new Date(item.derniereVisite).toLocaleDateString("fr-FR", {
-                                    day: "2-digit",
-                                    month: "short",
-                                  })}
-                                </Text>
-                              ) : null}
-                            </View>
-                            {item.commentaire ? (
-                              <Text style={styles.cardComment} numberOfLines={2}>
-                                {item.commentaire}
-                              </Text>
-                            ) : null}
-                          </View>
-                          <View style={styles.cardChevron}>
-                            <Feather name="chevron-right" size={16} color={colors.borderStrong} />
-                          </View>
-                        </View>
-                      </PressableCard>
-                    );
-                  })}
+                : repassageItems.map((item) => (
+                    <RepassageCard key={`rep-${item.porteId}`} item={item} onPress={handleCardPress} />
+                  ))}
             </View>
           )}
         </Card>

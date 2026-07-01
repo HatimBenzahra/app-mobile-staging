@@ -70,16 +70,16 @@ type StatusGridProps = {
   isTablet?: boolean;
 };
 
-function StatusCard({
+const StatusCard = memo(function StatusCard({
   desc,
   isSelected,
   isDimmed,
-  onPress,
+  onSelect,
 }: {
   desc: StatusDescriptor;
   isSelected: boolean;
   isDimmed: boolean;
-  onPress: () => void;
+  onSelect: (key: StatusKey) => void;
 }) {
   const scale = useSharedValue(1);
   const handlePressIn = useCallback(() => {
@@ -93,10 +93,12 @@ function StatusCard({
     transform: [{ scale: scale.value }],
   }));
 
+  const handlePress = useCallback(() => onSelect(desc.key), [onSelect, desc.key]);
+
   return (
     <Animated.View style={[styles.cardWrap, animatedStyle]}>
       <Pressable
-        onPress={onPress}
+        onPress={handlePress}
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
         style={[
@@ -148,7 +150,7 @@ function StatusCard({
       </Pressable>
     </Animated.View>
   );
-}
+});
 
 function StatusGridImpl({
   selected,
@@ -212,7 +214,7 @@ function StatusGridImpl({
               desc={desc}
               isSelected={isSelected}
               isDimmed={isDimmed}
-              onPress={() => onSelect(desc.key)}
+              onSelect={onSelect}
             />
           );
         })}

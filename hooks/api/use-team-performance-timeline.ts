@@ -1,6 +1,6 @@
 import { api } from "@/services/api";
 import type { TimelinePoint } from "@/types/api";
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
 
 import { useApiCall } from "./use-api-call";
 
@@ -27,49 +27,53 @@ export function useTeamPerformanceTimeline(
     [commercialIds],
   );
 
-  return useApiCall<TeamTimelinePoint[]>(
-    async () => {
-      if (normalizedIds.length === 0) {
-        return [];
-      }
+  const fetchTeamTimeline = useCallback(async (): Promise<
+    TeamTimelinePoint[]
+  > => {
+    if (normalizedIds.length === 0) {
+      return [];
+    }
 
-      const results = await Promise.allSettled(
-        normalizedIds.map((commercialId) =>
-          api.statistics.getStatsTimelineByCommercial(
-            commercialId,
-            startDate,
-            endDate,
-          ),
+    const results = await Promise.allSettled(
+      normalizedIds.map((commercialId) =>
+        api.statistics.getStatsTimelineByCommercial(
+          commercialId,
+          startDate,
+          endDate,
         ),
-      );
+      ),
+    );
 
-      const byDay = new Map<string, TeamTimelinePoint>();
+    const byDay = new Map<string, TeamTimelinePoint>();
 
-      for (const result of results) {
-        if (result.status !== "fulfilled") {
+    for (const result of results) {
+      if (result.status !== "fulfilled") {
+        continue;
+      }
+      for (const point of result.value as TimelinePoint[]) {
+        const dayKey = point.date.slice(0, 10);
+        const prev = byDay.get(dayKey);
+        if (!prev) {
+          byDay.set(dayKey, {
+            date: dayKey,
+            rdvPris: point.rdvPris || 0,
+            contratsSignes: point.contratsSignes || 0,
+          });
           continue;
         }
-        for (const point of result.value as TimelinePoint[]) {
-          const dayKey = point.date.slice(0, 10);
-          const prev = byDay.get(dayKey);
-          if (!prev) {
-            byDay.set(dayKey, {
-              date: dayKey,
-              rdvPris: point.rdvPris || 0,
-              contratsSignes: point.contratsSignes || 0,
-            });
-            continue;
-          }
 
-          prev.rdvPris += point.rdvPris || 0;
-          prev.contratsSignes += point.contratsSignes || 0;
-        }
+        prev.rdvPris += point.rdvPris || 0;
+        prev.contratsSignes += point.contratsSignes || 0;
       }
+    }
 
-      return Array.from(byDay.values()).sort((a, b) =>
-        a.date.localeCompare(b.date),
-      );
-    },
+    return Array.from(byDay.values()).sort((a, b) =>
+      a.date.localeCompare(b.date),
+    );
+  }, [normalizedIds, startDate, endDate]);
+
+  return useApiCall<TeamTimelinePoint[]>(
+    fetchTeamTimeline,
     [normalizedIds.join(","), startDate, endDate],
     {
       cacheKey: `commercial-timeline:team:${normalizedIds.join(",")}:${startDate ?? "none"}:${endDate ?? "none"}`,

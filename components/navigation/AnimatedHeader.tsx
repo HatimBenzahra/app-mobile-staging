@@ -82,7 +82,10 @@ export default function AnimatedHeader({ currentIndex }: AnimatedHeaderProps) {
     });
 
     Animated.parallel(animations).start();
-  }, [currentIndex, fadeAnims, titles, translateAnims]);
+    // fadeAnims/translateAnims are stable refs (useRef) and titles only
+    // changes when role changes (rare); animation should react to currentIndex.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentIndex]);
 
   const initials = useMemo(() => {
     if (!profile) {

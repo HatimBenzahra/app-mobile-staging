@@ -106,7 +106,6 @@ export default function StatistiquesScreen({
   const [customRange] = useState<PeriodRange | undefined>();
   const [teamView, setTeamView] = useState<"mine" | "team">("mine");
 
-  const [chartKey, setChartKey] = useState(0);
   const contentOpacity = useRef(new Animated.Value(0)).current;
   const skeletonPulse = useRef(new Animated.Value(0)).current;
   const wasFocusedRef = useRef(false);
@@ -252,18 +251,12 @@ export default function StatistiquesScreen({
   }, [commercialId, isFocused, workspaceState, refetchTimeline]);
 
   useEffect(() => {
-    if (commercialId) return;
-    shouldRefetchOnFocusRef.current = false;
-  }, [commercialId]);
-
-  useEffect(() => {
     if (!isFocused) {
       wasFocusedRef.current = false;
       return;
     }
     if (wasFocusedRef.current) return;
     wasFocusedRef.current = true;
-    setChartKey((prev) => prev + 1);
     if (!commercialId || !shouldRefetchOnFocusRef.current) return;
     shouldRefetchOnFocusRef.current = false;
     void workspaceState.refetch();
@@ -592,10 +585,7 @@ export default function StatistiquesScreen({
           <View style={styles.periodSelectorWrap}>
             <PeriodSelector
               value={period}
-              onChange={(p) => {
-                setPeriod(p);
-                setChartKey((k) => k + 1);
-              }}
+              onChange={(p) => setPeriod(p)}
               showCustom={false}
             />
             <Text style={styles.rangeLabel}>{formatRange(currentRange)}</Text>
@@ -678,7 +668,6 @@ export default function StatistiquesScreen({
             ) : (
               <View style={styles.giftedChartWrap}>
                 <LineChart
-                  key={`evo-chart-${chartKey}`}
                   data={evoPortes}
                   data2={evoRdv}
                   data3={evoContrats}
@@ -781,7 +770,6 @@ export default function StatistiquesScreen({
             ) : (
               <View style={styles.giftedChartWrap}>
                 <BarChart
-                  key={`bar-chart-${chartKey}`}
                   data={barData}
                   height={chartHeight}
                   width={chartWidth}

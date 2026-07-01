@@ -10,9 +10,11 @@ import { EditLieuPanel } from "@/components/carte-terrain/panels/EditLieuPanel";
 import { styles } from "@/components/carte-terrain/styles";
 import { TerrainMarkers } from "@/components/carte-terrain/TerrainMarkers";
 import { useCarteTerrain } from "@/hooks/carte-terrain/useCarteTerrain";
+import type { TerrainMode } from "@/hooks/carte-terrain/types";
+import type { Immeuble } from "@/types/api";
 import { useIsFocused } from "@react-navigation/native";
 import { router } from "expo-router";
-import { useEffect } from "react";
+import { useCallback, useEffect } from "react";
 import { View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -81,6 +83,57 @@ export default function CarteTerrainScreen({
     if (isFocused) navigatingRef.current = false;
   }, [isFocused, navigatingRef]);
 
+  const handleSelectLieu = useCallback(
+    (immeuble: Immeuble) => {
+      setSelectedExistingLieu(immeuble);
+      setMovingLieu(null);
+      setEditingLieu(null);
+    },
+    [setSelectedExistingLieu, setMovingLieu, setEditingLieu],
+  );
+
+  const handleToggleSatellite = useCallback(() => {
+    setSatellite((s) => !s);
+  }, [setSatellite]);
+
+  const handleSelectMode = useCallback(
+    (nextMode: TerrainMode) => {
+      setMode(nextMode);
+      setSuggestions([]);
+      setSelectedExistingLieu(null);
+      setEditingLieu(null);
+      setMovingLieu(null);
+    },
+    [setMode, setSuggestions, setSelectedExistingLieu, setEditingLieu, setMovingLieu],
+  );
+
+  const handleCloseBuildingSheet = useCallback(() => {
+    setSelectedExistingLieu(null);
+  }, [setSelectedExistingLieu]);
+
+  const handleProspect = useCallback(
+    (immeuble: Immeuble) => {
+      if (navigatingRef.current) return;
+      navigatingRef.current = true;
+      // On NE vide PAS la sélection : la sheet se masque via le focus puis
+      // se ré-ouvre sur ce bâtiment au retour (état préservé).
+      router.push(`/lieu/${immeuble.id}`);
+    },
+    [navigatingRef],
+  );
+
+  const handleMoveFromSheet = useCallback(
+    (immeuble: Immeuble) => {
+      setMovingLieu(immeuble);
+      setSelectedExistingLieu(null);
+    },
+    [setMovingLieu, setSelectedExistingLieu],
+  );
+
+  const handleCloseEditLieuPanel = useCallback(() => {
+    setEditingLieu(null);
+  }, [setEditingLieu]);
+
   return (
     <View style={styles.container}>
       <CarteTerrainMap
@@ -94,11 +147,7 @@ export default function CarteTerrainScreen({
           immeubles={immeubles}
           mode={mode}
           highlightedId={highlightedId}
-          onSelectLieu={(immeuble) => {
-            setSelectedExistingLieu(immeuble);
-            setMovingLieu(null);
-            setEditingLieu(null);
-          }}
+          onSelectLieu={handleSelectLieu}
         />
         <DraftPins
           mode={mode}
@@ -116,7 +165,7 @@ export default function CarteTerrainScreen({
         loadingLocation={loadingLocation}
         showTeamToggle={role === "manager"}
         showTeam={showTeam}
-        onToggleSatellite={() => setSatellite((s) => !s)}
+        onToggleSatellite={handleToggleSatellite}
         onToggleTeam={toggleShowTeam}
         onRecenter={centerOnCurrentLocation}
       />
@@ -126,13 +175,7 @@ export default function CarteTerrainScreen({
       <ModeSwitch
         insets={insets}
         mode={mode}
-        onSelectMode={(nextMode) => {
-          setMode(nextMode);
-          setSuggestions([]);
-          setSelectedExistingLieu(null);
-          setEditingLieu(null);
-          setMovingLieu(null);
-        }}
+        onSelectMode={handleSelectMode}
       />
 
       <BuildingSheet
@@ -140,19 +183,10 @@ export default function CarteTerrainScreen({
         immeuble={selectedExistingLieu}
         updatingLieu={updatingLieu}
         currentUserName={currentUserName}
-        onClose={() => setSelectedExistingLieu(null)}
-        onProspect={(immeuble) => {
-          if (navigatingRef.current) return;
-          navigatingRef.current = true;
-          // On NE vide PAS la sélection : la sheet se masque via le focus puis
-          // se ré-ouvre sur ce bâtiment au retour (état préservé).
-          router.push(`/lieu/${immeuble.id}`);
-        }}
+        onClose={handleCloseBuildingSheet}
+        onProspect={handleProspect}
         onEdit={openEditLieu}
-        onMove={(immeuble) => {
-          setMovingLieu(immeuble);
-          setSelectedExistingLieu(null);
-        }}
+        onMove={handleMoveFromSheet}
         onDelete={handleDeleteLieu}
       />
 
@@ -163,7 +197,7 @@ export default function CarteTerrainScreen({
           editingType={editingType}
           editingNbMaisons={editingNbMaisons}
           updatingLieu={updatingLieu}
-          onClose={() => setEditingLieu(null)}
+          onClose={handleCloseEditLieuPanel}
           onSelectType={setEditingType}
           onChangeNbMaisons={setEditingNbMaisons}
           onSave={handleSaveEditLieu}

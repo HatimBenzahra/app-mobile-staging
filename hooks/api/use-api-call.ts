@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   readPersistentCache,
   writePersistentCache,
@@ -34,6 +34,9 @@ export type UseApiCallOptions = {
 const DEFAULT_CACHE_TTL_MS = 30_000;
 const apiCache = new Map<string, ApiCacheEntry>();
 const cacheSubscribers = new Map<string, Set<CacheSubscriber>>();
+// Dédup des requêtes in-flight par cacheKey (request coalescing).
+// Ne concerne que les requêtes NON forcées avec une cacheKey.
+const pendingRequests = new Map<string, Promise<unknown>>();
 
 function subscribeCacheKey(cacheKey: string, subscriber: CacheSubscriber): () => void {
   const listeners = cacheSubscribers.get(cacheKey) ?? new Set<CacheSubscriber>();
@@ -166,7 +169,32 @@ export function useApiCall<T>(
     });
 
     try {
-      const result = await fn();
+      let result: T;
+      // Request coalescing : si une requête identique (même cacheKey) est déjà
+      // en cours et qu'on ne force pas le refresh, on réutilise sa promesse au
+      // lieu de rappeler fn(). forceRefresh bypass toujours la dédup.
+      if (cacheKey && !forceRefresh) {
+        const inFlight = pendingRequests.get(cacheKey) as
+          | Promise<T>
+          | undefined;
+        if (inFlight) {
+          result = await inFlight;
+        } else {
+          const promise = fn();
+          pendingRequests.set(cacheKey, promise as Promise<unknown>);
+          try {
+            result = await promise;
+          } finally {
+            // Nettoyage systématique (succès ET erreur) uniquement si c'est
+            // toujours notre promesse (évite d'effacer une entrée plus récente).
+            if (pendingRequests.get(cacheKey) === promise) {
+              pendingRequests.delete(cacheKey);
+            }
+          }
+        }
+      } else {
+        result = await fn();
+      }
       if (!mountedRef.current || requestId !== requestIdRef.current) {
         return;
       }
@@ -252,10 +280,15 @@ export function useApiCall<T>(
     });
   }, [cacheKey, run]);
 
-  return {
-    data: state.data,
-    loading: state.loading,
-    error: state.error,
-    refetch: () => run(true),
-  };
+  const refetch = useCallback(() => run(true), [run]);
+
+  return useMemo<UseApiState<T>>(
+    () => ({
+      data: state.data,
+      loading: state.loading,
+      error: state.error,
+      refetch,
+    }),
+    [state.data, state.loading, state.error, refetch],
+  );
 }

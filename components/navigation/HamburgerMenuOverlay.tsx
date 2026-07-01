@@ -6,8 +6,6 @@ import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Animated, Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-const MAX_MENU_ITEMS = 7;
-
 type MenuItemProps = {
   icon: keyof typeof Feather.glyphMap;
   label: string;
@@ -97,9 +95,7 @@ export default function HamburgerMenuOverlay({
   const insets = useSafeAreaInsets();
   const slideAnim = useRef(new Animated.Value(-300)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
-  const itemAnims = useRef(
-    Array.from({ length: MAX_MENU_ITEMS }, () => new Animated.Value(0)),
-  ).current;
+  const itemAnimsRef = useRef<Animated.Value[]>([]);
 
   const [userName, setUserName] = useState<string>("");
   const [userRole, setUserRole] = useState<string>("");
@@ -174,6 +170,14 @@ export default function HamburgerMenuOverlay({
     [currentIndex, isManager],
   );
 
+  if (itemAnimsRef.current.length !== menuItems.length) {
+    itemAnimsRef.current = menuItems.map(
+      (_item, itemIndex) => itemAnimsRef.current[itemIndex] ?? new Animated.Value(0),
+    );
+  }
+
+  const itemAnims = itemAnimsRef.current;
+
   useEffect(() => {
     if (isVisible) {
       itemAnims.forEach((a) => a.setValue(0));
@@ -218,7 +222,11 @@ export default function HamburgerMenuOverlay({
 
       itemAnims.forEach((a) => a.setValue(0));
     }
-  }, [isVisible, slideAnim, fadeAnim, itemAnims, menuItems.length]);
+    // slideAnim/fadeAnim are stable refs; itemAnims is a stable ref-backed
+    // array that only reallocates when menuItems.length changes, in which
+    // case this effect should still react solely to visibility toggles.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isVisible]);
 
   const handleNavigate = useCallback(
     (index: number) => {

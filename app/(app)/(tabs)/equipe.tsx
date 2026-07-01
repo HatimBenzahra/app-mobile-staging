@@ -114,6 +114,70 @@ type TeamSnapshot = Commercial & {
   immeubleCount: number;
 };
 
+const computeTeamSnapshot = (
+  commercial: Commercial,
+  period: PeriodKey,
+  periodStartKey: string | null,
+  periodEndKey: string,
+  teamCommercialDetails: Record<number, Commercial> | null | undefined,
+): TeamSnapshot => {
+  const detailedCommercial = teamCommercialDetails?.[commercial.id] ?? commercial;
+  const immeubles = detailedCommercial.immeubles || [];
+  const totals = { ...INITIAL_STATS };
+  const visitedImmeubles = new Set<number>();
+
+  for (const immeuble of immeubles) {
+    for (const porte of immeuble.portes || []) {
+      const statut = typeof porte.statut === "string" ? porte.statut : "";
+      if (!statut || statut === "NON_VISITE") continue;
+
+      const visitDay = porte.derniereVisite?.slice(0, 10);
+      if (period !== "all") {
+        if (!visitDay || !periodStartKey) continue;
+        if (visitDay < periodStartKey || visitDay > periodEndKey) continue;
+      }
+
+      visitedImmeubles.add(immeuble.id);
+      totals.nbPortesProspectes = (totals.nbPortesProspectes || 0) + 1;
+
+      if (statut === "CONTRAT_SIGNE") {
+        totals.contratsSignes += Math.max(1, porte.nbContrats || 1);
+      } else if (statut === "RENDEZ_VOUS_PRIS") {
+        totals.rendezVousPris += 1;
+      } else if (statut === "REFUS") {
+        totals.refus += 1;
+      } else if (statut === "ABSENT") {
+        totals.absents = (totals.absents || 0) + 1;
+      } else if (statut === "ARGUMENTE") {
+        totals.argumentes = (totals.argumentes || 0) + 1;
+      }
+    }
+  }
+
+  if ((totals.nbPortesProspectes || 0) === 0) {
+    const fallbackStats = filterStatsByPeriod(commercial.statistics || [], period);
+    const fallbackTotals = sumStats(fallbackStats);
+    Object.assign(totals, fallbackTotals);
+  }
+
+  totals.nbImmeublesProspectes = visitedImmeubles.size;
+  totals.immeublesVisites = visitedImmeubles.size;
+  const { rank, points } = calculateRank(
+    totals.contratsSignes,
+    totals.rendezVousPris,
+    totals.immeublesVisites,
+  );
+  const zones = detailedCommercial.zones || [];
+  return {
+    ...detailedCommercial,
+    stats: totals,
+    rank,
+    points,
+    zoneCount: zones.length,
+    immeubleCount: immeubles.length,
+  };
+};
+
 type FeatherIconName = ComponentProps<typeof Feather>["name"];
 
 const getPositionAccent = (
@@ -552,63 +616,15 @@ export default function EquipeScreen() {
   );
 
   const teamSnapshots = useMemo<TeamSnapshot[]>(() => {
-    return team.map((commercial) => {
-      const detailedCommercial = teamCommercialDetails?.[commercial.id] ?? commercial;
-      const immeubles = detailedCommercial.immeubles || [];
-      const totals = { ...INITIAL_STATS };
-      const visitedImmeubles = new Set<number>();
-
-      for (const immeuble of immeubles) {
-        for (const porte of immeuble.portes || []) {
-          const statut = typeof porte.statut === "string" ? porte.statut : "";
-          if (!statut || statut === "NON_VISITE") continue;
-
-          const visitDay = porte.derniereVisite?.slice(0, 10);
-          if (period !== "all") {
-            if (!visitDay || !periodStartKey) continue;
-            if (visitDay < periodStartKey || visitDay > periodEndKey) continue;
-          }
-
-          visitedImmeubles.add(immeuble.id);
-          totals.nbPortesProspectes = (totals.nbPortesProspectes || 0) + 1;
-
-          if (statut === "CONTRAT_SIGNE") {
-            totals.contratsSignes += Math.max(1, porte.nbContrats || 1);
-          } else if (statut === "RENDEZ_VOUS_PRIS") {
-            totals.rendezVousPris += 1;
-          } else if (statut === "REFUS") {
-            totals.refus += 1;
-          } else if (statut === "ABSENT") {
-            totals.absents = (totals.absents || 0) + 1;
-          } else if (statut === "ARGUMENTE") {
-            totals.argumentes = (totals.argumentes || 0) + 1;
-          }
-        }
-      }
-
-      if ((totals.nbPortesProspectes || 0) === 0) {
-        const fallbackStats = filterStatsByPeriod(commercial.statistics || [], period);
-        const fallbackTotals = sumStats(fallbackStats);
-        Object.assign(totals, fallbackTotals);
-      }
-
-      totals.nbImmeublesProspectes = visitedImmeubles.size;
-      totals.immeublesVisites = visitedImmeubles.size;
-      const { rank, points } = calculateRank(
-        totals.contratsSignes,
-        totals.rendezVousPris,
-        totals.immeublesVisites,
-      );
-      const zones = detailedCommercial.zones || [];
-      return {
-        ...detailedCommercial,
-        stats: totals,
-        rank,
-        points,
-        zoneCount: zones.length,
-        immeubleCount: immeubles.length,
-      };
-    });
+    return team.map((commercial) =>
+      computeTeamSnapshot(
+        commercial,
+        period,
+        periodStartKey,
+        periodEndKey,
+        teamCommercialDetails,
+      ),
+    );
   }, [period, periodEndKey, periodStartKey, team, teamCommercialDetails]);
 
   const orderedTeamSnapshots = useMemo(

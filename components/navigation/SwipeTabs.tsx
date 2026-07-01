@@ -1,4 +1,4 @@
-import { type ReactNode, useCallback, useEffect, useMemo, useState } from "react";
+import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { StyleSheet, View } from "react-native";
 import { TabView } from "react-native-tab-view";
 import AgendaScreen from "@/app/(app)/(tabs)/agenda";
@@ -47,6 +47,8 @@ export default function SwipeTabs({
   const [isManager, setIsManager] = useState(false);
   const tabRoutes = useMemo(() => buildRoutes(isManager), [isManager]);
   const [swipeEnabled, setSwipeEnabled] = useState(true);
+  const activeKeyRef = useRef<string | undefined>(tabRoutes[index]?.key);
+  activeKeyRef.current = tabRoutes[index]?.key;
 
   const handleNavigateToImmeuble = useCallback(
     (immeubleId: number, porteId?: number) => {
@@ -85,7 +87,7 @@ export default function SwipeTabs({
       if (route.key === "immeubles") {
         scene = (
           <ImmeublesScreen
-            isActive={tabRoutes[index]?.key === "immeubles"}
+            isActive={route.key === activeKeyRef.current}
             onSwipeLockChange={handleSwipeLockChange}
             onHamburgerVisibilityChange={onRailVisibilityChange}
             onHeaderVisibilityChange={onHeaderVisibilityChange}
@@ -105,7 +107,9 @@ export default function SwipeTabs({
 
       return <View style={{ flex: 1, paddingTop: headerHeight }}>{scene}</View>;
     },
-    [handleNavigateToImmeuble, handleSwipeLockChange, headerHeight, index, onHeaderVisibilityChange, onRailVisibilityChange, tabRoutes],
+    // activeKeyRef is read at call time (always current), so `index` and
+    // `tabRoutes` don't need to be dependencies here.
+    [handleNavigateToImmeuble, handleSwipeLockChange, headerHeight, onHeaderVisibilityChange, onRailVisibilityChange],
   );
 
   return (

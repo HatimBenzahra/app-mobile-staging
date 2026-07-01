@@ -460,11 +460,19 @@ function ImmeubleDetailsView({
 
   const updateLocalPorte = useCallback(
     (porteId: number, changes: Partial<Porte>) => {
-      setPortesState((prev) =>
-        prev.map((porte) =>
-          porte.id === porteId ? { ...porte, ...changes } : porte,
-        ),
-      );
+      setPortesState((prev) => {
+        const index = prev.findIndex((porte) => porte.id === porteId);
+        if (index === -1) return prev;
+        const target = prev[index];
+        // Ne recrée pas l'état si aucune valeur ne change réellement.
+        const hasChange = (Object.keys(changes) as (keyof Porte)[]).some(
+          (key) => target[key] !== changes[key],
+        );
+        if (!hasChange) return prev;
+        const next = prev.slice();
+        next[index] = { ...target, ...changes };
+        return next;
+      });
       if (onDirtyChange) onDirtyChange(true);
     },
     [onDirtyChange],

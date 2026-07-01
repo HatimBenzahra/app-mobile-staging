@@ -9,7 +9,7 @@ import {
   Marker,
 } from "@maplibre/maplibre-react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -69,17 +69,56 @@ export default function QuartierDetailScreen() {
     [quartier],
   );
 
+  const progressByImmeubleId = useMemo(() => {
+    const map = new Map<number, ReturnType<typeof getImmeubleProgress>>();
+    for (const imm of immeubles) {
+      map.set(imm.id, getImmeubleProgress(imm));
+    }
+    return map;
+  }, [immeubles]);
+
   const stats = useMemo(() => {
     let totalPortes = 0;
     let prospectees = 0;
     for (const imm of immeubles) {
-      const p = getImmeubleProgress(imm);
+      const p = progressByImmeubleId.get(imm.id) ?? getImmeubleProgress(imm);
       totalPortes += p.total;
       prospectees += p.prospectees;
     }
     const percent = totalPortes === 0 ? 0 : Math.round((prospectees / totalPortes) * 100);
     return { totalPortes, prospectees, percent };
-  }, [immeubles]);
+  }, [immeubles, progressByImmeubleId]);
+
+  const renderLieuItem = useCallback(
+    ({ item: imm }: { item: Immeuble }) => {
+      const { percent, color } = progressByImmeubleId.get(imm.id) ?? getImmeubleProgress(imm);
+      return (
+        <Pressable
+          style={styles.lieuRow}
+          onPress={() => router.push(`/lieu/${imm.id}`)}
+        >
+          <View style={[styles.lieuIcon, { backgroundColor: `${getTypeColor(imm)}1A` }]}>
+            <Feather
+              name={imm.typeHabitat === "MAISON" ? "home" : imm.typeHabitat === "PAVILLON" ? "grid" : "layers"}
+              size={16}
+              color={getTypeColor(imm)}
+            />
+          </View>
+          <View style={styles.lieuInfo}>
+            <Text style={styles.lieuAdresse} numberOfLines={1}>
+              {imm.adresse}
+            </Text>
+            <Text style={styles.lieuType}>{getTypeLabel(imm)}</Text>
+          </View>
+          <View style={styles.lieuProgress}>
+            <Text style={[styles.lieuPercent, { color }]}>{percent}%</Text>
+            <Feather name="chevron-right" size={16} color={colors.textSubtle} />
+          </View>
+        </Pressable>
+      );
+    },
+    [progressByImmeubleId, router],
+  );
 
   if (loading || quartiers == null) {
     return (
@@ -151,7 +190,7 @@ export default function QuartierDetailScreen() {
           {immeubles
             .filter((imm) => imm.latitude != null && imm.longitude != null)
             .map((imm) => {
-              const { percent } = getImmeubleProgress(imm);
+              const { percent } = progressByImmeubleId.get(imm.id) ?? getImmeubleProgress(imm);
               const progressColor =
                 percent < 35
                   ? colors.danger
@@ -199,33 +238,7 @@ export default function QuartierDetailScreen() {
         data={immeubles}
         keyExtractor={(imm) => String(imm.id)}
         contentContainerStyle={styles.list}
-        renderItem={({ item: imm }) => {
-          const { percent, color } = getImmeubleProgress(imm);
-          return (
-            <Pressable
-              style={styles.lieuRow}
-              onPress={() => router.push(`/lieu/${imm.id}`)}
-            >
-              <View style={[styles.lieuIcon, { backgroundColor: `${getTypeColor(imm)}1A` }]}>
-                <Feather
-                  name={imm.typeHabitat === "MAISON" ? "home" : imm.typeHabitat === "PAVILLON" ? "grid" : "layers"}
-                  size={16}
-                  color={getTypeColor(imm)}
-                />
-              </View>
-              <View style={styles.lieuInfo}>
-                <Text style={styles.lieuAdresse} numberOfLines={1}>
-                  {imm.adresse}
-                </Text>
-                <Text style={styles.lieuType}>{getTypeLabel(imm)}</Text>
-              </View>
-              <View style={styles.lieuProgress}>
-                <Text style={[styles.lieuPercent, { color }]}>{percent}%</Text>
-                <Feather name="chevron-right" size={16} color={colors.textSubtle} />
-              </View>
-            </Pressable>
-          );
-        }}
+        renderItem={renderLieuItem}
         ListEmptyComponent={
           <View style={styles.emptyBox}>
             <Feather name="map-pin" size={28} color={colors.textSubtle} />

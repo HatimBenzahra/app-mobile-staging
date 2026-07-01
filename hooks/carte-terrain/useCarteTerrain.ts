@@ -304,65 +304,95 @@ export function useCarteTerrain({ embedded = false }: UseCarteTerrainParams = {}
     };
   }, [mapCenter]);
 
-  const updateActivePin = (patch: Partial<DraftPin>) => {
-    if (mode === "BATIMENT") {
-      setBuildingPin((current) => (current ? { ...current, ...patch } : current));
-      return;
-    }
-    setQuartierPins((current) =>
-      current.map((pin) => (pin.id === activeQuartierPinId ? { ...pin, ...patch } : pin)),
-    );
-  };
-
-  const handleMapPress = (event: NativeSyntheticEvent<PressEvent>) => {
-    const [longitude, latitude] = event.nativeEvent.lngLat;
-    const point = { latitude, longitude };
-    if (movingLieu) {
-      setSelectedExistingLieu(null);
-      Alert.alert(
-        "Deplacer le lieu",
-        "Confirmer cette nouvelle position ?",
-        [
-          { text: "Annuler", style: "cancel" },
-          {
-            text: "Deplacer",
-            onPress: () => {
-              void handleMoveLieu(point);
-            },
-          },
-        ],
+  const updateActivePin = useCallback(
+    (patch: Partial<DraftPin>) => {
+      if (mode === "BATIMENT") {
+        setBuildingPin((current) => (current ? { ...current, ...patch } : current));
+        return;
+      }
+      setQuartierPins((current) =>
+        current.map((pin) => (pin.id === activeQuartierPinId ? { ...pin, ...patch } : pin)),
       );
-      return;
-    }
-    if (mode === "VISUALISATION") {
+    },
+    [mode, activeQuartierPinId],
+  );
+
+  const handleMoveLieu = useCallback(
+    async (point: TerrainPoint) => {
+      if (!movingLieu) return;
+      setUpdatingLieu(true);
+      try {
+        await api.immeubles.update({
+          id: movingLieu.id,
+          latitude: point.latitude,
+          longitude: point.longitude,
+        });
+        setMovingLieu(null);
+        await refetch();
+      } catch {
+        Alert.alert("Deplacement impossible", "La nouvelle position n'a pas pu etre enregistree.");
+      } finally {
+        setUpdatingLieu(false);
+      }
+    },
+    [movingLieu, refetch],
+  );
+
+  const handleMapPress = useCallback(
+    (event: NativeSyntheticEvent<PressEvent>) => {
+      const [longitude, latitude] = event.nativeEvent.lngLat;
+      const point = { latitude, longitude };
+      if (movingLieu) {
+        setSelectedExistingLieu(null);
+        Alert.alert(
+          "Deplacer le lieu",
+          "Confirmer cette nouvelle position ?",
+          [
+            { text: "Annuler", style: "cancel" },
+            {
+              text: "Deplacer",
+              onPress: () => {
+                void handleMoveLieu(point);
+              },
+            },
+          ],
+        );
+        return;
+      }
+      if (mode === "VISUALISATION") {
+        setSelectedExistingLieu(null);
+        setEditingLieu(null);
+        return;
+      }
+      if (mode === "BATIMENT") {
+        setSelectedExistingLieu(null);
+        setEditingLieu(null);
+        setBuildingActivePin(point);
+        return;
+      }
       setSelectedExistingLieu(null);
       setEditingLieu(null);
-      return;
-    }
-    if (mode === "BATIMENT") {
-      setSelectedExistingLieu(null);
-      setEditingLieu(null);
-      setBuildingActivePin(point);
-      return;
-    }
-    setSelectedExistingLieu(null);
-    setEditingLieu(null);
-    addQuartierPin(point);
-  };
+      addQuartierPin(point);
+    },
+    [movingLieu, mode, handleMoveLieu, setBuildingActivePin, addQuartierPin],
+  );
 
-  const selectQuartierPin = (pin: DraftPin) => {
-    setActiveQuartierPinId(pin.id);
-    void fetchAddressSuggestions(pin);
-  };
+  const selectQuartierPin = useCallback(
+    (pin: DraftPin) => {
+      setActiveQuartierPinId(pin.id);
+      void fetchAddressSuggestions(pin);
+    },
+    [fetchAddressSuggestions],
+  );
 
-  const removeActiveQuartierPin = () => {
+  const removeActiveQuartierPin = useCallback(() => {
     if (!activeQuartierPinId) return;
     setQuartierPins((current) => current.filter((pin) => pin.id !== activeQuartierPinId));
     setActiveQuartierPinId(null);
     setSuggestions([]);
-  };
+  }, [activeQuartierPinId]);
 
-  const handleCreateBatiment = async () => {
+  const handleCreateBatiment = useCallback(async () => {
     if (!buildingPin || !buildingPin.selectedAddress) {
       Alert.alert("Adresse requise", "Pose un pin puis choisis une adresse avant de creer.");
       return;
@@ -388,9 +418,9 @@ export function useCarteTerrain({ embedded = false }: UseCarteTerrainParams = {}
     } finally {
       setCreatingLieu(false);
     }
-  };
+  }, [buildingPin, role, userId, createMaison, refetch]);
 
-  const handleCreateQuartier = async () => {
+  const handleCreateQuartier = useCallback(async () => {
     if (quartierPins.length === 0) {
       Alert.alert("Quartier vide", "Pose au moins un pin pour creer un quartier.");
       return;
@@ -434,34 +464,16 @@ export function useCarteTerrain({ embedded = false }: UseCarteTerrainParams = {}
     } finally {
       setCreatingLieu(false);
     }
-  };
+  }, [quartierPins, role, userId, refetch, embedded]);
 
-  const handleMoveLieu = async (point: TerrainPoint) => {
-    if (!movingLieu) return;
-    setUpdatingLieu(true);
-    try {
-      await api.immeubles.update({
-        id: movingLieu.id,
-        latitude: point.latitude,
-        longitude: point.longitude,
-      });
-      setMovingLieu(null);
-      await refetch();
-    } catch {
-      Alert.alert("Deplacement impossible", "La nouvelle position n'a pas pu etre enregistree.");
-    } finally {
-      setUpdatingLieu(false);
-    }
-  };
-
-  const openEditLieu = (immeuble: Immeuble) => {
+  const openEditLieu = useCallback((immeuble: Immeuble) => {
     setSelectedExistingLieu(null);
     setEditingLieu(immeuble);
     setEditingType(immeuble.typeHabitat ?? "IMMEUBLE");
     setEditingNbMaisons(immeuble.nbMaisonsPrevu ?? immeuble.nbPortesParEtage ?? 1);
-  };
+  }, []);
 
-  const handleSaveEditLieu = async () => {
+  const handleSaveEditLieu = useCallback(async () => {
     if (!editingLieu) return;
     setUpdatingLieu(true);
     try {
@@ -479,36 +491,39 @@ export function useCarteTerrain({ embedded = false }: UseCarteTerrainParams = {}
     } finally {
       setUpdatingLieu(false);
     }
-  };
+  }, [editingLieu, editingType, editingNbMaisons, refetch]);
 
-  const handleDeleteLieu = (immeuble: Immeuble) => {
-    Alert.alert(
-      "Supprimer ce lieu ?",
-      "Possible uniquement si aucune porte n'a encore ete prospectee.",
-      [
-        { text: "Annuler", style: "cancel" },
-        {
-          text: "Supprimer",
-          style: "destructive",
-          onPress: async () => {
-            setUpdatingLieu(true);
-            try {
-              await api.immeubles.removeTerrainLieu(immeuble.id);
-              setSelectedExistingLieu(null);
-              await refetch();
-            } catch {
-              Alert.alert(
-                "Suppression impossible",
-                "Ce lieu contient peut-etre deja une prospection ou n'est pas accessible.",
-              );
-            } finally {
-              setUpdatingLieu(false);
-            }
+  const handleDeleteLieu = useCallback(
+    (immeuble: Immeuble) => {
+      Alert.alert(
+        "Supprimer ce lieu ?",
+        "Possible uniquement si aucune porte n'a encore ete prospectee.",
+        [
+          { text: "Annuler", style: "cancel" },
+          {
+            text: "Supprimer",
+            style: "destructive",
+            onPress: async () => {
+              setUpdatingLieu(true);
+              try {
+                await api.immeubles.removeTerrainLieu(immeuble.id);
+                setSelectedExistingLieu(null);
+                await refetch();
+              } catch {
+                Alert.alert(
+                  "Suppression impossible",
+                  "Ce lieu contient peut-etre deja une prospection ou n'est pas accessible.",
+                );
+              } finally {
+                setUpdatingLieu(false);
+              }
+            },
           },
-        },
-      ],
-    );
-  };
+        ],
+      );
+    },
+    [refetch],
+  );
 
   const creating = creatingMaison || creatingLieu;
   const readyToCreateBatiment = !!buildingPin?.selectedAddress && !creating;

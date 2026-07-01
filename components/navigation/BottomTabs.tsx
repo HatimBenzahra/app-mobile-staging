@@ -1,6 +1,6 @@
 ﻿import { Feather } from "@expo/vector-icons";
 import { Animated, Pressable, StyleSheet, Text, View } from "react-native";
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 type TabRoute = {
@@ -40,24 +40,34 @@ export default function BottomTabs({ routes, index, onTabPress }: BottomTabsProp
     Animated.parallel(animations).start();
   }, [index, tabAnims]);
 
+  const tabInterpolations = useMemo(
+    () =>
+      tabAnims.map((progress) => ({
+        scale: progress.interpolate({
+          inputRange: [0, 1],
+          outputRange: [0.96, 1],
+        }),
+        translateY: progress.interpolate({
+          inputRange: [0, 1],
+          outputRange: [2, 0],
+        }),
+        opacity: progress.interpolate({
+          inputRange: [0, 1],
+          outputRange: [0.7, 1],
+        }),
+      })),
+    // tabAnims is a stable ref-backed array that only reallocates when
+    // routes.length changes, so recompute interpolations solely on that.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [routes.length],
+  );
+
   return (
     <View style={[styles.container, { paddingBottom: 10 + insets.bottom }]}>
       {routes.map((route, routeIndex) => {
         const isActive = index === routeIndex;
         const color = isActive ? "#005BFF" : "#94A3B8";
-        const progress = tabAnims[routeIndex];
-        const scale = progress.interpolate({
-          inputRange: [0, 1],
-          outputRange: [0.96, 1],
-        });
-        const translateY = progress.interpolate({
-          inputRange: [0, 1],
-          outputRange: [2, 0],
-        });
-        const opacity = progress.interpolate({
-          inputRange: [0, 1],
-          outputRange: [0.7, 1],
-        });
+        const { scale, translateY, opacity } = tabInterpolations[routeIndex];
 
         return (
           <Pressable

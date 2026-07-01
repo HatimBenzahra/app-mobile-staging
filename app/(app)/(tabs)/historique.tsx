@@ -75,6 +75,8 @@ const EMPTY_HISTORY_META: HistoryMeta = {
   pipelines: [],
 };
 
+const EMPTY_HISTORY_LIST: StatusHistorique[] = [];
+
 function buildHistoryMeta(history: StatusHistorique[]): HistoryMeta {
   if (history.length === 0) return EMPTY_HISTORY_META;
 
@@ -285,12 +287,8 @@ const HistoriqueImmeubleCard = memo(
     );
   },
   (prev, next) =>
-    prev.immeuble.id === next.immeuble.id &&
-    prev.immeuble.adresse === next.immeuble.adresse &&
-    prev.immeuble.updatedAt === next.immeuble.updatedAt &&
+    prev.immeuble === next.immeuble &&
     prev.isExpanded === next.isExpanded &&
-    prev.expandAnim === next.expandAnim &&
-    prev.cardAnim === next.cardAnim &&
     prev.historyMeta === next.historyMeta &&
     prev.onToggle === next.onToggle,
 );
@@ -543,12 +541,26 @@ export default function HistoriqueScreen() {
     void Promise.all(pendingIds.map((immeubleId) => refreshHistoryForImmeuble(immeubleId)));
   }, [isFocused, refreshHistoryForImmeuble]);
 
+  const historyMetaCacheRef = useRef<Map<number, { history: StatusHistorique[]; meta: HistoryMeta }>>(
+    new Map(),
+  );
+
   const historyMetaByImmeuble = useMemo(() => {
     const entries: Record<number, HistoryMeta> = {};
+    const cache = historyMetaCacheRef.current;
 
     for (const imm of visibleImmeubles) {
-      const history = historyMap[imm.id] ?? [];
-      entries[imm.id] = buildHistoryMeta(history);
+      const history = historyMap[imm.id] ?? EMPTY_HISTORY_LIST;
+      const cached = cache.get(imm.id);
+
+      if (cached && cached.history === history) {
+        entries[imm.id] = cached.meta;
+        continue;
+      }
+
+      const meta = buildHistoryMeta(history);
+      cache.set(imm.id, { history, meta });
+      entries[imm.id] = meta;
     }
 
     return entries;

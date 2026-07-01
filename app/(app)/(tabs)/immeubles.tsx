@@ -13,7 +13,7 @@ import type { HabitatIconName } from "@/components/immeubles/habitat-icon";
 import type { Immeuble, Quartier, TypeHabitat } from "@/types/api";
 import { Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { memo, useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import {
   Animated,
   FlatList,
@@ -125,6 +125,213 @@ function getLieuMeta(immeuble: Immeuble): {
   };
 }
 
+type QuartierProgress = {
+  total: number;
+  prospectees: number;
+  percent: number;
+  color: string;
+};
+
+type LieuProgress = {
+  total: number;
+  prospectees: number;
+  progressPercent: number;
+  progressColor: string;
+};
+
+type QuartierCardProps = {
+  quartier: Quartier;
+  qp: QuartierProgress;
+  isTablet: boolean;
+  onOpenQuartier: (quartierId: number) => void;
+};
+
+const QuartierCard = memo(function QuartierCard({
+  quartier,
+  qp,
+  isTablet,
+  onOpenQuartier,
+}: QuartierCardProps) {
+  const nbLieux = (quartier.immeubles ?? []).length;
+  return (
+    <View style={styles.cardWrap}>
+      <PressableCard
+        variant="outlined"
+        padding="md"
+        style={{ flex: 1 }}
+        onPress={() => onOpenQuartier(quartier.id)}
+      >
+        {/* Header: icône + chip type — identique aux cartes bâtiment */}
+        <View style={styles.cardHeader}>
+          <View style={[styles.cardIcon, { backgroundColor: "#7C3AED1A" }]}>
+            <HabitatIcon type="quartiers" size={18} color="#7C3AED" />
+          </View>
+          <Text style={[styles.cardChip, { color: "#7C3AED" }]}>
+            Quartier
+          </Text>
+        </View>
+        <View style={styles.cardContent}>
+          <Text
+            style={[
+              styles.cardTitle,
+              !isTablet && styles.cardTitleCompact,
+            ]}
+            numberOfLines={2}
+          >
+            {quartier.nom || `Quartier #${quartier.id}`}
+          </Text>
+          <View style={styles.cardMetaRow}>
+            <Feather name="map-pin" size={11} color={colors.textStrong} />
+            <Text style={styles.cardMeta}>
+              {nbLieux} lieu{nbLieux !== 1 ? "x" : ""}
+            </Text>
+            <Text style={styles.cardMeta}>•</Text>
+            <Text style={styles.cardMeta}>
+              {qp.prospectees}/{qp.total} visités
+            </Text>
+          </View>
+          <View style={styles.progressRow}>
+            <View style={styles.progressTrack}>
+              <View
+                style={[
+                  styles.progressFill,
+                  { width: `${qp.percent}%`, backgroundColor: qp.color },
+                ]}
+              />
+            </View>
+            <Text style={[styles.progressText, { color: qp.color }]}>
+              {qp.percent}%
+            </Text>
+          </View>
+        </View>
+      </PressableCard>
+    </View>
+  );
+});
+
+type LieuCardProps = {
+  immeuble: Immeuble;
+  progress: LieuProgress;
+  anim: Animated.Value;
+  isTablet: boolean;
+  onOpen: (immeubleId: number) => void;
+  onFocusMap: (immeuble: Immeuble) => void;
+};
+
+const LieuCard = memo(function LieuCard({
+  immeuble,
+  progress,
+  anim,
+  isTablet,
+  onOpen,
+  onFocusMap,
+}: LieuCardProps) {
+  const meta = getLieuMeta(immeuble);
+  return (
+    <Animated.View
+      style={[
+        styles.cardWrap,
+        {
+          opacity: anim,
+          transform: [
+            {
+              translateY: anim.interpolate({
+                inputRange: [0, 1],
+                outputRange: [16, 0],
+              }),
+            },
+            {
+              translateX: anim.interpolate({
+                inputRange: [0, 1],
+                outputRange: [12, 0],
+              }),
+            },
+            {
+              scale: anim.interpolate({
+                inputRange: [0, 1],
+                outputRange: [0.96, 1],
+              }),
+            },
+          ],
+        },
+      ]}
+    >
+      <PressableCard
+        variant="outlined"
+        padding="md"
+        style={{ flex: 1 }}
+        onPress={() => onOpen(immeuble.id)}
+      >
+        <View style={styles.cardHeader}>
+          <View style={[styles.cardIcon, { backgroundColor: `${meta.color}1A` }]}>
+            <HabitatIcon type={effectiveTypeHabitat(immeuble)} size={18} color={meta.color} />
+          </View>
+          <View style={styles.cardHeaderRight}>
+            <Text style={[styles.cardChip, { color: meta.color }]}>
+              {meta.label}
+            </Text>
+            {immeuble.latitude != null && immeuble.longitude != null ? (
+              <Pressable
+                style={styles.mapButton}
+                hitSlop={8}
+                accessibilityRole="button"
+                accessibilityLabel="Voir sur la carte"
+                onPress={(event) => {
+                  // Empêche l'ouverture du détail (tap principal de la carte).
+                  event.stopPropagation();
+                  onFocusMap(immeuble);
+                }}
+              >
+                <Feather name="map-pin" size={15} color={colors.primary} />
+              </Pressable>
+            ) : null}
+          </View>
+        </View>
+        <View style={styles.cardContent}>
+          <Text
+            style={[
+              styles.cardTitle,
+              !isTablet && styles.cardTitleCompact,
+            ]}
+            numberOfLines={2}
+          >
+            {immeuble.adresse}
+          </Text>
+          <View style={styles.cardMetaRow}>
+            <Feather name="grid" size={11} color={colors.textStrong} />
+            <Text style={styles.cardMeta}>{meta.detail}</Text>
+            <Text style={styles.cardMeta}>•</Text>
+            <Text style={styles.cardMeta}>
+              {progress.prospectees}/{progress.total} visités
+            </Text>
+          </View>
+          <View style={styles.progressRow}>
+            <View style={styles.progressTrack}>
+              <View
+                style={[
+                  styles.progressFill,
+                  {
+                    width: `${progress.progressPercent}%`,
+                    backgroundColor: progress.progressColor,
+                  },
+                ]}
+              />
+            </View>
+            <Text
+              style={[
+                styles.progressText,
+                { color: progress.progressColor },
+              ]}
+            >
+              {progress.progressPercent}%
+            </Text>
+          </View>
+        </View>
+      </PressableCard>
+    </Animated.View>
+  );
+});
+
 export default function ImmeublesScreen({
   isActive = true,
 }: ImmeublesScreenProps) {
@@ -138,6 +345,9 @@ export default function ImmeublesScreen({
   const [userId, setUserId] = useState<number | null>(null);
   const [role, setRole] = useState<string | null>(null);
   const [query, setQuery] = useState("");
+  // Le champ (TextInput/clear) reste piloté par `query` pour rester réactif ;
+  // seul le filtrage lourd est différé via `deferredQuery` (React 19).
+  const deferredQuery = useDeferredValue(query);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [showFilters, setShowFilters] = useState(true);
   const searchInputRef = useRef<TextInput | null>(null);
@@ -251,25 +461,55 @@ export default function ImmeublesScreen({
       typeFilter === "all"
         ? standalone
         : standalone.filter((imm) => imm.typeHabitat === typeFilter);
-    if (!query.trim()) return byType;
-    const lower = query.toLowerCase();
+    if (!deferredQuery.trim()) return byType;
+    const lower = deferredQuery.toLowerCase();
     return byType.filter((imm) => imm.adresse.toLowerCase().includes(lower));
-  }, [immeubles, query, typeFilter, quartierMemberIds]);
+  }, [immeubles, deferredQuery, typeFilter, quartierMemberIds]);
 
   const filteredQuartiers = useMemo((): Quartier[] => {
     if (typeFilter !== "quartiers") return [];
     const all = quartiersData ?? [];
-    const matched = !query.trim()
+    const matched = !deferredQuery.trim()
       ? all
       : all.filter((q) =>
-          (q.nom ?? "").toLowerCase().includes(query.toLowerCase()),
+          (q.nom ?? "").toLowerCase().includes(deferredQuery.toLowerCase()),
         );
     return [...matched].sort((a, b) => recencyMs(b) - recencyMs(a));
-  }, [quartiersData, query, typeFilter]);
+  }, [quartiersData, deferredQuery, typeFilter]);
+
+  // Pré-calcul unique du progress par immeuble (à partir des immeubles filtrés
+  // par type/recherche). Sert à la fois au filtrage par progression
+  // (immeublesEnCours) et au rendu des cartes (renderLieuCard) — un seul appel
+  // à getImmeubleProgress par immeuble et par cycle.
+  const progressByImmeubleId = useMemo(() => {
+    const entries: Record<
+      number,
+      {
+        total: number;
+        prospectees: number;
+        percent: number;
+        progressPercent: number;
+        progressColor: string;
+      }
+    > = {};
+
+    for (const immeuble of filteredImmeubles) {
+      const { total, prospectees, percent, color } = getImmeubleProgress(immeuble);
+      entries[immeuble.id] = {
+        total,
+        prospectees,
+        percent,
+        progressPercent: percent,
+        progressColor: color,
+      };
+    }
+
+    return entries;
+  }, [filteredImmeubles]);
 
   const immeublesEnCours = useMemo(() => {
     const filtered = filteredImmeubles.filter((imm) => {
-      const { percent } = getImmeubleProgress(imm);
+      const percent = progressByImmeubleId[imm.id]?.percent ?? 0;
       if (progressFilter === "all") return true;
       if (progressFilter === "incomplete") return percent < 100;
       if (progressFilter === "low") return percent < 35;
@@ -279,7 +519,7 @@ export default function ImmeublesScreen({
       return true;
     });
     return [...filtered].sort((a, b) => recencyMs(b) - recencyMs(a));
-  }, [filteredImmeubles, progressFilter]);
+  }, [filteredImmeubles, progressByImmeubleId, progressFilter]);
 
   const getCardAnimation = (id: number) => {
     const existing = cardAnimationsRef.current.get(id);
@@ -340,10 +580,10 @@ export default function ImmeublesScreen({
   // immeublesEnCours so they stay progress-filtered and dedup-excluded.
   const mixedRows = useMemo((): LieuxItem[][] => {
     if (typeFilter !== "all") return [];
-    const matchedQuartiers = !query.trim()
+    const matchedQuartiers = !deferredQuery.trim()
       ? (quartiersData ?? [])
       : (quartiersData ?? []).filter((q) =>
-          (q.nom ?? "").toLowerCase().includes(query.toLowerCase()),
+          (q.nom ?? "").toLowerCase().includes(deferredQuery.toLowerCase()),
         );
     const items: LieuxItem[] = [
       ...matchedQuartiers.map((quartier): LieuxItem => ({ kind: "quartier", quartier })),
@@ -359,7 +599,7 @@ export default function ImmeublesScreen({
       rows.push(items.slice(i, i + columnsPerRow));
     }
     return rows;
-  }, [typeFilter, query, quartiersData, immeublesEnCours, columnsPerRow]);
+  }, [typeFilter, deferredQuery, quartiersData, immeublesEnCours, columnsPerRow]);
 
   const listData = useMemo<ListRow[]>(() => {
     if (typeFilter === "quartiers") {
@@ -400,30 +640,6 @@ export default function ImmeublesScreen({
     [],
   );
 
-  const progressByImmeubleId = useMemo(() => {
-    const entries: Record<
-      number,
-      {
-        total: number;
-        prospectees: number;
-        progressPercent: number;
-        progressColor: string;
-      }
-    > = {};
-
-    for (const immeuble of immeublesEnCours) {
-      const { total, prospectees, percent, color } = getImmeubleProgress(immeuble);
-      entries[immeuble.id] = {
-        total,
-        prospectees,
-        progressPercent: percent,
-        progressColor: color,
-      };
-    }
-
-    return entries;
-  }, [immeublesEnCours]);
-
   const quartierProgressById = useMemo(() => {
     const entries: Record<number, { total: number; prospectees: number; percent: number; color: string }> = {};
     for (const q of (quartiersData ?? [])) {
@@ -455,6 +671,13 @@ export default function ImmeublesScreen({
     [router],
   );
 
+  const handleOpenQuartier = useCallback(
+    (quartierId: number) => {
+      router.push(`/quartier/${quartierId}`);
+    },
+    [router],
+  );
+
   const renderQuartierCard = useCallback(
     (quartier: Quartier) => {
       const qp = quartierProgressById[quartier.id] ?? {
@@ -463,63 +686,17 @@ export default function ImmeublesScreen({
         percent: 0,
         color: progressColors.low,
       };
-      const nbLieux = (quartier.immeubles ?? []).length;
       return (
-        <View key={`q${quartier.id}`} style={styles.cardWrap}>
-          <PressableCard
-            variant="outlined"
-            padding="md"
-            style={{ flex: 1 }}
-            onPress={() => router.push(`/quartier/${quartier.id}`)}
-          >
-            {/* Header: icône + chip type — identique aux cartes bâtiment */}
-            <View style={styles.cardHeader}>
-              <View style={[styles.cardIcon, { backgroundColor: "#7C3AED1A" }]}>
-                <HabitatIcon type="quartiers" size={18} color="#7C3AED" />
-              </View>
-              <Text style={[styles.cardChip, { color: "#7C3AED" }]}>
-                Quartier
-              </Text>
-            </View>
-            <View style={styles.cardContent}>
-              <Text
-                style={[
-                  styles.cardTitle,
-                  !isTablet && styles.cardTitleCompact,
-                ]}
-                numberOfLines={2}
-              >
-                {quartier.nom || `Quartier #${quartier.id}`}
-              </Text>
-              <View style={styles.cardMetaRow}>
-                <Feather name="map-pin" size={11} color={colors.textStrong} />
-                <Text style={styles.cardMeta}>
-                  {nbLieux} lieu{nbLieux !== 1 ? "x" : ""}
-                </Text>
-                <Text style={styles.cardMeta}>•</Text>
-                <Text style={styles.cardMeta}>
-                  {qp.prospectees}/{qp.total} visités
-                </Text>
-              </View>
-              <View style={styles.progressRow}>
-                <View style={styles.progressTrack}>
-                  <View
-                    style={[
-                      styles.progressFill,
-                      { width: `${qp.percent}%`, backgroundColor: qp.color },
-                    ]}
-                  />
-                </View>
-                <Text style={[styles.progressText, { color: qp.color }]}>
-                  {qp.percent}%
-                </Text>
-              </View>
-            </View>
-          </PressableCard>
-        </View>
+        <QuartierCard
+          key={`q${quartier.id}`}
+          quartier={quartier}
+          qp={qp}
+          isTablet={isTablet}
+          onOpenQuartier={handleOpenQuartier}
+        />
       );
     },
-    [quartierProgressById, isTablet, router],
+    [quartierProgressById, isTablet, handleOpenQuartier],
   );
 
   const renderLieuCard = useCallback(
@@ -530,113 +707,21 @@ export default function ImmeublesScreen({
         progressPercent: 0,
         progressColor: progressColors.high,
       };
-      const meta = getLieuMeta(immeuble);
       const anim = getCardAnimation(immeuble.id);
       return (
-        <Animated.View
+        <LieuCard
           key={`l${immeuble.id}`}
-          style={[
-            styles.cardWrap,
-            {
-              opacity: anim,
-              transform: [
-                {
-                  translateY: anim.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [16, 0],
-                  }),
-                },
-                {
-                  translateX: anim.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [12, 0],
-                  }),
-                },
-                {
-                  scale: anim.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [0.96, 1],
-                  }),
-                },
-              ],
-            },
-          ]}
-        >
-          <PressableCard
-            variant="outlined"
-            padding="md"
-            style={{ flex: 1 }}
-            onPress={() => handleOpenImmeuble(immeuble.id)}
-          >
-            <View style={styles.cardHeader}>
-              <View style={[styles.cardIcon, { backgroundColor: `${meta.color}1A` }]}>
-                <HabitatIcon type={effectiveTypeHabitat(immeuble)} size={18} color={meta.color} />
-              </View>
-              <View style={styles.cardHeaderRight}>
-                <Text style={[styles.cardChip, { color: meta.color }]}>
-                  {meta.label}
-                </Text>
-                {immeuble.latitude != null && immeuble.longitude != null ? (
-                  <Pressable
-                    style={styles.mapButton}
-                    hitSlop={8}
-                    accessibilityRole="button"
-                    accessibilityLabel="Voir sur la carte"
-                    onPress={(event) => {
-                      // Empêche l'ouverture du détail (tap principal de la carte).
-                      event.stopPropagation();
-                      focusOnMap(immeuble);
-                    }}
-                  >
-                    <Feather name="map-pin" size={15} color={colors.primary} />
-                  </Pressable>
-                ) : null}
-              </View>
-            </View>
-            <View style={styles.cardContent}>
-              <Text
-                style={[
-                  styles.cardTitle,
-                  !isTablet && styles.cardTitleCompact,
-                ]}
-                numberOfLines={2}
-              >
-                {immeuble.adresse}
-              </Text>
-              <View style={styles.cardMetaRow}>
-                <Feather name="grid" size={11} color={colors.textStrong} />
-                <Text style={styles.cardMeta}>{meta.detail}</Text>
-                <Text style={styles.cardMeta}>•</Text>
-                <Text style={styles.cardMeta}>
-                  {progress.prospectees}/{progress.total} visités
-                </Text>
-              </View>
-              <View style={styles.progressRow}>
-                <View style={styles.progressTrack}>
-                  <View
-                    style={[
-                      styles.progressFill,
-                      {
-                        width: `${progress.progressPercent}%`,
-                        backgroundColor: progress.progressColor,
-                      },
-                    ]}
-                  />
-                </View>
-                <Text
-                  style={[
-                    styles.progressText,
-                    { color: progress.progressColor },
-                  ]}
-                >
-                  {progress.progressPercent}%
-                </Text>
-              </View>
-            </View>
-          </PressableCard>
-        </Animated.View>
+          immeuble={immeuble}
+          progress={progress}
+          anim={anim}
+          isTablet={isTablet}
+          onOpen={handleOpenImmeuble}
+          onFocusMap={focusOnMap}
+        />
       );
     },
+    // getCardAnimation lit un ref stable ; volontairement hors des deps.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [progressByImmeubleId, isTablet, handleOpenImmeuble, focusOnMap],
   );
 
@@ -659,6 +744,177 @@ export default function ImmeublesScreen({
       setRefreshing(false);
     }
   }, [refetch]);
+
+  const renderItem = useCallback(
+    ({ item: row }: { item: ListRow }) =>
+      !Array.isArray(row) ? (
+        <View style={styles.controlsSticky}>
+          {!isSearchFocused && filtersVisible && (
+            <View style={styles.filterStack}>
+              {/* Type chips — habitat chips use MCI icon rendered inline before the Chip label */}
+              <View style={styles.filterRow}>
+                {TYPE_CHIPS.map((chip) => (
+                  <Chip
+                    key={chip.key}
+                    label={chip.label}
+                    icon={chip.icon}
+                    selected={typeFilter === chip.key}
+                    accent={chip.color}
+                    onPress={() => setTypeFilter(chip.key)}
+                  />
+                ))}
+              </View>
+              {/* Progress chips — hidden when viewing quartiers */}
+              {typeFilter !== "quartiers" && (
+                <View style={styles.filterRow}>
+                  {FILTER_CHIPS.map((chip) => {
+                    const selected = progressFilter === chip.key;
+                    const anim = getFilterChipAnim(chip.key);
+                    return (
+                      <Animated.View
+                        key={chip.key}
+                        style={{
+                          opacity: anim,
+                          transform: [
+                            {
+                              translateY: anim.interpolate({
+                                inputRange: [0, 1],
+                                outputRange: [16, 0],
+                              }),
+                            },
+                            {
+                              translateX: anim.interpolate({
+                                inputRange: [0, 1],
+                                outputRange: [12, 0],
+                              }),
+                            },
+                            {
+                              scale: anim.interpolate({
+                                inputRange: [0, 1],
+                                outputRange: [0.9, 1],
+                              }),
+                            },
+                          ],
+                        }}
+                      >
+                        <Chip
+                          label={chip.label}
+                          icon={chip.icon}
+                          selected={selected}
+                          accent={chip.color}
+                          onPress={() => setProgressFilter(chip.key)}
+                        />
+                      </Animated.View>
+                    );
+                  })}
+                </View>
+              )}
+            </View>
+          )}
+          <View style={styles.searchWrapRow}>
+            <View
+              style={[
+                styles.searchBar,
+                styles.searchBarShadow,
+                isSearchFocused && styles.searchBarFocused,
+              ]}
+            >
+              <View style={styles.searchIconWrap}>
+                <Feather name="search" size={18} color={colors.primary} />
+              </View>
+              <TextInput
+                ref={searchInputRef}
+                placeholder="Rechercher un lieu, adresse, ville?"
+                placeholderTextColor={colors.textSubtle}
+                style={styles.searchInput}
+                value={query}
+                onChangeText={setQuery}
+                onFocus={() => setIsSearchFocused(true)}
+                onBlur={() => setIsSearchFocused(false)}
+              />
+              {query.length > 0 && (
+                <Pressable
+                  style={styles.clearButton}
+                  onPress={() => {
+                    setQuery("");
+                    searchInputRef.current?.focus();
+                  }}
+                >
+                  <Feather name="x" size={14} color={colors.textStrong} />
+                </Pressable>
+              )}
+              <Pressable
+                style={[
+                  styles.filterButton,
+                  showFilters && styles.filterButtonActive,
+                ]}
+                onPress={handleFilterToggle}
+              >
+                <Feather
+                  name="sliders"
+                  size={16}
+                  color={showFilters ? colors.textOnPrimary : colors.primary}
+                />
+              </Pressable>
+            </View>
+            {isSearchFocused && (
+              <Pressable
+                style={styles.cancelButton}
+                onPress={() => {
+                  setQuery("");
+                  setIsSearchFocused(false);
+                  searchInputRef.current?.blur();
+                }}
+              >
+                <Text style={styles.cancelText}>Annuler</Text>
+              </Pressable>
+            )}
+          </View>
+        </View>
+      ) : typeFilter === "quartiers" ? (
+        /* ── Quartier cards — même template que les cartes bâtiment ── */
+        <View style={styles.row}>
+          {(row as Quartier[]).map((quartier) => renderQuartierCard(quartier))}
+          {row.length < columnsPerRow && Array.from({ length: columnsPerRow - row.length }).map((_, i) => (
+            <View key={`placeholder-${i}`} style={styles.cardPlaceholder} />
+          ))}
+        </View>
+      ) : typeFilter === "all" ? (
+        /* ── "Tous" — quartiers + bâtiments mélangés, triés par récence ── */
+        <View style={styles.row}>
+          {(row as LieuxItem[]).map((item) =>
+            item.kind === "quartier"
+              ? renderQuartierCard(item.quartier)
+              : renderLieuCard(item.immeuble),
+          )}
+          {row.length < columnsPerRow && Array.from({ length: columnsPerRow - row.length }).map((_, i) => (
+            <View key={`placeholder-${i}`} style={styles.cardPlaceholder} />
+          ))}
+        </View>
+      ) : (
+        /* ── Lieu (bâtiment) cards ── */
+        <View style={styles.row}>
+          {(row as Immeuble[]).map((immeuble) => renderLieuCard(immeuble))}
+          {row.length < columnsPerRow && Array.from({ length: columnsPerRow - row.length }).map((_, i) => (
+            <View key={`placeholder-${i}`} style={styles.cardPlaceholder} />
+          ))}
+        </View>
+      ),
+    // getFilterChipAnim/handleFilterToggle/searchInputRef lisent des refs ou
+    // sont des fonctions locales stables ; setters d'état stables par React.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [
+      isSearchFocused,
+      filtersVisible,
+      typeFilter,
+      progressFilter,
+      query,
+      showFilters,
+      columnsPerRow,
+      renderQuartierCard,
+      renderLieuCard,
+    ],
+  );
 
   if (isInitialLoading) {
     return (
@@ -779,161 +1035,7 @@ export default function ImmeublesScreen({
               </Card>
             ) : null
           }
-          renderItem={({ item: row }) =>
-            !Array.isArray(row) ? (
-              <View style={styles.controlsSticky}>
-                {!isSearchFocused && filtersVisible && (
-                  <View style={styles.filterStack}>
-                    {/* Type chips — habitat chips use MCI icon rendered inline before the Chip label */}
-                    <View style={styles.filterRow}>
-                      {TYPE_CHIPS.map((chip) => (
-                        <Chip
-                          key={chip.key}
-                          label={chip.label}
-                          icon={chip.icon}
-                          selected={typeFilter === chip.key}
-                          accent={chip.color}
-                          onPress={() => setTypeFilter(chip.key)}
-                        />
-                      ))}
-                    </View>
-                    {/* Progress chips — hidden when viewing quartiers */}
-                    {typeFilter !== "quartiers" && (
-                      <View style={styles.filterRow}>
-                        {FILTER_CHIPS.map((chip) => {
-                          const selected = progressFilter === chip.key;
-                          const anim = getFilterChipAnim(chip.key);
-                          return (
-                            <Animated.View
-                              key={chip.key}
-                              style={{
-                                opacity: anim,
-                                transform: [
-                                  {
-                                    translateY: anim.interpolate({
-                                      inputRange: [0, 1],
-                                      outputRange: [16, 0],
-                                    }),
-                                  },
-                                  {
-                                    translateX: anim.interpolate({
-                                      inputRange: [0, 1],
-                                      outputRange: [12, 0],
-                                    }),
-                                  },
-                                  {
-                                    scale: anim.interpolate({
-                                      inputRange: [0, 1],
-                                      outputRange: [0.9, 1],
-                                    }),
-                                  },
-                                ],
-                              }}
-                            >
-                              <Chip
-                                label={chip.label}
-                                icon={chip.icon}
-                                selected={selected}
-                                accent={chip.color}
-                                onPress={() => setProgressFilter(chip.key)}
-                              />
-                            </Animated.View>
-                          );
-                        })}
-                      </View>
-                    )}
-                  </View>
-                )}
-                <View style={styles.searchWrapRow}>
-                  <View
-                    style={[
-                      styles.searchBar,
-                      styles.searchBarShadow,
-                      isSearchFocused && styles.searchBarFocused,
-                    ]}
-                  >
-                    <View style={styles.searchIconWrap}>
-                      <Feather name="search" size={18} color={colors.primary} />
-                    </View>
-                    <TextInput
-                      ref={searchInputRef}
-                      placeholder="Rechercher un lieu, adresse, ville?"
-                      placeholderTextColor={colors.textSubtle}
-                      style={styles.searchInput}
-                      value={query}
-                      onChangeText={setQuery}
-                      onFocus={() => setIsSearchFocused(true)}
-                      onBlur={() => setIsSearchFocused(false)}
-                    />
-                    {query.length > 0 && (
-                      <Pressable
-                        style={styles.clearButton}
-                        onPress={() => {
-                          setQuery("");
-                          searchInputRef.current?.focus();
-                        }}
-                      >
-                        <Feather name="x" size={14} color={colors.textStrong} />
-                      </Pressable>
-                    )}
-                    <Pressable
-                      style={[
-                        styles.filterButton,
-                        showFilters && styles.filterButtonActive,
-                      ]}
-                      onPress={handleFilterToggle}
-                    >
-                      <Feather
-                        name="sliders"
-                        size={16}
-                        color={showFilters ? colors.textOnPrimary : colors.primary}
-                      />
-                    </Pressable>
-                  </View>
-                  {isSearchFocused && (
-                    <Pressable
-                      style={styles.cancelButton}
-                      onPress={() => {
-                        setQuery("");
-                        setIsSearchFocused(false);
-                        searchInputRef.current?.blur();
-                      }}
-                    >
-                      <Text style={styles.cancelText}>Annuler</Text>
-                    </Pressable>
-                  )}
-                </View>
-              </View>
-            ) : typeFilter === "quartiers" ? (
-              /* ── Quartier cards — même template que les cartes bâtiment ── */
-              <View style={styles.row}>
-                {(row as Quartier[]).map((quartier) => renderQuartierCard(quartier))}
-                {row.length < columnsPerRow && Array.from({ length: columnsPerRow - row.length }).map((_, i) => (
-                  <View key={`placeholder-${i}`} style={styles.cardPlaceholder} />
-                ))}
-              </View>
-            ) : typeFilter === "all" ? (
-              /* ── "Tous" — quartiers + bâtiments mélangés, triés par récence ── */
-              <View style={styles.row}>
-                {(row as LieuxItem[]).map((item) =>
-                  item.kind === "quartier"
-                    ? renderQuartierCard(item.quartier)
-                    : renderLieuCard(item.immeuble),
-                )}
-                {row.length < columnsPerRow && Array.from({ length: columnsPerRow - row.length }).map((_, i) => (
-                  <View key={`placeholder-${i}`} style={styles.cardPlaceholder} />
-                ))}
-              </View>
-            ) : (
-              /* ── Lieu (bâtiment) cards ── */
-              <View style={styles.row}>
-                {(row as Immeuble[]).map((immeuble) => renderLieuCard(immeuble))}
-                {row.length < columnsPerRow && Array.from({ length: columnsPerRow - row.length }).map((_, i) => (
-                  <View key={`placeholder-${i}`} style={styles.cardPlaceholder} />
-                ))}
-              </View>
-            )
-          }
+          renderItem={renderItem}
         />
 
         <View style={[styles.fabStack, { bottom: insets.bottom + 72 }]}>

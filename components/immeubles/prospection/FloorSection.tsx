@@ -1,5 +1,5 @@
 import { Feather } from "@expo/vector-icons";
-import { memo } from "react";
+import { memo, useMemo } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { colors } from "@/constants/theme";
 
@@ -26,6 +26,19 @@ function FloorSectionImpl({
   isFocused = false,
   typeHabitat,
 }: FloorSectionProps) {
+  const tiles = useMemo(
+    () =>
+      portes.map((porte) => (
+        <PorteTile
+          key={porte.id}
+          porte={porte}
+          onPress={onPorteTap}
+          isTablet={isTablet}
+        />
+      )),
+    [portes, onPorteTap, isTablet],
+  );
+
   if (portes.length === 0) return null;
 
   const terms = getLieuTerms(typeHabitat);
@@ -39,14 +52,7 @@ function FloorSectionImpl({
     return (
       <View style={[styles.section, isTablet && styles.sectionTablet]}>
         <View style={[styles.grid, isTablet && styles.gridTablet]}>
-          {portes.map((porte) => (
-            <PorteTile
-              key={porte.id}
-              porte={porte}
-              onPress={onPorteTap}
-              isTablet={isTablet}
-            />
-          ))}
+          {tiles}
         </View>
       </View>
     );
@@ -114,14 +120,7 @@ function FloorSectionImpl({
       </View>
 
       <View style={[styles.grid, isTablet && styles.gridTablet]}>
-        {portes.map((porte) => (
-          <PorteTile
-            key={porte.id}
-            porte={porte}
-            onPress={onPorteTap}
-            isTablet={isTablet}
-          />
-        ))}
+        {tiles}
       </View>
     </View>
   );

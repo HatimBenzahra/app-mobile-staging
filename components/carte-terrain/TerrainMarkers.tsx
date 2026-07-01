@@ -3,7 +3,7 @@ import { colors } from "@/constants/theme";
 import type { TerrainMode } from "@/hooks/carte-terrain/types";
 import type { Immeuble, TypeHabitat } from "@/types/api";
 import { Marker } from "@maplibre/maplibre-react-native";
-import { useEffect } from "react";
+import { memo, useEffect, useMemo } from "react";
 import { StyleSheet, View } from "react-native";
 import Animated, {
   cancelAnimation,
@@ -41,7 +41,7 @@ type TerrainMarkersProps = {
  * N'anime — scale + halo qui pulse — que lorsque `highlighted` est vrai ; sinon
  * rendu strictement identique au badge d'origine.
  */
-function PulsingMarkerBadge({
+const PulsingMarkerBadge = memo(function PulsingMarkerBadge({
   fill,
   typeHabitat,
   highlighted,
@@ -97,17 +97,17 @@ function PulsingMarkerBadge({
       </Animated.View>
     </View>
   );
-}
+});
 
-export function TerrainMarkers({
+export const TerrainMarkers = memo(function TerrainMarkers({
   immeubles,
   mode,
   highlightedId,
   onSelectLieu,
 }: TerrainMarkersProps) {
-  return (
-    <>
-      {immeubles
+  const markers = useMemo(
+    () =>
+      immeubles
         .filter((immeuble) => immeuble.latitude != null && immeuble.longitude != null)
         .map((immeuble) => {
           const fill =
@@ -131,10 +131,12 @@ export function TerrainMarkers({
               />
             </Marker>
           );
-        })}
-    </>
+        }),
+    [immeubles, mode, highlightedId, onSelectLieu],
   );
-}
+
+  return <>{markers}</>;
+});
 
 const localStyles = StyleSheet.create({
   highlightWrap: {

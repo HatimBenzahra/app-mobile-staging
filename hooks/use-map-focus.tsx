@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useState } from "react";
+import { createContext, useCallback, useContext, useMemo, useState } from "react";
 
 export type MapFocusTarget = {
   id: number;
@@ -38,8 +38,13 @@ export function MapFocusProvider({ children }: { children: React.ReactNode }) {
     setFocusTarget(null);
   }, []);
 
+  const value = useMemo(
+    () => ({ focusTarget, focusOnMap, clearFocus }),
+    [focusTarget, focusOnMap, clearFocus],
+  );
+
   return (
-    <MapFocusContext.Provider value={{ focusTarget, focusOnMap, clearFocus }}>
+    <MapFocusContext.Provider value={value}>
       {children}
     </MapFocusContext.Provider>
   );

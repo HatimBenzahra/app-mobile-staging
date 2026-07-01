@@ -20,6 +20,11 @@ const queue = new Map<string, QueuedPorteUpdate>();
 const listeners = new Set<QueueListener>();
 let autoSyncEnabled = false;
 let flushing = false;
+// Souscription connectivité unique (module-level) pour éviter les doublons.
+let connectivityUnsubscribe: (() => void) | null = null;
+// Débounce du flush sur reconnexion pour absorber les changements rapides.
+const FLUSH_DEBOUNCE_MS = 500;
+let flushDebounceTimer: ReturnType<typeof setTimeout> | null = null;
 
 function getQueueCount(): number {
   return queue.size;
@@ -83,14 +88,28 @@ export async function flushOfflineQueue(): Promise<void> {
   }
 }
 
+function scheduleDebouncedFlush(): void {
+  if (flushDebounceTimer) {
+    clearTimeout(flushDebounceTimer);
+  }
+  flushDebounceTimer = setTimeout(() => {
+    flushDebounceTimer = null;
+    void flushOfflineQueue();
+  }, FLUSH_DEBOUNCE_MS);
+}
+
 export function enableOfflineQueueAutoSync(): void {
   if (autoSyncEnabled) return;
   autoSyncEnabled = true;
 
   ensureConnectivityMonitoring();
 
-  subscribeConnectivity((isOnline) => {
-    if (!isOnline) return;
-    void flushOfflineQueue();
-  });
+  // Souscription unique : on garde la fonction de désinscription au niveau
+  // module pour ne jamais empiler plusieurs abonnements connectivité.
+  if (!connectivityUnsubscribe) {
+    connectivityUnsubscribe = subscribeConnectivity((isOnline) => {
+      if (!isOnline) return;
+      scheduleDebouncedFlush();
+    });
+  }
 }

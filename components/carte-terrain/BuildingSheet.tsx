@@ -25,7 +25,7 @@ import {
 } from "@gorhom/bottom-sheet";
 import { router } from "expo-router";
 import { useIsFocused } from "@react-navigation/native";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Pressable,
@@ -182,6 +182,73 @@ function FilterChip({
     </Pressable>
   );
 }
+
+// --- Per-porte row — leading status icon chip + label + status tag + meta
+//     + trailing chevron + muted "—" time. No accent bar / ringed dot. ---
+// Extracted + memoized: BottomSheetSectionList items only need to re-render
+// when their own row data or the shared onPress identity changes.
+const PorteItem = memo(function PorteItem({
+  item,
+  onPress,
+}: {
+  item: PorteRow;
+  onPress: (porteId: number) => void;
+}) {
+  const status = STATUS_DISPLAY[item.statusKey] ?? DEFAULT_STATUS_OPTION;
+  const rdvHint = formatRdvHint(item.porte);
+  const repassages = item.porte.nbRepassages ?? 0;
+  const contrats = item.porte.statut === "CONTRAT_SIGNE" ? item.porte.nbContrats ?? 1 : 0;
+  return (
+    <Pressable
+      style={({ pressed }) => [styles.porteRow, pressed && styles.porteRowPressed]}
+      onPress={() => onPress(item.porte.id)}
+      accessibilityRole="button"
+      accessibilityLabel={`${item.label}, ${status.label}`}
+    >
+      <View
+        style={[
+          styles.porteIcon,
+          {
+            backgroundColor: `${status.accent}1A`,
+            borderColor: `${status.accent}33`,
+          },
+        ]}
+      >
+        <Feather name={status.icon} size={16} color={status.accent} />
+      </View>
+      <View style={styles.porteTextBlock}>
+        <Text style={styles.porteLabel} numberOfLines={1}>
+          {item.label}
+        </Text>
+        <View style={styles.porteMetaRow}>
+          <StatusBadge statusKey={item.statusKey} />
+          {contrats > 0 ? (
+            <View style={styles.metaItem}>
+              <Feather name="award" size={11} color={colors.textSubtle} />
+              <Text style={styles.metaText}>{contrats}</Text>
+            </View>
+          ) : null}
+          {rdvHint ? (
+            <View style={styles.metaItem}>
+              <Feather name="calendar" size={11} color={colors.textSubtle} />
+              <Text style={styles.metaText} numberOfLines={1}>
+                {rdvHint}
+              </Text>
+            </View>
+          ) : null}
+          {repassages > 0 ? (
+            <View style={styles.metaItem}>
+              <Feather name="repeat" size={11} color={colors.textSubtle} />
+              <Text style={styles.metaText}>{repassages}</Text>
+            </View>
+          ) : null}
+        </View>
+      </View>
+      <Text style={styles.porteTime}>—</Text>
+      <Feather name="chevron-right" size={18} color={colors.borderStrong} />
+    </Pressable>
+  );
+});
 
 export default function BuildingSheet({
   immeuble,
@@ -419,69 +486,8 @@ export default function BuildingSheet({
     />
   );
 
-  // --- Per-porte row — leading status icon chip + label + status tag + meta
-  //     + trailing chevron + muted "—" time. No accent bar / ringed dot. ---
   const renderPorteItem = useCallback(
-    ({ item }: { item: PorteRow }) => {
-      const status = STATUS_DISPLAY[item.statusKey] ?? DEFAULT_STATUS_OPTION;
-      const rdvHint = formatRdvHint(item.porte);
-      const repassages = item.porte.nbRepassages ?? 0;
-      const contrats =
-        item.porte.statut === "CONTRAT_SIGNE" ? item.porte.nbContrats ?? 1 : 0;
-      return (
-        <Pressable
-          style={({ pressed }) => [
-            styles.porteRow,
-            pressed && styles.porteRowPressed,
-          ]}
-          onPress={() => handleNavigate(item.porte.id)}
-          accessibilityRole="button"
-          accessibilityLabel={`${item.label}, ${status.label}`}
-        >
-          <View
-            style={[
-              styles.porteIcon,
-              {
-                backgroundColor: `${status.accent}1A`,
-                borderColor: `${status.accent}33`,
-              },
-            ]}
-          >
-            <Feather name={status.icon} size={16} color={status.accent} />
-          </View>
-          <View style={styles.porteTextBlock}>
-            <Text style={styles.porteLabel} numberOfLines={1}>
-              {item.label}
-            </Text>
-            <View style={styles.porteMetaRow}>
-              <StatusBadge statusKey={item.statusKey} />
-              {contrats > 0 ? (
-                <View style={styles.metaItem}>
-                  <Feather name="award" size={11} color={colors.textSubtle} />
-                  <Text style={styles.metaText}>{contrats}</Text>
-                </View>
-              ) : null}
-              {rdvHint ? (
-                <View style={styles.metaItem}>
-                  <Feather name="calendar" size={11} color={colors.textSubtle} />
-                  <Text style={styles.metaText} numberOfLines={1}>
-                    {rdvHint}
-                  </Text>
-                </View>
-              ) : null}
-              {repassages > 0 ? (
-                <View style={styles.metaItem}>
-                  <Feather name="repeat" size={11} color={colors.textSubtle} />
-                  <Text style={styles.metaText}>{repassages}</Text>
-                </View>
-              ) : null}
-            </View>
-          </View>
-          <Text style={styles.porteTime}>—</Text>
-          <Feather name="chevron-right" size={18} color={colors.borderStrong} />
-        </Pressable>
-      );
-    },
+    ({ item }: { item: PorteRow }) => <PorteItem item={item} onPress={handleNavigate} />,
     [handleNavigate],
   );
 
