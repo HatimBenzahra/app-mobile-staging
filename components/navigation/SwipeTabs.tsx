@@ -96,7 +96,7 @@ export default function SwipeTabs({
           />
         );
       } else if (route.key === "historique") {
-        scene = <HistoriqueScreen />;
+        scene = <HistoriqueScreen onNavigateToImmeuble={handleNavigateToImmeuble} />;
       } else if (route.key === "classement") {
         scene = <ClassementScreen />;
       } else if (route.key === "equipe") {
