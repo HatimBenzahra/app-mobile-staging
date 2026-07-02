@@ -196,6 +196,17 @@ export const progressColors = {
   complete: "#16A34A",
 } as const;
 
+// Type d'habitat — couleurs partagées entre les marqueurs de la carte, la liste
+// des lieux et les filtres, pour que le même type se lise pareil partout.
+// Immeuble = bleu de marque ; maison = vert ; pavillon/quartier hors palette
+// (assumés) mais centralisés ici plutôt qu'en littéraux dispersés.
+export const habitat = {
+  immeuble: colors.primary,
+  maison: colors.success,
+  pavillon: "#F97316",
+  quartier: "#7C3AED",
+} as const;
+
 // Ownership accents — carte terrain. Le marqueur, la légende et la sheet de
 // consultation partagent ces teintes pour qu'un lieu tapé "prolonge" la couleur
 // de son marqueur. Volontairement hors palette de marque (comme `podium`) : MINE
@@ -221,6 +232,7 @@ export const theme = {
   podium,
   progressColors,
   ownership,
+  habitat,
 } as const;
 
 export type Theme = typeof theme;
