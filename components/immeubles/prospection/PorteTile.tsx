@@ -1,10 +1,12 @@
 import { Feather } from "@expo/vector-icons";
-import { memo, useCallback } from "react";
+import { memo, useCallback, useEffect } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { colors } from "@/constants/theme";
 import Animated, {
+  cancelAnimation,
   useAnimatedStyle,
   useSharedValue,
+  withRepeat,
   withTiming,
 } from "react-native-reanimated";
 
@@ -19,9 +21,10 @@ type PorteTileProps = {
   porte: Porte;
   onPress: (porte: Porte) => void;
   isTablet?: boolean;
+  highlighted?: boolean;
 };
 
-function PorteTileImpl({ porte, onPress, isTablet = false }: PorteTileProps) {
+function PorteTileImpl({ porte, onPress, isTablet = false, highlighted = false }: PorteTileProps) {
   const statusKey = getDisplayStatusKey(porte);
   const status = statusKey
     ? (STATUS_DISPLAY[statusKey] ?? DEFAULT_STATUS_OPTION)
@@ -35,8 +38,28 @@ function PorteTileImpl({ porte, onPress, isTablet = false }: PorteTileProps) {
     scale.value = withTiming(1, { duration: 140 });
   }, [scale]);
 
+  // Pulse de mise en avant (redirection depuis l'agenda) : anneau bleu dont
+  // l'opacité respire + léger scale de la tuile, tant que `highlighted` est vrai.
+  const pulse = useSharedValue(0);
+  useEffect(() => {
+    if (highlighted) {
+      pulse.value = 0;
+      pulse.value = withRepeat(withTiming(1, { duration: 700 }), -1, true);
+    } else {
+      cancelAnimation(pulse);
+      pulse.value = 0;
+    }
+    return () => {
+      cancelAnimation(pulse);
+    };
+  }, [highlighted, pulse]);
+
   const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
+    transform: [{ scale: scale.value + pulse.value * 0.03 }],
+  }));
+
+  const ringStyle = useAnimatedStyle(() => ({
+    opacity: 0.35 + pulse.value * 0.65,
   }));
 
   const handlePress = useCallback(() => onPress(porte), [onPress, porte]);
@@ -94,6 +117,10 @@ function PorteTileImpl({ porte, onPress, isTablet = false }: PorteTileProps) {
         </View>
 
         <View style={[styles.accentBar, { backgroundColor: status.accent }]} />
+
+        {highlighted ? (
+          <Animated.View pointerEvents="none" style={[styles.highlightRing, ringStyle]} />
+        ) : null}
       </Pressable>
     </Animated.View>
   );
@@ -181,6 +208,16 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     height: 3,
+  },
+  highlightRing: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    borderRadius: 16,
+    borderWidth: 2,
+    borderColor: colors.primary,
   },
 });
 

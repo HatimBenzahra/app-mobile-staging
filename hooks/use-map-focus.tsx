@@ -4,15 +4,22 @@ export type MapFocusTarget = {
   id: number;
   longitude: number;
   latitude: number;
+  // Porte à mettre en avant dans le BuildingSheet (agenda : on s'intéresse à la
+  // porte du RDV/repassage). Absent depuis Lieux : on met alors juste le
+  // bâtiment en avant, sans ouvrir le sheet ni cibler de porte.
+  porteId?: number;
 };
 
 type MapFocusContextValue = {
   focusTarget: MapFocusTarget | null;
-  focusOnMap: (immeuble: {
-    id: number;
-    latitude?: number | null;
-    longitude?: number | null;
-  }) => void;
+  focusOnMap: (
+    immeuble: {
+      id: number;
+      latitude?: number | null;
+      longitude?: number | null;
+    },
+    options?: { porteId?: number },
+  ) => void;
   clearFocus: () => void;
 };
 
@@ -22,13 +29,17 @@ export function MapFocusProvider({ children }: { children: React.ReactNode }) {
   const [focusTarget, setFocusTarget] = useState<MapFocusTarget | null>(null);
 
   const focusOnMap = useCallback(
-    (immeuble: { id: number; latitude?: number | null; longitude?: number | null }) => {
+    (
+      immeuble: { id: number; latitude?: number | null; longitude?: number | null },
+      options?: { porteId?: number },
+    ) => {
       // On ignore les bâtiments sans coordonnées valides (rien à centrer).
       if (immeuble.latitude == null || immeuble.longitude == null) return;
       setFocusTarget({
         id: immeuble.id,
         latitude: immeuble.latitude,
         longitude: immeuble.longitude,
+        porteId: options?.porteId,
       });
     },
     [],

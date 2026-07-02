@@ -1,4 +1,5 @@
 import { useCommercialActivity } from "@/hooks/api/use-commercial-activity";
+import { useMapFocus } from "@/hooks/use-map-focus";
 import { useWorkspaceProfile } from "@/hooks/api/use-workspace-profile";
 import { authService } from "@/services/auth";
 import { dataSyncService } from "@/services/sync/data-sync.service";
@@ -79,40 +80,31 @@ const RdvCard = memo(function RdvCard({ item, onPress }: RdvCardProps) {
   return (
     <PressableCard
       variant="outlined"
-      padding="sm"
-      style={styles.cardRdvBorder}
+      padding="md"
+      style={styles.rowCard}
       onPress={handlePress}
     >
-      <View style={styles.cardInner}>
-        <View style={styles.cardLeft}>
-          <Chip
-            label={formatTime(item.rdvTime)}
-            icon="clock"
-            tone="primary"
-          />
+      <View style={styles.rowTop}>
+        <View style={[styles.rowIcon, { backgroundColor: colors.primarySoft }]}>
+          <Feather name="clock" size={18} color={colors.primary} />
         </View>
-        <View style={styles.cardCenter}>
-          <Text style={styles.cardTitle} numberOfLines={1}>
-            Porte {item.numero}
-            {item.nomPersonnalise ? ` · ${item.nomPersonnalise}` : ""}
-          </Text>
-          <Text style={styles.cardEtage}>{formatEtage(item.etage)}</Text>
-          <View style={styles.cardAddressRow}>
-            <Feather name="map-pin" size={11} color={colors.textSubtle} />
-            <Text style={styles.cardAddress} numberOfLines={1}>
-              {item.adresse}
-            </Text>
-          </View>
-          {item.commentaire ? (
-            <Text style={styles.cardComment} numberOfLines={2}>
-              {item.commentaire}
-            </Text>
-          ) : null}
-        </View>
-        <View style={styles.cardChevron}>
-          <Feather name="chevron-right" size={16} color={colors.borderStrong} />
-        </View>
+        <Text style={styles.rowTitle} numberOfLines={1}>
+          Porte {item.numero}
+          {item.nomPersonnalise ? ` · ${item.nomPersonnalise}` : ""}
+        </Text>
+        <Text style={styles.rowTime}>{formatTime(item.rdvTime)}</Text>
       </View>
+      <View style={styles.rowMeta}>
+        <Feather name="map-pin" size={11} color={colors.textSubtle} />
+        <Text style={styles.rowMetaText} numberOfLines={1}>
+          {formatEtage(item.etage)} · {item.adresse}
+        </Text>
+      </View>
+      {item.commentaire ? (
+        <Text style={styles.rowComment} numberOfLines={2}>
+          {item.commentaire}
+        </Text>
+      ) : null}
     </PressableCard>
   );
 });
@@ -129,60 +121,50 @@ const RepassageCard = memo(function RepassageCard({ item, onPress }: RepassageCa
 
   const isAbsent = item.statut === "ABSENT";
   const accentColor = isAbsent ? colors.danger : colors.warning;
+  const accentSoft = isAbsent ? colors.dangerSoft : colors.warningSoft;
+  const lastVisit = item.derniereVisite
+    ? new Date(item.derniereVisite).toLocaleDateString("fr-FR", {
+        day: "2-digit",
+        month: "short",
+      })
+    : null;
 
   return (
     <PressableCard
       variant="outlined"
-      padding="sm"
-      style={{ borderLeftWidth: 3, borderLeftColor: accentColor }}
+      padding="md"
+      style={styles.rowCard}
       onPress={handlePress}
     >
-      <View style={styles.cardInner}>
-        <View style={styles.cardLeft}>
-          <View style={[styles.repassageBadge, { backgroundColor: isAbsent ? colors.dangerSoft : colors.warningSoft }]}>
-            <Feather
-              name={isAbsent ? "user-x" : "refresh-cw"}
-              size={13}
-              color={accentColor}
-            />
-          </View>
+      <View style={styles.rowTop}>
+        <View style={[styles.rowIcon, { backgroundColor: accentSoft }]}>
+          <Feather
+            name={isAbsent ? "user-x" : "refresh-cw"}
+            size={16}
+            color={accentColor}
+          />
         </View>
-        <View style={styles.cardCenter}>
-          <Text style={styles.cardTitle} numberOfLines={1}>
-            Porte {item.numero}
-            {item.nomPersonnalise ? ` · ${item.nomPersonnalise}` : ""}
-          </Text>
-          <Text style={styles.cardEtage}>{formatEtage(item.etage)}</Text>
-          <View style={styles.cardAddressRow}>
-            <Feather name="map-pin" size={11} color={colors.textSubtle} />
-            <Text style={styles.cardAddress} numberOfLines={1}>
-              {item.adresse}
-            </Text>
-          </View>
-          <View style={styles.cardStatusRow}>
-            <Chip
-              label={STATUS_LABELS[item.statut] ?? item.statut}
-              tone={isAbsent ? "danger" : "warning"}
-            />
-            {item.derniereVisite ? (
-              <Text style={styles.cardLastVisit}>
-                {new Date(item.derniereVisite).toLocaleDateString("fr-FR", {
-                  day: "2-digit",
-                  month: "short",
-                })}
-              </Text>
-            ) : null}
-          </View>
-          {item.commentaire ? (
-            <Text style={styles.cardComment} numberOfLines={2}>
-              {item.commentaire}
-            </Text>
-          ) : null}
-        </View>
-        <View style={styles.cardChevron}>
-          <Feather name="chevron-right" size={16} color={colors.borderStrong} />
-        </View>
+        <Text style={styles.rowTitle} numberOfLines={1}>
+          Porte {item.numero}
+          {item.nomPersonnalise ? ` · ${item.nomPersonnalise}` : ""}
+        </Text>
+        <Chip
+          label={STATUS_LABELS[item.statut] ?? item.statut}
+          tone={isAbsent ? "danger" : "warning"}
+        />
       </View>
+      <View style={styles.rowMeta}>
+        <Feather name="map-pin" size={11} color={colors.textSubtle} />
+        <Text style={styles.rowMetaText} numberOfLines={1}>
+          {formatEtage(item.etage)} · {item.adresse}
+          {lastVisit ? ` · ${lastVisit}` : ""}
+        </Text>
+      </View>
+      {item.commentaire ? (
+        <Text style={styles.rowComment} numberOfLines={2}>
+          {item.commentaire}
+        </Text>
+      ) : null}
     </PressableCard>
   );
 });
@@ -192,6 +174,7 @@ export default function AgendaScreen({
 }: AgendaScreenProps = {}) {
   const insets = useSafeAreaInsets();
   const isFocused = useIsFocused();
+  const { focusOnMap } = useMapFocus();
   const [userId, setUserId] = useState<number | null>(null);
   const [role, setRole] = useState<string | null>(null);
   const [activeSection, setActiveSection] = useState<"rdv" | "repassage">("rdv");
@@ -282,6 +265,16 @@ export default function AgendaScreen({
     return map;
   }, [workspaceState.data]);
 
+  // Index bâtiment complet (coordonnées incluses) pour la redirection carte.
+  const immeubleMap = useMemo(() => {
+    const map = new Map<number, Immeuble>();
+    const immeubles: Immeuble[] = workspaceState.data?.immeubles ?? [];
+    for (const imm of immeubles) {
+      map.set(imm.id, imm);
+    }
+    return map;
+  }, [workspaceState.data]);
+
   const todayRdvs = useMemo<RdvItem[]>(() => {
     const portes = rdvToday.data ?? [];
     return portes
@@ -367,11 +360,19 @@ export default function AgendaScreen({
     return `${dayNames[d.getDay()]} ${d.getDate()} ${monthNames[d.getMonth()]}`;
   }, [todayKey]);
 
+  // Tap sur une card : on redirige vers la carte, on centre sur le bâtiment et on
+  // met en avant la porte du RDV/repassage. Sans coordonnées (bâtiment non
+  // géolocalisé), on retombe sur la fiche détail pour ne pas laisser un tap mort.
   const handleCardPress = useCallback(
     (immeubleId: number, porteId: number) => {
+      const immeuble = immeubleMap.get(immeubleId);
+      if (immeuble && immeuble.latitude != null && immeuble.longitude != null) {
+        focusOnMap(immeuble, { porteId });
+        return;
+      }
       onNavigateToImmeuble?.(immeubleId, porteId);
     },
-    [onNavigateToImmeuble],
+    [immeubleMap, focusOnMap, onNavigateToImmeuble],
   );
 
   if (isLoading) {
@@ -439,7 +440,7 @@ export default function AgendaScreen({
               <Feather name="calendar" size={22} color={colors.primary} />
             </View>
             <View style={styles.heroTextWrap}>
-              <Text style={styles.heroTitle}>Aujourd'hui</Text>
+              <Text style={styles.heroTitle}>Aujourd&apos;hui</Text>
               <Text style={styles.heroDate}>{todayLabel}</Text>
             </View>
           </View>
@@ -683,70 +684,54 @@ const styles = StyleSheet.create({
   cardList: {
     gap: 12,
   },
-  cardRdvBorder: {
-    borderLeftWidth: 3,
-    borderLeftColor: colors.primary,
+  // Ligne au standard design system (cf. LieuCard) : carte outlined neutre,
+  // icône teintée + méta indentée. Plus aucun contour coloré.
+  rowCard: {
+    gap: 8,
   },
-  cardInner: {
+  rowTop: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 14,
+    gap: 11,
   },
-  cardLeft: {
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  repassageBadge: {
+  rowIcon: {
     width: 36,
     height: 36,
-    borderRadius: 12,
+    borderRadius: 10,
     alignItems: "center",
     justifyContent: "center",
   },
-  cardCenter: {
+  rowTitle: {
     flex: 1,
-    gap: 4,
-  },
-  cardTitle: {
     fontSize: 14,
     fontWeight: "700",
     color: colors.text,
+    letterSpacing: -0.2,
   },
-  cardEtage: {
-    fontSize: 12,
-    color: colors.textMuted,
+  rowTime: {
+    fontSize: 15,
+    fontWeight: "800",
+    color: colors.primary,
+    fontVariant: ["tabular-nums"],
+    letterSpacing: -0.2,
   },
-  cardAddressRow: {
+  rowMeta: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
-    marginTop: 2,
+    gap: 5,
+    paddingLeft: 47,
   },
-  cardAddress: {
-    fontSize: 11,
-    color: colors.textSubtle,
+  rowMetaText: {
     flex: 1,
+    fontSize: 11.5,
+    color: colors.textMuted,
+    fontWeight: "600",
   },
-  cardStatusRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    marginTop: 4,
-  },
-  cardLastVisit: {
-    fontSize: 10,
-    color: colors.textSubtle,
-  },
-  cardComment: {
-    fontSize: 11,
+  rowComment: {
+    fontSize: 11.5,
     color: colors.textMuted,
     fontStyle: "italic",
-    marginTop: 4,
-  },
-  cardChevron: {
-    alignItems: "center",
-    justifyContent: "center",
-    width: 24,
+    paddingLeft: 47,
   },
   skeletonHeader: {
     width: "100%",

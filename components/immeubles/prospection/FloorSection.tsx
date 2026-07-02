@@ -15,6 +15,7 @@ type FloorSectionProps = {
   isTablet?: boolean;
   isFocused?: boolean;
   typeHabitat?: TypeHabitat;
+  highlightedPorteId?: number | null;
 };
 
 function FloorSectionImpl({
@@ -25,6 +26,7 @@ function FloorSectionImpl({
   isTablet = false,
   isFocused = false,
   typeHabitat,
+  highlightedPorteId,
 }: FloorSectionProps) {
   const tiles = useMemo(
     () =>
@@ -34,9 +36,10 @@ function FloorSectionImpl({
           porte={porte}
           onPress={onPorteTap}
           isTablet={isTablet}
+          highlighted={porte.id === highlightedPorteId}
         />
       )),
-    [portes, onPorteTap, isTablet],
+    [portes, onPorteTap, isTablet, highlightedPorteId],
   );
 
   if (portes.length === 0) return null;

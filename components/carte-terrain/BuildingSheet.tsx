@@ -17,7 +17,7 @@ import {
 import type { Immeuble, Porte } from "@/types/api";
 import { Feather } from "@expo/vector-icons";
 import { router } from "expo-router";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Pressable,
@@ -32,6 +32,8 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 type BuildingSheetProps = {
   immeuble: Immeuble | null;
   open: boolean;
+  // Porte à mettre en avant (anneau + pulse) après une redirection depuis l'agenda.
+  highlightedPorteId?: number | null;
   onClose: () => void;
   onProspect: (immeuble: Immeuble) => void;
   onEdit?: (immeuble: Immeuble) => void;
@@ -124,6 +126,7 @@ function FilterChip({
 export default function BuildingSheet({
   immeuble,
   open,
+  highlightedPorteId,
   onClose,
   onProspect,
   onEdit,
@@ -134,6 +137,8 @@ export default function BuildingSheet({
 }: BuildingSheetProps) {
   const insets = useSafeAreaInsets();
   const { height } = useWindowDimensions();
+  const scrollRef = useRef<ScrollView>(null);
+  const highlightedFloorRef = useRef<View>(null);
 
   const isMine = immeuble?.ownership === "MINE";
   const own = isMine ? ownership.mine : ownership.team;
@@ -209,6 +214,13 @@ export default function BuildingSheet({
     setSelectedFilter("all");
   }, [immeuble?.id]);
 
+  // Une porte mise en avant (redirection agenda) doit toujours être rendue : on
+  // force le filtre "Tous" pour qu'un filtre résiduel (même bâtiment rouvert avec
+  // un statut sélectionné) ne masque pas la porte ciblée → sinon ni pulse ni scroll.
+  useEffect(() => {
+    if (highlightedPorteId != null) setSelectedFilter("all");
+  }, [highlightedPorteId]);
+
   const filterOptions = useMemo<FilterOption[]>(() => {
     const tally = new Map<string, number>();
     portes.forEach((porte) => {
@@ -245,6 +257,36 @@ export default function BuildingSheet({
   }, [portes, selectedFilter]);
 
   const floorGroups = useMemo(() => groupByEtage(filteredPortes), [filteredPortes]);
+
+  // Étage contenant la porte mise en avant → on scrolle le sheet jusqu'à lui pour
+  // que le pulse soit visible sans que l'utilisateur ait à chercher.
+  const highlightedEtage = useMemo(() => {
+    if (highlightedPorteId == null) return null;
+    const porte = portes.find((p) => p.id === highlightedPorteId);
+    return porte ? porte.etage : null;
+  }, [highlightedPorteId, portes]);
+
+  useEffect(() => {
+    if (highlightedEtage == null) return;
+    // Laisse le sheet + la liste se monter avant de mesurer la position.
+    const timer = setTimeout(() => {
+      const node = highlightedFloorRef.current;
+      const inner = scrollRef.current?.getInnerViewNode?.();
+      if (!node || !inner) return;
+      try {
+        node.measureLayout(
+          inner,
+          (_x: number, y: number) => {
+            scrollRef.current?.scrollTo({ y: Math.max(y - 12, 0), animated: true });
+          },
+          () => {},
+        );
+      } catch {
+        // measureLayout best-effort : en cas d'échec, le pulse reste visible.
+      }
+    }, 320);
+    return () => clearTimeout(timer);
+  }, [highlightedEtage, floorGroups]);
 
   const totalsPerFloor = useMemo(() => {
     const m = new Map<number, number>();
@@ -331,6 +373,7 @@ export default function BuildingSheet({
       <View style={styles.chipRow}>{ownershipChip}</View>
 
       <ScrollView
+        ref={scrollRef}
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
@@ -420,16 +463,25 @@ export default function BuildingSheet({
         {portes.length > 0 ? (
           floorGroups.length > 0 ? (
             <View style={styles.floorList}>
-              {floorGroups.map((group) => (
-                <FloorSection
-                  key={group.etage}
-                  etage={group.etage}
-                  portes={group.portes}
-                  totalOnFloor={totalsPerFloor.get(group.etage)}
-                  onPorteTap={handlePorteTap}
-                  typeHabitat={habitatType}
-                />
-              ))}
+              {floorGroups.map((group) => {
+                const isHighlightedFloor = group.etage === highlightedEtage;
+                return (
+                  <View
+                    key={group.etage}
+                    ref={isHighlightedFloor ? highlightedFloorRef : undefined}
+                    collapsable={false}
+                  >
+                    <FloorSection
+                      etage={group.etage}
+                      portes={group.portes}
+                      totalOnFloor={totalsPerFloor.get(group.etage)}
+                      onPorteTap={handlePorteTap}
+                      typeHabitat={habitatType}
+                      highlightedPorteId={highlightedPorteId}
+                    />
+                  </View>
+                );
+              })}
             </View>
           ) : (
             <View style={styles.filterEmpty}>

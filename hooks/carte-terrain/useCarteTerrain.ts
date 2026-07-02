@@ -10,7 +10,7 @@ import * as Location from "expo-location";
 import { router } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { NativeSyntheticEvent } from "react-native";
-import { Alert } from "react-native";
+import { Alert, useWindowDimensions } from "react-native";
 import {
   downloadAreaPack,
   getAreaPackName,
@@ -38,6 +38,7 @@ type TeamCommercial = {
 
 export function useCarteTerrain({ embedded = false }: UseCarteTerrainParams = {}) {
   const cameraRef = useRef<CameraRef | null>(null);
+  const { height: screenHeight } = useWindowDimensions();
   const [userId, setUserId] = useState<number | null>(null);
   const [role, setRole] = useState<string | null>(null);
   const [mode, setMode] = useState<TerrainMode>("VISUALISATION");
@@ -60,15 +61,33 @@ export function useCarteTerrain({ embedded = false }: UseCarteTerrainParams = {}
   const [showTeam, setShowTeam] = useState(false);
   // Bâtiment mis en avant (badge agrandi + pulsation) après un "Voir sur la carte".
   const [highlightedId, setHighlightedId] = useState<number | null>(null);
+  // Porte mise en avant dans le BuildingSheet (anneau + pulse) après une
+  // redirection depuis l'agenda (on cible la porte du RDV/repassage).
+  const [highlightedPorteId, setHighlightedPorteId] = useState<number | null>(null);
+  // Le highlight courant provient-il d'un focus porte (agenda) ? Détermine la
+  // durée du pulse du bâtiment : aligné sur celui de la porte (5 s) pour qu'ils
+  // soient mis en avant ensemble, vs 3,5 s pour un focus bâtiment seul (Lieux).
+  const highlightWithPorteRef = useRef(false);
+  // Ouverture du sheet différée : à l'arrivée d'un focus porte, le bâtiment peut
+  // ne pas être encore chargé (profil en cours de fetch, onglet monté en lazy).
+  // On mémorise la cible et un effet ouvre le sheet dès que le bâtiment existe.
+  const [pendingPorteFocus, setPendingPorteFocus] = useState<{
+    immeubleId: number;
+    porteId: number;
+  } | null>(null);
   const navigatingRef = useRef(false);
   // Garde anti-doublon du téléchargement offline auto (1 pack max par zone).
   const offlineRequestedAreasRef = useRef<Set<string>>(new Set());
   // Jeton de séquence : `suggestions` est partagé entre tous les pins, une réponse
   // arrivée en retard (switch rapide de pin) ne doit pas écraser la liste courante.
   const suggestionsRequestRef = useRef(0);
-  // Remet le garde à zéro dès que le panneau marqueur se ferme.
+  // Remet le garde à zéro dès que le panneau marqueur se ferme, et retire tout
+  // highlight de porte (le sheet fermé n'a plus rien à mettre en avant).
   useEffect(() => {
-    if (selectedExistingLieu === null) navigatingRef.current = false;
+    if (selectedExistingLieu === null) {
+      navigatingRef.current = false;
+      setHighlightedPorteId(null);
+    }
   }, [selectedExistingLieu]);
 
   const { data: profile, refetch } = useWorkspaceProfile(userId, role);
@@ -85,14 +104,25 @@ export function useCarteTerrain({ embedded = false }: UseCarteTerrainParams = {}
     if (!focusTarget) return;
 
     const target = focusTarget;
+    const withPorte = target.porteId != null;
     let retryTimer: ReturnType<typeof setTimeout> | undefined;
+
+    // Focus porte (agenda) : le BuildingSheet recouvre le bas de l'écran. On donne
+    // à la caméra un `padding` bas égal à la zone couverte par le sheet : MapLibre
+    // centre alors le bâtiment dans la bande VISIBLE au-dessus du modal (recadrage
+    // exact, en points écran — pas de calcul mètres/pixel dépendant des tuiles). Le
+    // padding est remis à zéro sur les autres mouvements caméra (recentrage GPS,
+    // choix d'adresse) pour ne jamais rester collé.
+    const zoom = withPorte ? 18 : 17;
+    const sheetPadding = withPorte ? Math.round(screenHeight * 0.58) : 0;
 
     const ease = () => {
       if (!cameraRef.current) return false;
       cameraRef.current.easeTo({
         center: [target.longitude, target.latitude],
-        zoom: 17,
-        duration: 600,
+        zoom,
+        duration: 650,
+        padding: { top: 0, right: 0, bottom: sheetPadding, left: 0 },
       });
       return true;
     };
@@ -102,22 +132,36 @@ export function useCarteTerrain({ embedded = false }: UseCarteTerrainParams = {}
       retryTimer = setTimeout(ease, 300);
     }
 
+    highlightWithPorteRef.current = withPorte;
     setHighlightedId(target.id);
+    if (withPorte) {
+      setPendingPorteFocus({ immeubleId: target.id, porteId: target.porteId! });
+    }
     clearFocus();
 
     return () => {
       if (retryTimer) clearTimeout(retryTimer);
     };
-  }, [focusTarget, clearFocus]);
+  }, [focusTarget, clearFocus, screenHeight]);
 
   // Retrait automatique du highlight ~3,5 s après son armement. Effet séparé
   // (clé highlightedId) pour que la consommation synchrone de focusTarget
   // ci-dessus ne déclenche pas le nettoyage de ce timer.
   useEffect(() => {
     if (highlightedId == null) return;
-    const clearTimer = setTimeout(() => setHighlightedId(null), 3500);
+    const duration = highlightWithPorteRef.current ? 5000 : 3500;
+    const clearTimer = setTimeout(() => setHighlightedId(null), duration);
     return () => clearTimeout(clearTimer);
   }, [highlightedId]);
+
+  // Le pulse de la porte ciblée se calme ~5 s après son armement (le sheet, lui,
+  // reste ouvert). Effet séparé pour ne pas être remis à zéro par les rendus
+  // intermédiaires de l'ouverture du sheet.
+  useEffect(() => {
+    if (highlightedPorteId == null) return;
+    const clearTimer = setTimeout(() => setHighlightedPorteId(null), 5000);
+    return () => clearTimeout(clearTimer);
+  }, [highlightedPorteId]);
 
   const activePin = useMemo(() => {
     if (mode === "VISUALISATION") return null;
@@ -175,6 +219,20 @@ export function useCarteTerrain({ embedded = false }: UseCarteTerrainParams = {}
     });
     return Array.from(byId.values());
   }, [profile, role, showTeam]);
+
+  // Ouverture différée du BuildingSheet sur la cible d'un focus porte : on attend
+  // que le bâtiment soit présent dans `immeubles` (profil chargé), puis on ouvre
+  // le sheet et on arme le highlight de la porte.
+  useEffect(() => {
+    if (!pendingPorteFocus) return;
+    const building = immeubles.find((imm) => imm.id === pendingPorteFocus.immeubleId);
+    if (!building) return; // bâtiment pas encore chargé : on retentera au prochain rendu
+    setSelectedExistingLieu(building);
+    setMovingLieu(null);
+    setEditingLieu(null);
+    setHighlightedPorteId(pendingPorteFocus.porteId);
+    setPendingPorteFocus(null);
+  }, [pendingPorteFocus, immeubles]);
 
   const currentUserName = useMemo(() => {
     const prenom = profile?.prenom?.trim();
@@ -275,6 +333,8 @@ export function useCarteTerrain({ embedded = false }: UseCarteTerrainParams = {}
         center: [nextRegion.longitude, nextRegion.latitude],
         zoom: 16,
         duration: 450,
+        // Réinitialise tout padding posé par un focus porte précédent.
+        padding: { top: 0, right: 0, bottom: 0, left: 0 },
       });
       if (mode === "BATIMENT" && !buildingPin && quartierPins.length === 0) {
         setBuildingActivePin(nextRegion);
@@ -363,6 +423,8 @@ export function useCarteTerrain({ embedded = false }: UseCarteTerrainParams = {}
           center: [coords[0], coords[1]],
           zoom: 17,
           duration: 400,
+          // Réinitialise tout padding posé par un focus porte précédent.
+          padding: { top: 0, right: 0, bottom: 0, left: 0 },
         });
       }
       updateActivePin(patch);
@@ -630,6 +692,7 @@ export function useCarteTerrain({ embedded = false }: UseCarteTerrainParams = {}
     activePin,
     immeubles,
     highlightedId,
+    highlightedPorteId,
     quartiers,
     updateActivePin,
     searchAddresses,

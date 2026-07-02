@@ -58,6 +58,7 @@ export default function CarteTerrainScreen({
     activePin,
     immeubles,
     highlightedId,
+    highlightedPorteId,
     quartiers,
     updateActivePin,
     searchAddresses,
@@ -186,6 +187,7 @@ export default function CarteTerrainScreen({
       <BuildingSheet
         open={!!selectedExistingLieu}
         immeuble={selectedExistingLieu}
+        highlightedPorteId={highlightedPorteId}
         updatingLieu={updatingLieu}
         currentUserName={currentUserName}
         onClose={handleCloseBuildingSheet}
