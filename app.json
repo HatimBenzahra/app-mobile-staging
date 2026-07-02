@@ -2,7 +2,7 @@
   "expo": {
     "name": "ProWin",
     "slug": "pro-win-staging",
-    "version": "1.1.44",
+    "version": "1.1.45",
     "orientation": "default",
     "scheme": "prospection",
     "userInterfaceStyle": "automatic",
@@ -11,7 +11,7 @@
     "splash": {
       "image": "./assets/images/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#000000"
+      "backgroundColor": "#F8FAFC"
     },
     "assetBundlePatterns": [
       "assets/images/*"
@@ -55,7 +55,7 @@
         "android.permission.BLUETOOTH"
       ],
       "package": "com.aksilsadi.prospection",
-      "versionCode": 53
+      "versionCode": 54
     },
     "web": {
       "output": "static",
@@ -70,10 +70,10 @@
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 200,
           "resizeMode": "contain",
-          "backgroundColor": "#000000",
+          "backgroundColor": "#F8FAFC",
           "dark": {
             "image": "./assets/images/splash-icon.png",
-            "backgroundColor": "#000000"
+            "backgroundColor": "#F8FAFC"
           }
         }
       ],
