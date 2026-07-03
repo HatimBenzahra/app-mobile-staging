@@ -2,7 +2,7 @@
   "expo": {
     "name": "ProWin",
     "slug": "pro-win-staging",
-    "version": "1.1.46",
+    "version": "1.1.47",
     "orientation": "default",
     "scheme": "prospection",
     "userInterfaceStyle": "automatic",
@@ -23,7 +23,12 @@
       "infoPlist": {
         "UIViewControllerBasedStatusBarAppearance": false,
         "UIStatusBarHidden": false,
-        "UIStatusBarStyle": "UIStatusBarStyleLightContent"
+        "UIStatusBarStyle": "UIStatusBarStyleLightContent",
+        "NSLocationWhenInUseUsageDescription": "Autorise ProWin a utiliser ta position pour centrer la carte terrain.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "Autorise ProWin a partager ta position pendant la prospection, meme en arriere-plan.",
+        "UIBackgroundModes": [
+          "location"
+        ]
       },
       "bundleIdentifier": "com.aksilsadi.prospection"
     },
@@ -45,8 +50,10 @@
         "android.permission.CAMERA",
         "android.permission.ACCESS_COARSE_LOCATION",
         "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_BACKGROUND_LOCATION",
         "android.permission.FOREGROUND_SERVICE",
         "android.permission.FOREGROUND_SERVICE_MICROPHONE",
+        "android.permission.FOREGROUND_SERVICE_LOCATION",
         "android.permission.INTERNET",
         "android.permission.MODIFY_AUDIO_SETTINGS",
         "android.permission.RECORD_AUDIO",
@@ -55,7 +62,7 @@
         "android.permission.BLUETOOTH"
       ],
       "package": "com.aksilsadi.prospection",
-      "versionCode": 55
+      "versionCode": 56
     },
     "web": {
       "output": "static",
@@ -81,7 +88,10 @@
       [
         "expo-location",
         {
-          "locationWhenInUsePermission": "Autorise ProWin a utiliser ta position pour centrer la carte terrain."
+          "locationWhenInUsePermission": "Autorise ProWin a utiliser ta position pour centrer la carte terrain.",
+          "locationAlwaysAndWhenInUsePermission": "Autorise ProWin a partager ta position pendant la prospection, meme en arriere-plan.",
+          "isAndroidBackgroundLocationEnabled": true,
+          "isIosBackgroundLocationEnabled": true
         }
       ],
       [
