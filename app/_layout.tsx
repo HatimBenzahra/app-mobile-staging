@@ -2,6 +2,10 @@ import { OfflineBanner, ToastProvider } from "@/components/ui";
 import { configureMapTileCache } from "@/services/offline/map-tile-cache.service";
 import { enableOfflineQueueAutoSync } from "@/services/offline/offline-queue.service";
 import { enableUploadQueueAutoSync } from "@/services/audio/recordings/upload-queue.service";
+// Side-effect import: registers the background LOCATION_TASK in the global
+// scope so it is available even when the OS wakes the app headless for a
+// location event. Do not remove.
+import "@/services/location/location-tracking.service";
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";

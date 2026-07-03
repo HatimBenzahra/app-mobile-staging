@@ -269,6 +269,18 @@ export type CommercialTeamRanking = {
   managerNumTel?: SchemaTeamRanking['managerNumTel'];
 };
 
+// GPS position reporting. Not present in the generated schema yet (codegen is
+// types-only against the current SDL); typed manually to match the fixed
+// backend contract: input ReportPositionInput / mutation reportMyPositions.
+export type ReportPositionInput = {
+  latitude: number;
+  longitude: number;
+  accuracy?: number | null;
+  batteryLevel?: number | null;
+  // ISO-8601 string (GraphQL DateTime scalar).
+  recordedAt?: string | null;
+};
+
 export type UpdatePorteInput = {
   id: SchemaUpdatePorteInput['id'];
   numero?: SchemaUpdatePorteInput['numero'];
