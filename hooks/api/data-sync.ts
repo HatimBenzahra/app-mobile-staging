@@ -17,7 +17,7 @@ const QUARTIERS_PREFIX = "quartiers:";
 function invalidateByEventType(eventType: DataSyncEventType): void {
   // Invalidation ciblée mais volontairement large en cas de doute.
   // - Mutations PORTE_* : les données porte sont périmées, PAS "quartiers:".
-  // - Mutations IMMEUBLE_* : la structure change, donc "quartiers:" aussi.
+  // - Mutations IMMEUBLE_*/QUARTIER_* : la structure change, donc "quartiers:" aussi.
   // Tout eventType non préfixé "PORTE" invalide large (comportement de sûreté).
   for (const prefix of PORTE_RELATED_PREFIXES) {
     invalidateApiCacheByPrefix(prefix);

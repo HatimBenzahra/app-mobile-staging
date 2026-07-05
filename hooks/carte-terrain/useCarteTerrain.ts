@@ -1,4 +1,5 @@
 import { useCreateMaison } from "@/hooks/api/use-create-maison";
+import { useCreateQuartier } from "@/hooks/api/use-create-quartier";
 import { useMapFocus } from "@/hooks/use-map-focus";
 import { useQuartiers } from "@/hooks/api/use-quartiers";
 import { useWorkspaceProfile } from "@/hooks/api/use-workspace-profile";
@@ -93,6 +94,7 @@ export function useCarteTerrain({ embedded = false }: UseCarteTerrainParams = {}
   const { data: profile, refetch } = useWorkspaceProfile(userId, role);
   const { data: quartiers } = useQuartiers();
   const { createMaison, loading: creatingMaison } = useCreateMaison();
+  const { createQuartier } = useCreateQuartier();
   const { focusTarget, clearFocus } = useMapFocus();
 
   // "Voir sur la carte" : dès qu'une cible arrive, on centre la caméra et on
@@ -572,27 +574,30 @@ export function useCarteTerrain({ embedded = false }: UseCarteTerrainParams = {}
         };
       });
 
-      const result = await api.immeubles.createQuartier({
+      const result = await createQuartier({
         commercialId: role === "commercial" ? (userId ?? undefined) : undefined,
         managerId: role === "manager" ? (userId ?? undefined) : undefined,
         points,
       });
 
+      if (!result) {
+        Alert.alert("Creation impossible", "Le quartier n'a pas pu etre cree.");
+        return;
+      }
+
       await refetch();
       setQuartierPins([]);
       setActiveQuartierPinId(null);
       setSuggestions([]);
-      if (result?.id) {
+      if (result.id) {
         router.push(`/quartier/${result.id}`);
       } else if (!embedded) {
         router.back();
       }
-    } catch {
-      Alert.alert("Creation impossible", "Le quartier n'a pas pu etre cree.");
     } finally {
       setCreatingLieu(false);
     }
-  }, [quartierPins, role, userId, refetch, embedded]);
+  }, [quartierPins, role, userId, createQuartier, refetch, embedded]);
 
   const openEditLieu = useCallback((immeuble: Immeuble) => {
     setSelectedExistingLieu(null);

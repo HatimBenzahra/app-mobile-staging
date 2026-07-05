@@ -2,6 +2,7 @@ export type DataSyncEventType =
   | "IMMEUBLE_CREATED"
   | "IMMEUBLE_UPDATED"
   | "IMMEUBLE_DELETED"
+  | "QUARTIER_CREATED"
   | "PORTE_CREATED"
   | "PORTE_UPDATED"
   | "PORTE_DELETED";
