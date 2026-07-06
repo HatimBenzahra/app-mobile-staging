@@ -7,6 +7,10 @@ import {
   useProfileSheet,
 } from "@/hooks/use-profile-sheet";
 import { MapFocusProvider, useMapFocus } from "@/hooks/use-map-focus";
+import {
+  TerrainModeRequestProvider,
+  useTerrainModeRequest,
+} from "@/hooks/use-terrain-mode-request";
 import { useWorkspaceProfile } from "@/hooks/api/use-workspace-profile";
 import { sendOperator } from "@/modules/kiosk-bridge";
 import { authService } from "@/services/auth";
@@ -27,6 +31,7 @@ function AppContent() {
   const [showRail, setShowRail] = useState(true);
   const { sheetRef } = useProfileSheet();
   const { focusTarget } = useMapFocus();
+  const { requestedMode } = useTerrainModeRequest();
   const didSetInitialTab = useRef(false);
   const currentIndexRef = useRef(0);
   const fromIndexRef = useRef(0);
@@ -113,6 +118,15 @@ function AppContent() {
     const carteIdx = routes.findIndex((r) => r.key === "carte");
     if (carteIdx >= 0) goToTab(carteIdx);
   }, [focusTarget, routes, goToTab]);
+
+  // Demande de tracé (« Créer une zone » depuis l'onglet Zones) : on bascule sur
+  // l'onglet Carte. On NE consomme PAS la demande ici : useCarteTerrain applique
+  // le mode puis l'efface (même contrat que focusTarget ci-dessus).
+  useEffect(() => {
+    if (!requestedMode) return;
+    const carteIdx = routes.findIndex((r) => r.key === "carte");
+    if (carteIdx >= 0) goToTab(carteIdx);
+  }, [requestedMode, routes, goToTab]);
 
   useEffect(() => {
     const loadIdentity = async () => {
@@ -235,9 +249,11 @@ export default function AppIndex() {
   return (
     <ProfileSheetProvider>
       <MapFocusProvider>
-        <View style={styles.container}>
-          <AppContent />
-        </View>
+        <TerrainModeRequestProvider>
+          <View style={styles.container}>
+            <AppContent />
+          </View>
+        </TerrainModeRequestProvider>
       </MapFocusProvider>
     </ProfileSheetProvider>
   );

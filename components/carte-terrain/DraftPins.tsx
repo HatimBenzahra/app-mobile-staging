@@ -12,6 +12,9 @@ type DraftPinsProps = {
   quartierPins: DraftPin[];
   activeQuartierPinId: string | null;
   onSelectQuartierPin: (pin: DraftPin) => void;
+  zonePins: DraftPin[];
+  activeZonePinId: string | null;
+  onSelectZonePin: (pin: DraftPin) => void;
 };
 
 export const DraftPins = memo(function DraftPins({
@@ -20,6 +23,9 @@ export const DraftPins = memo(function DraftPins({
   quartierPins,
   activeQuartierPinId,
   onSelectQuartierPin,
+  zonePins,
+  activeZonePinId,
+  onSelectZonePin,
 }: DraftPinsProps) {
   const quartierMarkers = useMemo(
     () =>
@@ -47,6 +53,34 @@ export const DraftPins = memo(function DraftPins({
     [quartierPins, activeQuartierPinId, onSelectQuartierPin],
   );
 
+  // Sommets numérotés de la zone en cours de tracé (accent info, cf. ZoneDraft).
+  const zoneMarkers = useMemo(
+    () =>
+      zonePins.map((pin, index) => (
+        <Marker
+          key={`zone-${pin.id}`}
+          id={`zone-pin-${pin.id}`}
+          lngLat={[pin.longitude, pin.latitude]}
+          anchor="bottom"
+          onPress={(event) => {
+            event.stopPropagation();
+            onSelectZonePin(pin);
+          }}
+        >
+          <View
+            style={[
+              styles.quartierMapMarker,
+              styles.zoneMapMarker,
+              pin.id === activeZonePinId && styles.quartierMapMarkerActive,
+            ]}
+          >
+            <Text style={styles.quartierMapMarkerText}>{index + 1}</Text>
+          </View>
+        </Marker>
+      )),
+    [zonePins, activeZonePinId, onSelectZonePin],
+  );
+
   return (
     <>
       {buildingPin && mode === "BATIMENT" && (
@@ -61,6 +95,7 @@ export const DraftPins = memo(function DraftPins({
         </Marker>
       )}
       {quartierMarkers}
+      {zoneMarkers}
     </>
   );
 });

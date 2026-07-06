@@ -157,6 +157,9 @@ export const styles = StyleSheet.create({
     borderRadius: 18,
     backgroundColor: colors.danger,
   },
+  zoneMapMarker: {
+    backgroundColor: colors.info,
+  },
   quartierMapMarkerText: {
     color: colors.textOnPrimary,
     fontSize: 12,
@@ -335,6 +338,16 @@ export const styles = StyleSheet.create({
     color: colors.textOnPrimary,
     fontSize: 15,
     fontWeight: "800",
+  },
+  zoneChipsRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  zoneSectionLabel: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: colors.textStrong,
   },
 
   // ── Assistant de création (mode BATIMENT) ─────────────────────────────

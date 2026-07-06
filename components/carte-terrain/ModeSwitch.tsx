@@ -5,17 +5,32 @@ import { Pressable, Text, View } from "react-native";
 import type { EdgeInsets } from "react-native-safe-area-context";
 import { styles } from "./styles";
 
+type ModeMeta = { icon: keyof typeof Feather.glyphMap; label: string };
+
+const MODE_META: Record<TerrainMode, ModeMeta> = {
+  VISUALISATION: { icon: "eye", label: "Voir" },
+  BATIMENT: { icon: "map-pin", label: "Batiment" },
+  QUARTIER: { icon: "map", label: "Quartier" },
+  ZONE: { icon: "grid", label: "Zone" },
+};
+
 type ModeSwitchProps = {
   insets: EdgeInsets;
   mode: TerrainMode;
+  /** Le mode ZONE (tracé de zone) est réservé au manager. */
+  showZone?: boolean;
   onSelectMode: (nextMode: TerrainMode) => void;
 };
 
-export function ModeSwitch({ insets, mode, onSelectMode }: ModeSwitchProps) {
+export function ModeSwitch({ insets, mode, showZone = false, onSelectMode }: ModeSwitchProps) {
+  const modes: TerrainMode[] = ["VISUALISATION", "BATIMENT", "QUARTIER"];
+  if (showZone) modes.push("ZONE");
+
   return (
     <View style={[styles.modeSwitch, { top: insets.top + 10 }]}>
-      {(["VISUALISATION", "BATIMENT", "QUARTIER"] as TerrainMode[]).map((nextMode) => {
+      {modes.map((nextMode) => {
         const selected = mode === nextMode;
+        const meta = MODE_META[nextMode];
         return (
           <Pressable
             key={nextMode}
@@ -23,22 +38,12 @@ export function ModeSwitch({ insets, mode, onSelectMode }: ModeSwitchProps) {
             onPress={() => onSelectMode(nextMode)}
           >
             <Feather
-              name={
-                nextMode === "VISUALISATION"
-                  ? "eye"
-                  : nextMode === "BATIMENT"
-                    ? "map-pin"
-                    : "map"
-              }
+              name={meta.icon}
               size={15}
               color={selected ? colors.textOnPrimary : colors.primary}
             />
             <Text style={[styles.modeText, selected && styles.modeTextSelected]}>
-              {nextMode === "VISUALISATION"
-                ? "Voir"
-                : nextMode === "BATIMENT"
-                  ? "Batiment"
-                  : "Quartier"}
+              {meta.label}
             </Text>
           </Pressable>
         );

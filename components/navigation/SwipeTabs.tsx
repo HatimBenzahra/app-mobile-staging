@@ -9,6 +9,7 @@ import DashboardScreen from "@/app/(app)/(tabs)/dashboard";
 import ImmeublesScreen from "@/app/(app)/(tabs)/immeubles";
 import StatistiquesScreen from "@/app/(app)/(tabs)/statistiques";
 import EquipeScreen from "@/app/(app)/(tabs)/equipe";
+import ZonesScreen from "@/app/(app)/(tabs)/zones";
 import HistoriqueScreen from "@/app/(app)/(tabs)/historique";
 import { authService } from "@/services/auth";
 import { useRouter } from "expo-router";
@@ -26,6 +27,7 @@ export const buildRoutes = (isManager: boolean): TabRoute[] => {
   ];
   if (isManager) {
     baseRoutes.push({ key: "equipe", title: "Équipe", icon: "users" });
+    baseRoutes.push({ key: "zones", title: "Zones", icon: "grid" });
   }
   baseRoutes.push({ key: "historique", title: "Historique", icon: "clock" });
   return baseRoutes;
@@ -124,6 +126,8 @@ export default function SwipeTabs({
         scene = <ClassementScreen />;
       } else if (route.key === "equipe") {
         scene = <EquipeScreen />;
+      } else if (route.key === "zones") {
+        scene = <ZonesScreen />;
       } else if (route.key === "agenda") {
         scene = <AgendaScreen onNavigateToImmeuble={handleNavigateToImmeuble} />;
       } else if (route.key === "statistiques") {

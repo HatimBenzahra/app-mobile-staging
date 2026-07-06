@@ -53,6 +53,9 @@ export function MapLegend({ insets, role }: MapLegendProps) {
         <LegendRow swatch={<View style={[styles.dot, { backgroundColor: ownership.team.accent }]} />} label="Lieux de l'équipe" />
       )}
 
+      <Text style={styles.sectionLabel}>Zone</Text>
+      <LegendRow swatch={<View style={[styles.zoneSwatch, { borderColor: colors.info }]} />} label="Ma zone" />
+
       <Text style={styles.sectionLabel}>Type d&apos;habitat</Text>
       <LegendRow swatch={<Text style={styles.glyph}>🏢</Text>} label="Immeuble" />
       <LegendRow swatch={<Text style={styles.glyph}>🏠</Text>} label="Maison" />
@@ -144,6 +147,13 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderWidth: 2,
     borderColor: colors.surface,
+  },
+  zoneSwatch: {
+    width: 16,
+    height: 16,
+    borderRadius: 4,
+    borderWidth: 2,
+    backgroundColor: colors.infoSoft,
   },
   glyph: {
     fontSize: 15,

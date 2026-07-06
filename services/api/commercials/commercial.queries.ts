@@ -7,6 +7,14 @@ export const GET_COMMERCIAL_FULL = `
       email
       numTel
       managerId
+      zones {
+        id
+        nom
+        polygon
+        xOrigin
+        yOrigin
+        rayon
+      }
       immeubles {
         id
         adresse

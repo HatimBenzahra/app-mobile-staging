@@ -12,7 +12,10 @@ export type Scalars = {
   Boolean: { input: boolean; output: boolean; }
   Int: { input: number; output: number; }
   Float: { input: number; output: number; }
+  /** A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format. */
   DateTime: { input: string; output: string; }
+  /** The `JSON` scalar type represents JSON values as specified by [ECMA-404](http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf). */
+  JSON: { input: Record<string, unknown>; output: Record<string, unknown>; }
 };
 
 export type AcquiscanAddress = {
@@ -619,9 +622,10 @@ export type CreateZoneInput = {
   directeurId?: InputMaybe<Scalars['Int']['input']>;
   managerId?: InputMaybe<Scalars['Int']['input']>;
   nom: Scalars['String']['input'];
-  rayon: Scalars['Float']['input'];
-  xOrigin: Scalars['Float']['input'];
-  yOrigin: Scalars['Float']['input'];
+  polygon?: InputMaybe<Scalars['JSON']['input']>;
+  rayon?: InputMaybe<Scalars['Float']['input']>;
+  xOrigin?: InputMaybe<Scalars['Float']['input']>;
+  yOrigin?: InputMaybe<Scalars['Float']['input']>;
 };
 
 export type CreerUtilisateurInput = {
@@ -689,34 +693,17 @@ export type GlobalSearchResult = {
   totalCount: Scalars['Int']['output'];
 };
 
-export type GpsHistoryResponse = {
-  __typename?: 'GpsHistoryResponse';
-  positions: Array<GpsPosition>;
-  total: Scalars['Int']['output'];
-};
-
 export type GpsPosition = {
   __typename?: 'GpsPosition';
   accuracy?: Maybe<Scalars['Float']['output']>;
   batteryLevel?: Maybe<Scalars['Int']['output']>;
-  createdAt: Scalars['DateTime']['output'];
-  deviceId: Scalars['String']['output'];
-  deviceName?: Maybe<Scalars['String']['output']>;
   id: Scalars['Int']['output'];
   isOnline: Scalars['Boolean']['output'];
   latitude: Scalars['Float']['output'];
   longitude: Scalars['Float']['output'];
   recordedAt: Scalars['DateTime']['output'];
-};
-
-export type GpsPositionInput = {
-  accuracy?: InputMaybe<Scalars['Float']['input']>;
-  batteryLevel?: InputMaybe<Scalars['Int']['input']>;
-  deviceId: Scalars['String']['input'];
-  deviceName?: InputMaybe<Scalars['String']['input']>;
-  isOnline?: InputMaybe<Scalars['Boolean']['input']>;
-  latitude: Scalars['Float']['input'];
-  longitude: Scalars['Float']['input'];
+  userId?: Maybe<Scalars['Int']['output']>;
+  userType?: Maybe<UserType>;
 };
 
 export type HistoriqueZone = {
@@ -910,10 +897,10 @@ export type Mutation = {
   removeStatistic: Statistic;
   removeTerrainLieu: Immeuble;
   removeZone: Zone;
+  reportMyPositions: Scalars['Int']['output'];
   requestRecordingUpload: RecordingUploadDetails;
   resetS3Diagnostics: S3DiagnosticsSnapshot;
   revokeBadge: MappingResult;
-  saveGpsPositions: SaveGpsPositionsResponse;
   seedBadges: SeedBadgesResult;
   startMonitoring: LiveKitConnectionDetails;
   startRecording: RecordingResult;
@@ -1221,6 +1208,11 @@ export type MutationRemoveZoneArgs = {
 };
 
 
+export type MutationReportMyPositionsArgs = {
+  input: Array<ReportPositionInput>;
+};
+
+
 export type MutationRequestRecordingUploadArgs = {
   input: RequestRecordingUploadInput;
 };
@@ -1228,11 +1220,6 @@ export type MutationRequestRecordingUploadArgs = {
 
 export type MutationRevokeBadgeArgs = {
   id: Scalars['Int']['input'];
-};
-
-
-export type MutationSaveGpsPositionsArgs = {
-  input: SaveGpsPositionsInput;
 };
 
 
@@ -1404,6 +1391,7 @@ export type Porte = {
   commentaire?: Maybe<Scalars['String']['output']>;
   createdAt: Scalars['DateTime']['output'];
   derniereVisite?: Maybe<Scalars['DateTime']['output']>;
+  duree?: Maybe<Scalars['Int']['output']>;
   etage: Scalars['Int']['output'];
   id: Scalars['Int']['output'];
   immeubleId: Scalars['Int']['output'];
@@ -1487,11 +1475,9 @@ export type Query = {
   getRecordingSpeechScores: Array<SpeechScoreDto>;
   getStreamingUrl: Scalars['String']['output'];
   globalSearch: GlobalSearchResult;
-  gpsAllPositions: GpsHistoryResponse;
-  gpsDailyRoute: GpsHistoryResponse;
-  gpsDevices: Array<GpsPosition>;
-  gpsHistory: GpsHistoryResponse;
-  gpsLatestPositions: Array<GpsPosition>;
+  gpsDailyRouteByActor: Array<GpsPosition>;
+  gpsLatestActorPositions: Array<GpsPosition>;
+  gpsRouteByActor: Array<GpsPosition>;
   immeuble: Immeuble;
   immeubles: Array<Immeuble>;
   listAllRecordings: PaginatedRecordingsResult;
@@ -1536,6 +1522,7 @@ export type Query = {
   zone: Zone;
   zoneCurrentAssignments: Array<ZoneEnCours>;
   zoneHistory: Array<HistoriqueZone>;
+  zoneProspections: Array<ZoneProspection>;
   zoneStatistics: Array<ZoneStatistic>;
   zones: Array<Zone>;
 };
@@ -1666,25 +1653,18 @@ export type QueryGlobalSearchArgs = {
 };
 
 
-export type QueryGpsAllPositionsArgs = {
-  deviceId?: InputMaybe<Scalars['String']['input']>;
-  from: Scalars['String']['input'];
-  limit?: InputMaybe<Scalars['Int']['input']>;
-  to: Scalars['String']['input'];
-};
-
-
-export type QueryGpsDailyRouteArgs = {
+export type QueryGpsDailyRouteByActorArgs = {
   date: Scalars['String']['input'];
-  deviceId: Scalars['String']['input'];
+  userId: Scalars['Int']['input'];
+  userType: UserType;
 };
 
 
-export type QueryGpsHistoryArgs = {
-  deviceId: Scalars['String']['input'];
-  from?: InputMaybe<Scalars['String']['input']>;
-  limit?: InputMaybe<Scalars['Int']['input']>;
-  to?: InputMaybe<Scalars['String']['input']>;
+export type QueryGpsRouteByActorArgs = {
+  from: Scalars['String']['input'];
+  to: Scalars['String']['input'];
+  userId: Scalars['Int']['input'];
+  userType: UserType;
 };
 
 
@@ -1871,6 +1851,11 @@ export type QueryZoneHistoryArgs = {
   zoneId: Scalars['Int']['input'];
 };
 
+
+export type QueryZoneProspectionsArgs = {
+  zoneId: Scalars['Int']['input'];
+};
+
 /** Période de classement (jour, semaine, mois, trimestre, année) */
 export type RankPeriod =
   | 'DAILY'
@@ -1974,6 +1959,14 @@ export type ReponseSupprimerUtilisateur = {
   success: Scalars['Boolean']['output'];
 };
 
+export type ReportPositionInput = {
+  accuracy?: InputMaybe<Scalars['Float']['input']>;
+  batteryLevel?: InputMaybe<Scalars['Int']['input']>;
+  latitude: Scalars['Float']['input'];
+  longitude: Scalars['Float']['input'];
+  recordedAt?: InputMaybe<Scalars['DateTime']['input']>;
+};
+
 export type RequestRecordingUploadInput = {
   duration?: InputMaybe<Scalars['Float']['input']>;
   fileSize?: InputMaybe<Scalars['Float']['input']>;
@@ -2009,16 +2002,6 @@ export type S3DiagnosticsSnapshot = {
   succeeded: Scalars['Int']['output'];
   total: Scalars['Int']['output'];
   updatedAt?: Maybe<Scalars['DateTime']['output']>;
-};
-
-export type SaveGpsPositionsInput = {
-  positions: Array<GpsPositionInput>;
-};
-
-export type SaveGpsPositionsResponse = {
-  __typename?: 'SaveGpsPositionsResponse';
-  saved: Scalars['Int']['output'];
-  success: Scalars['Boolean']['output'];
 };
 
 export type SearchResultGroup = {
@@ -2259,6 +2242,7 @@ export type UpdateOffrePointsInput = {
 export type UpdatePorteInput = {
   commentaire?: InputMaybe<Scalars['String']['input']>;
   derniereVisite?: InputMaybe<Scalars['DateTime']['input']>;
+  duree?: InputMaybe<Scalars['Int']['input']>;
   etage?: InputMaybe<Scalars['Int']['input']>;
   id: Scalars['Int']['input'];
   nbContrats?: InputMaybe<Scalars['Int']['input']>;
@@ -2292,6 +2276,7 @@ export type UpdateZoneInput = {
   id: Scalars['Int']['input'];
   managerId?: InputMaybe<Scalars['Int']['input']>;
   nom?: InputMaybe<Scalars['String']['input']>;
+  polygon?: InputMaybe<Scalars['JSON']['input']>;
   rayon?: InputMaybe<Scalars['Float']['input']>;
   xOrigin?: InputMaybe<Scalars['Float']['input']>;
   yOrigin?: InputMaybe<Scalars['Float']['input']>;
@@ -2336,6 +2321,7 @@ export type Zone = {
   immeubles?: Maybe<Array<Immeuble>>;
   managerId?: Maybe<Scalars['Int']['output']>;
   nom: Scalars['String']['output'];
+  polygon?: Maybe<Scalars['JSON']['output']>;
   rayon: Scalars['Float']['output'];
   updatedAt: Scalars['DateTime']['output'];
   xOrigin: Scalars['Float']['output'];
@@ -2350,6 +2336,19 @@ export type ZoneEnCours = {
   userType: UserType;
   zone?: Maybe<Zone>;
   zoneId: Scalars['Int']['output'];
+};
+
+export type ZoneProspection = {
+  __typename?: 'ZoneProspection';
+  commercialId?: Maybe<Scalars['Int']['output']>;
+  commercialNom?: Maybe<Scalars['String']['output']>;
+  date: Scalars['DateTime']['output'];
+  dureeSec?: Maybe<Scalars['Int']['output']>;
+  immeubleAdresse: Scalars['String']['output'];
+  immeubleId: Scalars['Int']['output'];
+  porteId: Scalars['Int']['output'];
+  porteNumero: Scalars['String']['output'];
+  statut: Scalars['String']['output'];
 };
 
 export type ZoneStatistic = {

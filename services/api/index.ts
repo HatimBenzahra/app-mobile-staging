@@ -6,6 +6,7 @@ import { managerApi } from "./managers/manager.service";
 import { porteApi } from "./portes/porte.service";
 import { recordingApi } from "./recordings/recording.service";
 import { statisticApi } from "./statistics/statistic.service";
+import { zoneApi } from "./zones/zone.service";
 
 export const api = {
   commercials: commercialApi,
@@ -16,4 +17,5 @@ export const api = {
   portes: porteApi,
   recordings: recordingApi,
   statistics: statisticApi,
+  zones: zoneApi,
 };

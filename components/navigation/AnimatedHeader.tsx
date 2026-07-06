@@ -19,6 +19,7 @@ const MANAGER_TITLES = [
   "Stats",
   "Classement",
   "Équipe",
+  "Zones",
   "Historique",
 ];
 

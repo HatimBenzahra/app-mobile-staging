@@ -13,6 +13,7 @@ export const UPDATE_PORTE = `
       rdvTime
       commentaire
       derniereVisite
+      duree
       createdAt
       updatedAt
     }

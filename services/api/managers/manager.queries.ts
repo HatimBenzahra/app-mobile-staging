@@ -9,6 +9,10 @@ export const GET_MANAGER_PERSONAL = `
       zones {
         id
         nom
+        polygon
+        xOrigin
+        yOrigin
+        rayon
       }
       immeubles {
         id

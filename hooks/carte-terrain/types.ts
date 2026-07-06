@@ -20,7 +20,7 @@ export type TerrainPoint = {
   longitude: number;
 };
 
-export type TerrainMode = "VISUALISATION" | "BATIMENT" | "QUARTIER";
+export type TerrainMode = "VISUALISATION" | "BATIMENT" | "QUARTIER" | "ZONE";
 
 export type DraftPin = TerrainPoint & {
   id: string;

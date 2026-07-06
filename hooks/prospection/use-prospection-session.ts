@@ -179,12 +179,15 @@ export function useProspectionSession({
         createdNow: current.createdNow,
       });
 
+      const durationMs = Math.max(0, Date.now() - current.startedAt);
+
       const updated = await updatePorte({
         id: current.porte.id,
         statut: input.statut,
         commentaire: input.commentaire?.trim() || null,
         nomPersonnalise: input.nomPersonnalise?.trim() || null,
         derniereVisite: new Date().toISOString(),
+        duree: Math.round(durationMs / 1000),
         rdvDate: input.rdvDate || undefined,
         rdvTime: input.rdvTime || undefined,
         nbContrats:
@@ -201,7 +204,6 @@ export function useProspectionSession({
         return { ok: false as const };
       }
 
-      const durationMs = Math.max(0, Date.now() - current.startedAt);
       onPorteSaved?.(updated, durationMs);
       setState({ phase: "IDLE" });
       return { ok: true as const, porte: updated, durationMs };

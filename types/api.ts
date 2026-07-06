@@ -79,6 +79,18 @@ export type TimelinePoint = {
 export type Zone = {
   id: SchemaZone['id'];
   nom: SchemaZone['nom'];
+  xOrigin: SchemaZone['xOrigin'];
+  yOrigin: SchemaZone['yOrigin'];
+  rayon: SchemaZone['rayon'];
+  // Anneau fermé [[lng,lat],…] (JSON scalar côté schéma). Nullable.
+  polygon?: number[][] | null;
+};
+
+// Création d'une zone (tracé terrain manager). Le backend force managerId et
+// calcule xOrigin/yOrigin/rayon depuis polygon → on n'envoie QUE nom + polygon.
+export type CreateZoneInput = {
+  nom: string;
+  polygon: number[][];
 };
 
 export type Porte = {
@@ -94,6 +106,7 @@ export type Porte = {
   rdvTime?: SchemaPorte['rdvTime'];
   commentaire?: SchemaPorte['commentaire'];
   derniereVisite?: SchemaPorte['derniereVisite'];
+  duree?: SchemaPorte['duree'];
 };
 
 export type CreatePorteInput = {
@@ -293,4 +306,5 @@ export type UpdatePorteInput = {
   rdvTime?: SchemaUpdatePorteInput['rdvTime'];
   commentaire?: SchemaUpdatePorteInput['commentaire'];
   derniereVisite?: SchemaUpdatePorteInput['derniereVisite'];
+  duree?: SchemaUpdatePorteInput['duree'];
 };
