@@ -1,6 +1,7 @@
 import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { StyleSheet, View } from "react-native";
+import { ActivityIndicator, Animated, StyleSheet, useWindowDimensions, View } from "react-native";
 import { TabView } from "react-native-tab-view";
+import { colors } from "@/constants/theme";
 import AgendaScreen from "@/app/(app)/(tabs)/agenda";
 import CarteTerrainScreen from "@/app/(app)/carte-terrain";
 import ClassementScreen from "@/app/(app)/(tabs)/classement";
@@ -36,6 +37,8 @@ type SwipeTabsProps = {
   headerHeight?: number;
   onHeaderVisibilityChange?: (visible: boolean) => void;
   onRailVisibilityChange?: (visible: boolean) => void;
+  /** Remonte la position animée continue du pager (index + fraction du swipe). */
+  onPositionChange?: (position: Animated.AnimatedInterpolation<number>) => void;
 };
 
 export default function SwipeTabs({
@@ -44,13 +47,33 @@ export default function SwipeTabs({
   headerHeight = 0,
   onHeaderVisibilityChange,
   onRailVisibilityChange,
+  onPositionChange,
 }: SwipeTabsProps) {
   const router = useRouter();
+  const { width: windowWidth } = useWindowDimensions();
   const [isManager, setIsManager] = useState(false);
   const tabRoutes = useMemo(() => buildRoutes(isManager), [isManager]);
   const [swipeEnabled, setSwipeEnabled] = useState(true);
   const activeKeyRef = useRef<string | undefined>(tabRoutes[index]?.key);
   activeKeyRef.current = tabRoutes[index]?.key;
+
+  // Le TabView calcule une position animée continue (0 → N-1) qui suit le geste.
+  // On la capture depuis renderTabBar (seul endroit qui la reçoit) dans un ref,
+  // puis on la remonte au parent via un effet (jamais pendant le rendu).
+  const positionRef = useRef<Animated.AnimatedInterpolation<number> | null>(null);
+  const positionSentRef = useRef(false);
+  const renderTabBar = useCallback(
+    (props: { position: Animated.AnimatedInterpolation<number> }) => {
+      positionRef.current = props.position;
+      return null;
+    },
+    [],
+  );
+  useEffect(() => {
+    if (positionSentRef.current || !positionRef.current || !onPositionChange) return;
+    positionSentRef.current = true;
+    onPositionChange(positionRef.current);
+  }, [onPositionChange]);
 
   const handleNavigateToImmeuble = useCallback(
     (immeubleId: number, porteId?: number) => {
@@ -116,15 +139,32 @@ export default function SwipeTabs({
     [handleNavigateToImmeuble, handleSwipeLockChange, headerHeight, onHeaderVisibilityChange, onRailVisibilityChange],
   );
 
+  // Écran d'attente thémé pour une scène pas encore montée (au lieu du blanc par
+  // défaut). Visible pendant le swipe vers un onglet voisin non encore chargé.
+  const renderLazyPlaceholder = useCallback(
+    () => (
+      <View style={[styles.placeholder, { paddingTop: headerHeight }]}>
+        <ActivityIndicator size="small" color={colors.primary} />
+      </View>
+    ),
+    [headerHeight],
+  );
+
   return (
     <View style={styles.container}>
       <TabView
         navigationState={{ index, routes: tabRoutes }}
         renderScene={renderScene}
         onIndexChange={onIndexChange}
-        renderTabBar={() => null}
+        renderTabBar={renderTabBar}
+        // Sans initialLayout, layout.width = 0 au départ : les scènes non-focus
+        // (celles vers lesquelles on swipe) ne se montent pas et restent bloquées
+        // sur le placeholder jusqu'à un tap. On fournit donc une largeur initiale.
+        initialLayout={{ width: windowWidth }}
         swipeEnabled={swipeEnabled && tabRoutes[index]?.key !== "carte"}
         lazy
+        lazyPreloadDistance={1}
+        renderLazyPlaceholder={renderLazyPlaceholder}
       />
     </View>
   );
@@ -133,5 +173,11 @@ export default function SwipeTabs({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  placeholder: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.background,
   },
 });

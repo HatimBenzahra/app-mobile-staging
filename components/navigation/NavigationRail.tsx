@@ -1,22 +1,43 @@
 import { authService } from "@/services/auth";
 import { Feather } from "@expo/vector-icons";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Animated, Pressable, StyleSheet, Text, View } from "react-native";
+import {
+  Animated,
+  type LayoutChangeEvent,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import ProwinLogo from "./ProwinLogo";
+
+const COLOR_INACTIVE = "#64748B";
+const COLOR_ACTIVE = "#005BFF";
+const ICON_ACTIVE = "#FFFFFF";
+const PILL_TOP_OFFSET = 8; // padding haut du navItem : place l'indicateur sur la pastille icône
+
+type TabPosition = Animated.AnimatedInterpolation<number>;
 
 type NavItemProps = {
   icon: keyof typeof Feather.glyphMap;
   label: string;
+  index: number;
   isActive: boolean;
+  /** Position animée du pager ; si absente, rendu statique via isActive. */
+  position: TabPosition | null;
   onPress: () => void;
+  onLayout: (event: LayoutChangeEvent) => void;
 };
 
 const NavItem = memo(function NavItem({
   icon,
   label,
+  index,
   isActive,
+  position,
   onPress,
+  onLayout,
 }: NavItemProps) {
   const scaleAnim = useRef(new Animated.Value(1)).current;
 
@@ -35,8 +56,27 @@ const NavItem = memo(function NavItem({
     }).start();
   }, [scaleAnim]);
 
+  // Proximité de cet onglet à la position du pager : 1 au centre, 0 à ±1 onglet.
+  // NB : la position du pager est pilotée en native driver → on ne peut animer
+  // QUE des props natives (opacity, transform), jamais `color`. On fait donc des
+  // fondus d'opacité (icône + label) plutôt qu'une interpolation de couleur.
+  const proximity = useMemo(
+    () =>
+      position?.interpolate({
+        inputRange: [index - 1, index, index + 1],
+        outputRange: [0, 1, 0],
+        extrapolate: "clamp",
+      }) ?? null,
+    [position, index],
+  );
+
+  const animated = position != null && proximity != null;
+
   return (
-    <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
+    <Animated.View
+      style={{ transform: [{ scale: scaleAnim }] }}
+      onLayout={onLayout}
+    >
       <Pressable
         style={styles.navItem}
         onPress={onPress}
@@ -44,20 +84,55 @@ const NavItem = memo(function NavItem({
         onPressOut={handlePressOut}
       >
         <View
-          style={[styles.navIconPill, isActive && styles.navIconPillActive]}
+          style={[
+            styles.navIconPill,
+            !animated && isActive && styles.navIconPillActive,
+          ]}
         >
+          {/* Icône neutre (base). En mode animé, une copie blanche se fond
+              par-dessus quand l'indicateur arrive (opacité = proximité). */}
           <Feather
             name={icon}
             size={20}
-            color={isActive ? "#FFFFFF" : "#64748B"}
+            color={animated ? COLOR_INACTIVE : isActive ? ICON_ACTIVE : COLOR_INACTIVE}
           />
+          {animated ? (
+            <Animated.View
+              style={[styles.iconOverlay, { opacity: proximity! }]}
+              pointerEvents="none"
+            >
+              <Feather name={icon} size={20} color={ICON_ACTIVE} />
+            </Animated.View>
+          ) : null}
         </View>
-        <Text
-          style={[styles.navLabel, isActive && styles.navLabelActive]}
-          numberOfLines={1}
-        >
-          {label}
-        </Text>
+
+        {animated ? (
+          <View style={styles.labelWrap}>
+            <Text style={[styles.navLabel, styles.labelBase]} numberOfLines={1}>
+              {label}
+            </Text>
+            {/* Copie active (bleu/gras) fondue par-dessus selon la proximité. */}
+            <Animated.Text
+              style={[
+                styles.navLabel,
+                styles.navLabelActive,
+                styles.labelOverlay,
+                { opacity: proximity! },
+              ]}
+              numberOfLines={1}
+              pointerEvents="none"
+            >
+              {label}
+            </Animated.Text>
+          </View>
+        ) : (
+          <Text
+            style={[styles.navLabel, isActive && styles.navLabelActive]}
+            numberOfLines={1}
+          >
+            {label}
+          </Text>
+        )}
       </Pressable>
     </Animated.View>
   );
@@ -66,14 +141,18 @@ const NavItem = memo(function NavItem({
 type NavigationRailProps = {
   currentIndex: number;
   onNavigate: (index: number) => void;
+  /** Position animée continue du pager, pour un indicateur qui suit le swipe. */
+  position?: TabPosition | null;
 };
 
 export default function NavigationRail({
   currentIndex,
   onNavigate,
+  position,
 }: NavigationRailProps) {
   const insets = useSafeAreaInsets();
   const [isManager, setIsManager] = useState(false);
+  const [itemYs, setItemYs] = useState<number[]>([]);
 
   useEffect(() => {
     const loadRole = async () => {
@@ -85,61 +164,47 @@ export default function NavigationRail({
 
   const navItems = useMemo(
     () => [
-      {
-        key: "dashboard",
-        icon: "bar-chart-2" as keyof typeof Feather.glyphMap,
-        label: "Tableau",
-        targetIndex: 0,
-      },
-      {
-        key: "carte",
-        icon: "map" as keyof typeof Feather.glyphMap,
-        label: "Carte",
-        targetIndex: 1,
-      },
-      {
-        key: "immeubles",
-        icon: "map-pin" as keyof typeof Feather.glyphMap,
-        label: "Lieux",
-        targetIndex: 2,
-      },
-      {
-        key: "agenda",
-        icon: "book-open" as keyof typeof Feather.glyphMap,
-        label: "Agenda",
-        targetIndex: 3,
-      },
-      {
-        key: "stats",
-        icon: "trending-up" as keyof typeof Feather.glyphMap,
-        label: "Stats",
-        targetIndex: 4,
-      },
-      {
-        key: "classement",
-        icon: "award" as keyof typeof Feather.glyphMap,
-        label: "Classement",
-        targetIndex: 5,
-      },
+      { key: "dashboard", icon: "bar-chart-2" as const, label: "Tableau" },
+      { key: "carte", icon: "map" as const, label: "Carte" },
+      { key: "immeubles", icon: "map-pin" as const, label: "Lieux" },
+      { key: "agenda", icon: "book-open" as const, label: "Agenda" },
+      { key: "stats", icon: "trending-up" as const, label: "Stats" },
+      { key: "classement", icon: "award" as const, label: "Classement" },
       ...(isManager
-        ? [
-            {
-              key: "equipe",
-              icon: "users" as keyof typeof Feather.glyphMap,
-              label: "Équipe",
-              targetIndex: 6,
-            },
-          ]
+        ? [{ key: "equipe", icon: "users" as const, label: "Équipe" }]
         : []),
-      {
-        key: "historique",
-        icon: "clock" as keyof typeof Feather.glyphMap,
-        label: "Historique",
-        targetIndex: isManager ? 7 : 6,
-      },
+      { key: "historique", icon: "clock" as const, label: "Historique" },
     ],
     [isManager],
   );
+
+  // La liste change avec le rôle : on remesure depuis zéro.
+  useEffect(() => {
+    setItemYs([]);
+  }, [navItems.length]);
+
+  const handleItemLayout = useCallback((index: number, y: number) => {
+    setItemYs((prev) => {
+      if (prev[index] === y) return prev;
+      const next = [...prev];
+      next[index] = y;
+      return next;
+    });
+  }, []);
+
+  const itemsReady =
+    itemYs.length === navItems.length && itemYs.every((y) => y != null);
+  const animated = position != null && itemsReady;
+
+  // L'indicateur glisse verticalement en suivant la position du pager.
+  const indicatorTranslateY = useMemo(() => {
+    if (!animated || !position) return null;
+    return position.interpolate({
+      inputRange: navItems.map((_, i) => i),
+      outputRange: navItems.map((_, i) => (itemYs[i] ?? 0) + PILL_TOP_OFFSET),
+      extrapolate: "clamp",
+    });
+  }, [animated, position, itemYs, navItems]);
 
   return (
     <View
@@ -156,13 +221,28 @@ export default function NavigationRail({
       </View>
 
       <View style={styles.navSection}>
-        {navItems.map((item) => (
+        {indicatorTranslateY ? (
+          <Animated.View
+            style={[
+              styles.indicatorWrap,
+              { transform: [{ translateY: indicatorTranslateY }] },
+            ]}
+            pointerEvents="none"
+          >
+            <View style={styles.indicatorPill} />
+          </Animated.View>
+        ) : null}
+
+        {navItems.map((item, i) => (
           <NavItem
             key={item.key}
             icon={item.icon}
             label={item.label}
-            isActive={currentIndex === item.targetIndex}
-            onPress={() => onNavigate(item.targetIndex)}
+            index={i}
+            isActive={currentIndex === i}
+            position={animated ? position : null}
+            onPress={() => onNavigate(i)}
+            onLayout={(e) => handleItemLayout(i, e.nativeEvent.layout.y)}
           />
         ))}
       </View>
@@ -183,23 +263,23 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 24,
   },
-  logo: {
-    width: 44,
-    height: 44,
-    borderRadius: 14,
-    backgroundColor: "#005BFF",
-    alignItems: "center",
-    justifyContent: "center",
-    shadowColor: "#005BFF",
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 4,
-  },
   navSection: {
     flex: 1,
     alignItems: "center",
     gap: 4,
+  },
+  indicatorWrap: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    alignItems: "center",
+  },
+  indicatorPill: {
+    width: 48,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: COLOR_ACTIVE,
   },
   navItem: {
     alignItems: "center",
@@ -216,17 +296,33 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   navIconPillActive: {
-    backgroundColor: "#005BFF",
+    backgroundColor: COLOR_ACTIVE,
+  },
+  iconOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  labelWrap: {
+    marginTop: 4,
+    alignSelf: "stretch",
   },
   navLabel: {
     fontSize: 10,
     fontWeight: "600",
-    color: "#64748B",
+    color: COLOR_INACTIVE,
     marginTop: 4,
     textAlign: "center",
   },
+  labelBase: {
+    marginTop: 0,
+  },
+  labelOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    marginTop: 0,
+  },
   navLabelActive: {
-    color: "#005BFF",
+    color: COLOR_ACTIVE,
     fontWeight: "700",
   },
 });

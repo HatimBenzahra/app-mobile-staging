@@ -19,6 +19,8 @@ function AppContent() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const [index, setIndex] = useState(0);
+  const [tabPosition, setTabPosition] =
+    useState<Animated.AnimatedInterpolation<number> | null>(null);
   const [userId, setUserId] = useState<number | null>(null);
   const [role, setRole] = useState<string | null>(null);
   const [showHeader, setShowHeader] = useState(true);
@@ -27,34 +29,46 @@ function AppContent() {
   const { focusTarget } = useMapFocus();
   const didSetInitialTab = useRef(false);
   const currentIndexRef = useRef(0);
-  const targetIndexRef = useRef(0);
+  const fromIndexRef = useRef(0);
   const settlingRef = useRef(false);
+  const settleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     currentIndexRef.current = index;
   }, [index]);
 
-  // Navigation d'onglet volontaire (rail, focus carte). On mémorise la cible et
-  // on marque la transition « en cours » : react-native-pager-view peut émettre
-  // un onPageSelected parasite avec l'ANCIEN index pendant le montage lazy de la
-  // scène de destination (et la bascule de scrollEnabled en quittant la Carte).
-  // Ce callback réécrivait l'index -> l'onglet Carte « flashait » avant de
-  // revenir sur la bonne scène. On ignore donc tout onIndexChange qui ne
-  // correspond pas à la cible tant que la transition n'est pas stabilisée.
+  useEffect(
+    () => () => {
+      if (settleTimerRef.current) clearTimeout(settleTimerRef.current);
+    },
+    [],
+  );
+
+  // Navigation volontaire (rail, focus carte). react-native-pager-view peut
+  // émettre un onPageSelected parasite avec l'ANCIEN index juste après (montage
+  // de la scène / bascule scrollEnabled en quittant la Carte) → l'onglet de
+  // départ « flashe ». On arme une garde qui n'ignore QUE ce cas précis, et qui
+  // s'AUTO-EXPIRE : contrairement à l'ancienne version, elle ne peut pas rester
+  // bloquée et faire échouer les swipes (qui restaient en chargement infini).
   const goToTab = useCallback((next: number) => {
-    if (next === currentIndexRef.current) return;
-    targetIndexRef.current = next;
+    const prev = currentIndexRef.current;
+    if (prev === next) return;
+    fromIndexRef.current = prev;
     settlingRef.current = true;
+    if (settleTimerRef.current) clearTimeout(settleTimerRef.current);
+    settleTimerRef.current = setTimeout(() => {
+      settlingRef.current = false;
+    }, 400);
     setIndex(next);
   }, []);
 
   const handleIndexChange = useCallback((next: number) => {
-    if (settlingRef.current) {
-      if (next !== targetIndexRef.current) return; // callback parasite -> ignoré
-      settlingRef.current = false; // cible atteinte, transition terminée
-    } else {
-      targetIndexRef.current = next; // swipe utilisateur : la cible suit
-    }
+    // Parasite : retour à l'index de départ pendant la stabilisation → ignoré.
+    // Tout le reste (swipe utilisateur inclus) met à jour l'index normalement,
+    // exactement comme un tap depuis la sidebar → la scène se charge.
+    if (settlingRef.current && next === fromIndexRef.current) return;
+    settlingRef.current = false;
+    if (settleTimerRef.current) clearTimeout(settleTimerRef.current);
     setIndex(next);
   }, []);
 
@@ -170,7 +184,11 @@ function AppContent() {
     <>
       <View style={styles.appLayout}>
         {railVisible ? (
-          <NavigationRail currentIndex={index} onNavigate={goToTab} />
+          <NavigationRail
+            currentIndex={index}
+            onNavigate={goToTab}
+            position={tabPosition}
+          />
         ) : null}
         <View style={styles.mainContent}>
           <SwipeTabs
@@ -179,6 +197,7 @@ function AppContent() {
             headerHeight={headerHeight}
             onHeaderVisibilityChange={setShowHeader}
             onRailVisibilityChange={setShowRail}
+            onPositionChange={setTabPosition}
           />
           {/* Overlay header : hors flux, animé en fondu. Ne redimensionne jamais
               les scènes -> pas de reflow de la map à l'ouverture de la Carte. */}
