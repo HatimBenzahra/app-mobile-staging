@@ -35,27 +35,16 @@ export default function AnimatedHeader({ currentIndex }: AnimatedHeaderProps) {
     [role],
   );
 
-  const fadeAnims = useRef([
-    new Animated.Value(1),
-    new Animated.Value(0),
-    new Animated.Value(0),
-    new Animated.Value(0),
-    new Animated.Value(0),
-    new Animated.Value(0),
-    new Animated.Value(0),
-    new Animated.Value(0),
-  ]).current;
+  // Un Animated.Value par titre possible. Dimensionné sur la liste la plus
+  // longue (MANAGER_TITLES) pour rester valide quel que soit le rôle et éviter
+  // un index sans valeur -> transform vide -> crash natif (TransformHelper).
+  const fadeAnims = useRef(
+    MANAGER_TITLES.map((_, index) => new Animated.Value(index === 0 ? 1 : 0)),
+  ).current;
 
-  const translateAnims = useRef([
-    new Animated.Value(0),
-    new Animated.Value(20),
-    new Animated.Value(20),
-    new Animated.Value(20),
-    new Animated.Value(20),
-    new Animated.Value(20),
-    new Animated.Value(20),
-    new Animated.Value(20),
-  ]).current;
+  const translateAnims = useRef(
+    MANAGER_TITLES.map((_, index) => new Animated.Value(index === 0 ? 0 : 20)),
+  ).current;
 
   useEffect(() => {
     const loadIdentity = async () => {
