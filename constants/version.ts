@@ -1,10 +1,10 @@
 // AUTO-GÉNÉRÉ par scripts/deploy-mobile.sh — ne pas éditer à la main.
 export const APP_VERSION = {
-  versionName: "1.1.54",
-  versionCode: 63,
-  gitSha: "813faba-dirty",
-  channel: "prod",
-  buildDate: "2026-07-06T08:32:45Z",
+  versionName: "1.1.55",
+  versionCode: 64,
+  gitSha: "25d334a",
+  channel: "staging",
+  buildDate: "2026-07-06T13:51:48Z",
 } as const;
 
 export const APP_VERSION_LABEL = "v" + APP_VERSION.versionName + " (" + APP_VERSION.versionCode + ")";
