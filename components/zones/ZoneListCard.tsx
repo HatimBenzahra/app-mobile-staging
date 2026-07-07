@@ -57,10 +57,21 @@ type Props = {
   commercials: ZoneCommercial[];
   /** Immeubles prospectés (agrégat `zoneStatistics`). */
   prospectedCount: number;
+  /**
+   * Affiche le compteur « N commercial(s) » et les avatars assignés. Mis à
+   * false pour un commercial (données d'équipe indisponibles côté commercial).
+   */
+  showCommercials?: boolean;
   onPress: () => void;
 };
 
-function ZoneListCardBase({ zone, commercials, prospectedCount, onPress }: Props) {
+function ZoneListCardBase({
+  zone,
+  commercials,
+  prospectedCount,
+  showCommercials = true,
+  onPress,
+}: Props) {
   const immeubleCount = zone.immeubles?.length ?? 0;
   const areaKm2 = useMemo(() => zoneAreaKm2(zone), [zone]);
   const areaLabel = `${areaKm2 < 1 ? areaKm2.toFixed(2) : areaKm2.toFixed(1)} km²`;
@@ -83,7 +94,7 @@ function ZoneListCardBase({ zone, commercials, prospectedCount, onPress }: Props
           </Text>
           <Text style={styles.subtitle} numberOfLines={1}>
             {areaLabel}
-            {commercials.length > 0 ? ` · ${commercials.length} commercial${commercials.length !== 1 ? "s" : ""}` : ""}
+            {showCommercials && commercials.length > 0 ? ` · ${commercials.length} commercial${commercials.length !== 1 ? "s" : ""}` : ""}
             {immeubleCount > 0 ? ` · ${immeubleCount} immeuble${immeubleCount !== 1 ? "s" : ""}` : ""}
           </Text>
         </View>
@@ -97,7 +108,7 @@ function ZoneListCardBase({ zone, commercials, prospectedCount, onPress }: Props
         )}
       </View>
 
-      {commercials.length > 0 ? (
+      {showCommercials && commercials.length > 0 ? (
         <View style={styles.bottomRow}>
           <View style={styles.assigned}>
             <MaterialCommunityIcons name="account-multiple-outline" size={16} color={colors.textMuted} />

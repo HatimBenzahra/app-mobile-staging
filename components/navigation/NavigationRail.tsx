@@ -171,11 +171,9 @@ export default function NavigationRail({
       { key: "stats", icon: "trending-up" as const, label: "Stats" },
       { key: "classement", icon: "award" as const, label: "Classement" },
       ...(isManager
-        ? [
-            { key: "equipe", icon: "users" as const, label: "Équipe" },
-            { key: "zones", icon: "grid" as const, label: "Zones" },
-          ]
+        ? [{ key: "equipe", icon: "users" as const, label: "Équipe" }]
         : []),
+      { key: "zones", icon: "grid" as const, label: "Zones" },
       { key: "historique", icon: "clock" as const, label: "Historique" },
     ],
     [isManager],

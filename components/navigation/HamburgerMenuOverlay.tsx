@@ -167,11 +167,18 @@ export default function HamburgerMenuOverlay({
           ]
         : []),
       {
+        key: "zones",
+        icon: "grid" as keyof typeof Feather.glyphMap,
+        label: "Zones",
+        targetIndex: isManager ? 7 : 6,
+        isActive: currentIndex === (isManager ? 7 : 6),
+      },
+      {
         key: "historique",
         icon: "clock" as keyof typeof Feather.glyphMap,
         label: "Historique",
-        targetIndex: isManager ? 7 : 6,
-        isActive: currentIndex === (isManager ? 7 : 6),
+        targetIndex: isManager ? 8 : 7,
+        isActive: currentIndex === (isManager ? 8 : 7),
       },
     ],
     [currentIndex, isManager],

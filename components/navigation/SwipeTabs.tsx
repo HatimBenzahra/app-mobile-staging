@@ -27,8 +27,8 @@ export const buildRoutes = (isManager: boolean): TabRoute[] => {
   ];
   if (isManager) {
     baseRoutes.push({ key: "equipe", title: "Équipe", icon: "users" });
-    baseRoutes.push({ key: "zones", title: "Zones", icon: "grid" });
   }
+  baseRoutes.push({ key: "zones", title: "Zones", icon: "grid" });
   baseRoutes.push({ key: "historique", title: "Historique", icon: "clock" });
   return baseRoutes;
 };

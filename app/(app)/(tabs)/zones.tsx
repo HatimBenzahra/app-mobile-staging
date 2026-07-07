@@ -88,7 +88,10 @@ export default function ZonesScreen() {
     data: zonesData,
     loading,
     refetch: refetchZones,
-  } = useZonesForUser(isManager ? userId : null, "MANAGER");
+  } = useZonesForUser(
+    userId,
+    role === null ? null : isManager ? "MANAGER" : "COMMERCIAL",
+  );
   const { data: statsData, refetch: refetchStats } = useZoneStatisticsList();
 
   const managerProfile = useMemo(
@@ -232,19 +235,7 @@ export default function ZonesScreen() {
         <Card variant="outlined" padding="lg" style={styles.stateCard}>
           <Feather name="loader" size={28} color={colors.textSubtle} />
           <Text style={styles.stateTitle}>Chargement</Text>
-          <Text style={styles.stateText}>Récupération du profil manager...</Text>
-        </Card>
-      </View>
-    );
-  }
-
-  if (!isManager) {
-    return (
-      <View style={[styles.container, { paddingTop: insets.top + 24 }]}>
-        <Card variant="outlined" padding="lg" style={styles.stateCard}>
-          <Feather name="lock" size={28} color={colors.textSubtle} />
-          <Text style={styles.stateTitle}>Accès manager</Text>
-          <Text style={styles.stateText}>Cette page est réservée aux managers.</Text>
+          <Text style={styles.stateText}>Récupération de vos zones...</Text>
         </Card>
       </View>
     );
@@ -350,15 +341,17 @@ export default function ZonesScreen() {
         ))}
       </ScrollView>
 
-      <Pressable
-        style={styles.createButton}
-        onPress={() =>
-          router.push("/zone/create" as Parameters<typeof router.push>[0])
-        }
-      >
-        <Feather name="plus" size={18} color={colors.textOnPrimary} />
-        <Text style={styles.createText}>Créer une zone</Text>
-      </Pressable>
+      {isManager ? (
+        <Pressable
+          style={styles.createButton}
+          onPress={() =>
+            router.push("/zone/create" as Parameters<typeof router.push>[0])
+          }
+        >
+          <Feather name="plus" size={18} color={colors.textOnPrimary} />
+          <Text style={styles.createText}>Créer une zone</Text>
+        </Pressable>
+      ) : null}
 
       {visibleZones.length === 0 ? (
         <Card variant="outlined" padding="lg" style={styles.stateCard}>
@@ -372,7 +365,9 @@ export default function ZonesScreen() {
           </Text>
           <Text style={styles.stateText}>
             {zones.length === 0
-              ? "Trace une zone sur la carte pour l'assigner à ton équipe."
+              ? isManager
+                ? "Trace une zone sur la carte pour l'assigner à ton équipe."
+                : "Aucune zone ne t'a encore été assignée."
               : hasActiveFilters
                 ? "Aucune zone ne correspond à ces filtres. Ajuste-les ou réinitialise."
                 : "Aucune zone ne correspond à ta recherche."}
@@ -385,6 +380,7 @@ export default function ZonesScreen() {
             zone={zone}
             commercials={commercialsByZone.get(zone.id) ?? []}
             prospectedCount={prospectedByZone.get(zone.id) ?? 0}
+            showCommercials={isManager}
             onPress={() => openZoneDetail(zone.id)}
           />
         ))

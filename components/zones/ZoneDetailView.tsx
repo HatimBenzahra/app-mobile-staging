@@ -357,7 +357,7 @@ export function ZoneDetailView({ zoneId, onBack }: ZoneDetailViewProps) {
       {
         key: "immeubles",
         icon: "home",
-        label: "Immeubles visités",
+        label: "Bâtiments visités",
         value: stats.totalImmeublesVisites,
       },
       {
@@ -538,9 +538,9 @@ export function ZoneDetailView({ zoneId, onBack }: ZoneDetailViewProps) {
       ) : null}
 
       {/* Immeubles concernés */}
-      <Text style={styles.sectionTitle}>Immeubles ({immeubles.length})</Text>
+      <Text style={styles.sectionTitle}>Bâtiments ({immeubles.length})</Text>
       {immeubles.length === 0 ? (
-        <Text style={styles.sectionEmpty}>Aucun immeuble dans la zone.</Text>
+        <Text style={styles.sectionEmpty}>Aucun bâtiment dans la zone.</Text>
       ) : (
         <Card variant="outlined" padding="none" style={styles.immeubleList}>
           {immeubles.map((imm, index) => {
@@ -655,7 +655,7 @@ export function ZoneDetailView({ zoneId, onBack }: ZoneDetailViewProps) {
             <Text style={styles.headerSub}>
               {stats.nombreCommerciaux} commercial
               {stats.nombreCommerciaux !== 1 ? "aux" : ""} ·{" "}
-              {immeubles.length} immeuble{immeubles.length !== 1 ? "s" : ""}
+              {immeubles.length} bâtiment{immeubles.length !== 1 ? "s" : ""}
             </Text>
           ) : null}
         </View>

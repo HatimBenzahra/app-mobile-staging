@@ -10,7 +10,7 @@ type AnimatedHeaderProps = {
   currentIndex: number;
 };
 
-const BASE_TITLES = ["Tableau", "Carte", "Lieux", "Agenda", "Stats", "Classement", "Historique"];
+const BASE_TITLES = ["Tableau", "Carte", "Lieux", "Agenda", "Stats", "Classement", "Zones", "Historique"];
 const MANAGER_TITLES = [
   "Tableau",
   "Carte",
