@@ -1,7 +1,7 @@
 import { Card, Chip } from "@/components/ui";
 import { colors } from "@/constants/theme";
 import type { DraftPin } from "@/hooks/carte-terrain/types";
-import type { Commercial } from "@/types/api";
+import type { ZoneAssignable } from "@/hooks/zone/use-zone-draft";
 import { Feather } from "@expo/vector-icons";
 import { useState } from "react";
 import {
@@ -19,19 +19,19 @@ type ZonePanelProps = {
   insets: EdgeInsets;
   zonePins: DraftPin[];
   activeZonePinId: string | null;
-  commercials: Commercial[];
+  assignables: ZoneAssignable[];
   creating: boolean;
   readyToCreateZone: boolean;
   onSelectZonePin: (pin: DraftPin) => void;
   onRemoveActiveZonePin: () => void;
-  onCreateZone: (nom: string, commercialIds: number[]) => void;
+  onCreateZone: (nom: string, selectedIds: number[]) => void;
 };
 
 export function ZonePanel({
   insets,
   zonePins,
   activeZonePinId,
-  commercials,
+  assignables,
   creating,
   readyToCreateZone,
   onSelectZonePin,
@@ -45,7 +45,7 @@ export function ZonePanel({
   const cardStyle = [styles.panel, { paddingBottom: Math.max(insets.bottom, 12) }];
   const canCreate = readyToCreateZone && nom.trim().length > 0;
 
-  const toggleCommercial = (id: number) => {
+  const toggleAssignable = (id: number) => {
     setSelectedIds((current) =>
       current.includes(id) ? current.filter((c) => c !== id) : [...current, id],
     );
@@ -104,17 +104,18 @@ export function ZonePanel({
         placeholderTextColor={colors.textSubtle}
       />
 
-      {commercials.length > 0 && (
+      {assignables.length > 0 && (
         <>
           <Text style={styles.zoneSectionLabel}>Assigner à</Text>
           <View style={styles.zoneChipsRow}>
-            {commercials.map((commercial) => (
+            {assignables.map((assignable) => (
               <Chip
-                key={commercial.id}
-                label={`${commercial.prenom} ${commercial.nom}`}
-                icon="user"
-                selected={selectedIds.includes(commercial.id)}
-                onPress={() => toggleCommercial(commercial.id)}
+                key={assignable.id}
+                label={assignable.label}
+                icon={assignable.self ? "user-check" : "user"}
+                tone={assignable.self ? "info" : "neutral"}
+                selected={selectedIds.includes(assignable.id)}
+                onPress={() => toggleAssignable(assignable.id)}
               />
             ))}
           </View>

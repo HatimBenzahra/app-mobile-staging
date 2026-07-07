@@ -15,7 +15,7 @@ import type {
   Zone as SchemaZone,
 } from './graphql-schema';
 
-export type { InputMaybe, Maybe, Scalars, StatutPorte, UserStatus, UserType } from './graphql-schema';
+export type { AssignZoneInput, InputMaybe, Maybe, Scalars, StatutPorte, UserStatus, UserType } from './graphql-schema';
 
 export interface GraphQLResponse<T> {
   data?: T;

@@ -18,7 +18,7 @@ export default function ZoneCreateScreen() {
     mapCenter,
     zonePins,
     activeZonePinId,
-    commercials,
+    assignables,
     loadingLocation,
     creating,
     readyToCreateZone,
@@ -133,7 +133,7 @@ export default function ZoneCreateScreen() {
         insets={insets}
         zonePins={zonePins}
         activeZonePinId={activeZonePinId}
-        commercials={commercials}
+        assignables={assignables}
         creating={creating}
         readyToCreateZone={readyToCreateZone}
         onSelectZonePin={selectZonePin}

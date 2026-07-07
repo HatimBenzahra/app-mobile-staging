@@ -6,12 +6,23 @@ import { makeDraftPin } from "@/hooks/carte-terrain/helpers";
 import type { DraftPin, TerrainPoint } from "@/hooks/carte-terrain/types";
 import { api } from "@/services/api";
 import { authService } from "@/services/auth";
-import type { Commercial, Manager } from "@/types/api";
+import type { Manager, UserType } from "@/types/api";
 import { type CameraRef } from "@maplibre/maplibre-react-native";
 import * as Location from "expo-location";
 import { router } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Alert } from "react-native";
+
+/**
+ * Cible d'assignation d'une zone : soit le manager lui-même (`self`), soit un
+ * commercial de son équipe. `role` porte le `UserType` envoyé au backend.
+ */
+export type ZoneAssignable = {
+  id: number;
+  label: string;
+  role: UserType;
+  self: boolean;
+};
 
 /**
  * Tracé d'une zone dans la page dédiée (`/zone/create`). Extrait de
@@ -50,11 +61,26 @@ export function useZoneDraft() {
     };
   }, []);
 
-  // Commerciaux de l'équipe (manager uniquement) — cible d'assignation d'une zone.
-  const commercials = useMemo<Commercial[]>(
-    () => (role === "manager" ? ((profile as Manager | null)?.commercials ?? []) : []),
-    [profile, role],
-  );
+  // Cibles d'assignation (manager uniquement) : le manager lui-même en tête,
+  // puis les commerciaux de son équipe. Le manager fait partie de l'équipe et
+  // peut donc s'assigner la zone (userType MANAGER → crée sa ZoneEnCours).
+  const assignables = useMemo<ZoneAssignable[]>(() => {
+    if (role !== "manager") return [];
+    const manager = profile as Manager | null;
+    const list: ZoneAssignable[] = [];
+    if (userId != null && manager) {
+      list.push({ id: userId, label: "Moi (manager)", role: "MANAGER", self: true });
+    }
+    for (const commercial of manager?.commercials ?? []) {
+      list.push({
+        id: commercial.id,
+        label: `${commercial.prenom} ${commercial.nom}`,
+        role: "COMMERCIAL",
+        self: false,
+      });
+    }
+    return list;
+  }, [profile, role, userId]);
 
   // Un sommet de zone n'est qu'une coordonnée : pas d'adresse à résoudre.
   const addZonePin = useCallback((point: TerrainPoint) => {
@@ -131,7 +157,7 @@ export function useZoneDraft() {
   }, []);
 
   const handleCreateZone = useCallback(
-    async (nom: string, commercialIds: number[]) => {
+    async (nom: string, selectedIds: number[]) => {
       const trimmed = nom.trim();
       if (!trimmed || zonePins.length < 3) {
         Alert.alert("Zone incomplete", "Donne un nom et pose au moins 3 sommets.");
@@ -150,9 +176,17 @@ export function useZoneDraft() {
           return;
         }
 
-        if (commercialIds.length > 0) {
+        // Chaque sélection est assignée selon son rôle : le manager via
+        // l'assignation générique (userType MANAGER), les commerciaux via
+        // l'assignation dédiée existante.
+        const targets = assignables.filter((target) => selectedIds.includes(target.id));
+        if (targets.length > 0) {
           await Promise.all(
-            commercialIds.map((id) => api.zones.assignToCommercial(id, newZone.id)),
+            targets.map((target) =>
+              target.self
+                ? api.zones.assignToUser(target.id, target.role, newZone.id)
+                : api.zones.assignToCommercial(target.id, newZone.id),
+            ),
           );
         }
 
@@ -167,7 +201,7 @@ export function useZoneDraft() {
         setCreating(false);
       }
     },
-    [zonePins, createZone, refetch, toast],
+    [zonePins, assignables, createZone, refetch, toast],
   );
 
   // Une zone est un polygone : au moins 3 sommets (le nom est validé côté panneau).
@@ -178,7 +212,7 @@ export function useZoneDraft() {
     mapCenter,
     zonePins,
     activeZonePinId,
-    commercials,
+    assignables,
     loadingLocation,
     creating,
     readyToCreateZone,

@@ -22,3 +22,11 @@ export const ASSIGN_ZONE_TO_COMMERCIAL = `
     assignZoneToCommercial(commercialId: $commercialId, zoneId: $zoneId)
   }
 `;
+
+// Assignation générique (COMMERCIAL | MANAGER | DIRECTEUR) : un manager peut
+// s'assigner lui-même (userType MANAGER), ce qui crée sa ZoneEnCours.
+export const ASSIGN_ZONE_TO_USER = `
+  mutation AssignZoneToUser($input: AssignZoneInput!) {
+    assignZoneToUser(input: $input)
+  }
+`;
