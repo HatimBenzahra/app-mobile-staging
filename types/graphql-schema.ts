@@ -12,7 +12,9 @@ export type Scalars = {
   Boolean: { input: boolean; output: boolean; }
   Int: { input: number; output: number; }
   Float: { input: number; output: number; }
+  /** A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format. */
   DateTime: { input: string; output: string; }
+  /** The `JSON` scalar type represents JSON values as specified by [ECMA-404](http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf). */
   JSON: { input: Record<string, unknown>; output: Record<string, unknown>; }
 };
 
@@ -328,6 +330,7 @@ export type ActiveRoom = {
 };
 
 export type AssignZoneInput = {
+  cascade?: InputMaybe<Scalars['Boolean']['input']>;
   userId: Scalars['Int']['input'];
   userType: UserType;
   zoneId: Scalars['Int']['input'];
@@ -1523,6 +1526,7 @@ export type Query = {
   zoneProspections: Array<ZoneProspection>;
   zoneStatistics: Array<ZoneStatistic>;
   zones: Array<Zone>;
+  zonesForUser: Array<Zone>;
 };
 
 
@@ -1852,6 +1856,12 @@ export type QueryZoneHistoryArgs = {
 
 export type QueryZoneProspectionsArgs = {
   zoneId: Scalars['Int']['input'];
+};
+
+
+export type QueryZonesForUserArgs = {
+  userId: Scalars['Int']['input'];
+  userType: UserType;
 };
 
 /** Période de classement (jour, semaine, mois, trimestre, année) */

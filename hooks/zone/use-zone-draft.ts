@@ -19,6 +19,7 @@ import { Alert } from "react-native";
  * commercial de son équipe. `role` porte le `UserType` envoyé au backend.
  */
 export type ZoneAssignable = {
+  key: string;
   id: number;
   label: string;
   role: UserType;
@@ -80,10 +81,17 @@ export function useZoneDraft() {
     const manager = profile as Manager | null;
     const list: ZoneAssignable[] = [];
     if (userId != null && manager) {
-      list.push({ id: userId, label: "Moi (manager)", role: "MANAGER", self: true });
+      list.push({
+        key: `MANAGER:${userId}`,
+        id: userId,
+        label: "Moi (manager)",
+        role: "MANAGER",
+        self: true,
+      });
     }
     for (const commercial of manager?.commercials ?? []) {
       list.push({
+        key: `COMMERCIAL:${commercial.id}`,
         id: commercial.id,
         label: `${commercial.prenom} ${commercial.nom}`,
         role: "COMMERCIAL",
@@ -203,7 +211,7 @@ export function useZoneDraft() {
   }, []);
 
   const handleCreateZone = useCallback(
-    async (nom: string, selectedIds: number[]) => {
+    async (nom: string, selectedKeys: string[]) => {
       const trimmed = nom.trim();
       if (!trimmed || zonePins.length < 3) {
         Alert.alert("Zone incomplete", "Donne un nom et pose au moins 3 sommets.");
@@ -225,12 +233,12 @@ export function useZoneDraft() {
         // Chaque sélection est assignée selon son rôle : le manager via
         // l'assignation générique (userType MANAGER), les commerciaux via
         // l'assignation dédiée existante.
-        const targets = assignables.filter((target) => selectedIds.includes(target.id));
+        const targets = assignables.filter((target) => selectedKeys.includes(target.key));
         if (targets.length > 0) {
           await Promise.all(
             targets.map((target) =>
               target.self
-                ? api.zones.assignToUser(target.id, target.role, newZone.id)
+                ? api.zones.assignToUser(target.id, target.role, newZone.id, false)
                 : api.zones.assignToCommercial(target.id, newZone.id),
             ),
           );

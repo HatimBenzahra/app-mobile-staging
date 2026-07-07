@@ -10,10 +10,12 @@ import { useZoneStatisticsList } from "@/hooks/api/use-zone-statistics-list";
 import { useZonesForUser } from "@/hooks/api/use-zones-for-user";
 import { useZoneDetailPanel } from "@/hooks/use-zone-detail-panel";
 import { authService } from "@/services/auth";
+import { dataSyncService } from "@/services/sync/data-sync.service";
 import type { Manager } from "@/types/api";
 import { Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { useEffect, useMemo, useState } from "react";
+import { useIsFocused } from "@react-navigation/native";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Pressable,
   RefreshControl,
@@ -36,11 +38,14 @@ const SORT_OPTIONS: { key: SortKey; label: string }[] = [
 export default function ZonesScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const isFocused = useIsFocused();
   const { openZoneDetail } = useZoneDetailPanel();
   const [userId, setUserId] = useState<number | null>(null);
   const [role, setRole] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState<SortKey>("nom");
+  const shouldRefetchOnFocusRef = useRef(false);
+  const wasFocusedRef = useRef(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -76,6 +81,36 @@ export default function ZonesScreen() {
   );
 
   const zones = useMemo(() => zonesData ?? [], [zonesData]);
+
+  useEffect(() => {
+    const unsubscribe = dataSyncService.subscribe((event) => {
+      if (event.type !== "ZONE_CREATED") return;
+      if (isFocused) {
+        void refetchZones();
+        void refetchProfile();
+        void refetchStats();
+        return;
+      }
+      shouldRefetchOnFocusRef.current = true;
+    });
+    return unsubscribe;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isFocused]);
+
+  useEffect(() => {
+    if (!isFocused) {
+      wasFocusedRef.current = false;
+      return;
+    }
+    if (wasFocusedRef.current) return;
+    wasFocusedRef.current = true;
+    if (!shouldRefetchOnFocusRef.current) return;
+    shouldRefetchOnFocusRef.current = false;
+    void refetchZones();
+    void refetchProfile();
+    void refetchStats();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isFocused]);
 
   // Commerciaux assignés par zone : un commercial est assigné à une zone si sa
   // liste `zones` (profil manager) contient l'id de celle-ci.

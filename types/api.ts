@@ -13,6 +13,7 @@ import type {
   TeamRanking as SchemaTeamRanking,
   UpdatePorteInput as SchemaUpdatePorteInput,
   Zone as SchemaZone,
+  ZoneEnCours as SchemaZoneEnCours,
 } from './graphql-schema';
 
 export type { AssignZoneInput, InputMaybe, Maybe, Scalars, StatutPorte, UserStatus, UserType } from './graphql-schema';
@@ -84,6 +85,14 @@ export type Zone = {
   rayon: SchemaZone['rayon'];
   // Anneau fermé [[lng,lat],…] (JSON scalar côté schéma). Nullable.
   polygon?: number[][] | null;
+};
+
+export type ZoneEnCours = {
+  id: SchemaZoneEnCours['id'];
+  zoneId: SchemaZoneEnCours['zoneId'];
+  userId: SchemaZoneEnCours['userId'];
+  userType: SchemaZoneEnCours['userType'];
+  assignedAt: SchemaZoneEnCours['assignedAt'];
 };
 
 // Création d'une zone (tracé terrain manager). Le backend force managerId et

@@ -3,7 +3,7 @@ import { authService } from "@/services/auth";
 import { Feather } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Animated, Pressable, StyleSheet, Text, View } from "react-native";
+import { Animated, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 type MenuItemProps = {
@@ -287,16 +287,21 @@ export default function HamburgerMenuOverlay({
 
         <View style={styles.navigationSection}>
           <Text style={styles.sectionLabel}>Navigation</Text>
-          {menuItems.map((item, index) => (
-            <MenuItem
-              key={item.key}
-              icon={item.icon}
-              label={item.label}
-              isActive={item.isActive}
-              animValue={itemAnims[index]}
-              onPress={() => handleNavigate(item.targetIndex)}
-            />
-          ))}
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.navigationScrollContent}
+          >
+            {menuItems.map((item, index) => (
+              <MenuItem
+                key={item.key}
+                icon={item.icon}
+                label={item.label}
+                isActive={item.isActive}
+                animValue={itemAnims[index]}
+                onPress={() => handleNavigate(item.targetIndex)}
+              />
+            ))}
+          </ScrollView>
         </View>
       </Animated.View>
     </View>
@@ -412,6 +417,9 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 16,
     paddingTop: 20,
+  },
+  navigationScrollContent: {
+    paddingBottom: 12,
   },
   sectionLabel: {
     fontSize: 11,

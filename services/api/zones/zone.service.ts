@@ -1,5 +1,12 @@
 import { gql } from "@/services/core/graphql";
-import type { AssignZoneInput, CreateZoneInput, Immeuble, UserType, Zone } from "@/types/api";
+import type {
+  AssignZoneInput,
+  CreateZoneInput,
+  Immeuble,
+  UserType,
+  Zone,
+  ZoneEnCours,
+} from "@/types/api";
 import {
   ASSIGN_ZONE_TO_COMMERCIAL,
   ASSIGN_ZONE_TO_USER,
@@ -47,11 +54,18 @@ export const zoneApi = {
 
   // Assignation générique : permet notamment au manager de s'assigner lui-même
   // (userType MANAGER) à sa propre zone.
-  async assignToUser(userId: number, userType: UserType, zoneId: number): Promise<boolean> {
+  async assignToUser(
+    userId: number,
+    userType: UserType,
+    zoneId: number,
+    cascade?: boolean,
+  ): Promise<ZoneEnCours> {
     const response = await gql<
-      { assignZoneToUser: boolean },
+      { assignZoneToUser: ZoneEnCours },
       { input: AssignZoneInput }
-    >(ASSIGN_ZONE_TO_USER, { input: { userId, userType, zoneId } });
+    >(ASSIGN_ZONE_TO_USER, {
+      input: { userId, userType, zoneId, ...(cascade !== undefined ? { cascade } : {}) },
+    });
     return response.assignZoneToUser;
   },
 };

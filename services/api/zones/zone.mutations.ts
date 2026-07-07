@@ -27,6 +27,12 @@ export const ASSIGN_ZONE_TO_COMMERCIAL = `
 // s'assigner lui-même (userType MANAGER), ce qui crée sa ZoneEnCours.
 export const ASSIGN_ZONE_TO_USER = `
   mutation AssignZoneToUser($input: AssignZoneInput!) {
-    assignZoneToUser(input: $input)
+    assignZoneToUser(input: $input) {
+      id
+      zoneId
+      userId
+      userType
+      assignedAt
+    }
   }
 `;

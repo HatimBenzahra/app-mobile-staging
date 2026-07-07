@@ -24,7 +24,7 @@ type ZonePanelProps = {
   readyToCreateZone: boolean;
   onSelectZonePin: (pin: DraftPin) => void;
   onRemoveActiveZonePin: () => void;
-  onCreateZone: (nom: string, selectedIds: number[]) => void;
+  onCreateZone: (nom: string, selectedKeys: string[]) => void;
 };
 
 export function ZonePanel({
@@ -39,15 +39,15 @@ export function ZonePanel({
   onCreateZone,
 }: ZonePanelProps) {
   const [nom, setNom] = useState("");
-  const [selectedIds, setSelectedIds] = useState<number[]>([]);
+  const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
 
   const totalSommets = zonePins.length;
   const cardStyle = [styles.panel, { paddingBottom: Math.max(insets.bottom, 12) }];
   const canCreate = readyToCreateZone && nom.trim().length > 0;
 
-  const toggleAssignable = (id: number) => {
-    setSelectedIds((current) =>
-      current.includes(id) ? current.filter((c) => c !== id) : [...current, id],
+  const toggleAssignable = (key: string) => {
+    setSelectedKeys((current) =>
+      current.includes(key) ? current.filter((c) => c !== key) : [...current, key],
     );
   };
 
@@ -110,12 +110,12 @@ export function ZonePanel({
           <View style={styles.zoneChipsRow}>
             {assignables.map((assignable) => (
               <Chip
-                key={assignable.id}
+                key={assignable.key}
                 label={assignable.label}
                 icon={assignable.self ? "user-check" : "user"}
                 tone={assignable.self ? "info" : "neutral"}
-                selected={selectedIds.includes(assignable.id)}
-                onPress={() => toggleAssignable(assignable.id)}
+                selected={selectedKeys.includes(assignable.key)}
+                onPress={() => toggleAssignable(assignable.key)}
               />
             ))}
           </View>
@@ -124,7 +124,7 @@ export function ZonePanel({
 
       <Pressable
         style={[styles.createButton, !canCreate && styles.createButtonDisabled]}
-        onPress={() => onCreateZone(nom, selectedIds)}
+        onPress={() => onCreateZone(nom, selectedKeys)}
         disabled={!canCreate}
       >
         {creating ? (

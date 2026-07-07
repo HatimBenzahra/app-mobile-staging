@@ -206,10 +206,18 @@ export function ZoneDetailView({ zoneId, onBack }: ZoneDetailViewProps) {
 
   const zone = zoneQuery.data;
   const stats = statsQuery.data;
-  const prospections = useMemo(
-    () => prospectionsQuery.data ?? [],
-    [prospectionsQuery.data],
-  );
+  const prospections = useMemo(() => {
+    const list = [...(prospectionsQuery.data ?? [])];
+    list.sort((a, b) => {
+      const ta = a.date ? new Date(a.date).getTime() : -Infinity;
+      const tb = b.date ? new Date(b.date).getTime() : -Infinity;
+      if (Number.isNaN(ta) && Number.isNaN(tb)) return 0;
+      if (Number.isNaN(ta)) return 1;
+      if (Number.isNaN(tb)) return -1;
+      return tb - ta;
+    });
+    return list;
+  }, [prospectionsQuery.data]);
 
   const zoneName =
     zone?.nom ?? stats?.zoneName ?? (zoneId != null ? `Zone #${zoneId}` : "Zone");
