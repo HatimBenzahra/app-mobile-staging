@@ -24,6 +24,25 @@ export const GET_ZONE_DETAIL = `
   }
 `;
 
+export const ZONES_FOR_USER = `
+  query ZonesForUser($userId: Int!, $userType: UserType!) {
+    zonesForUser(userId: $userId, userType: $userType) {
+      id
+      nom
+      polygon
+      xOrigin
+      yOrigin
+      rayon
+      immeubles {
+        id
+        adresse
+        latitude
+        longitude
+      }
+    }
+  }
+`;
+
 export const GET_ZONE_STATISTICS = `
   query GetZoneStatistics {
     zoneStatistics {

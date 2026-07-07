@@ -3,12 +3,14 @@ import { useCreateQuartier } from "@/hooks/api/use-create-quartier";
 import { useMapFocus } from "@/hooks/use-map-focus";
 import { useQuartiers } from "@/hooks/api/use-quartiers";
 import { useWorkspaceProfile } from "@/hooks/api/use-workspace-profile";
+import { useZonesForUser } from "@/hooks/api/use-zones-for-user";
 import { api } from "@/services/api";
 import { authService } from "@/services/auth";
 import type {
   CreateQuartierPointInput,
   Immeuble,
   TypeHabitat,
+  UserType,
   Zone,
 } from "@/types/api";
 import { type CameraRef, type PressEvent } from "@maplibre/maplibre-react-native";
@@ -103,6 +105,14 @@ export function useCarteTerrain({ embedded = false }: UseCarteTerrainParams = {}
   }, [selectedExistingLieu]);
 
   const { data: profile, refetch } = useWorkspaceProfile(userId, role);
+  // Zones à afficher : source de vérité `zonesForUser` (commercial = ZoneEnCours ;
+  // manager = possédées OU assignées). Le rôle stocké est en minuscules → on le
+  // convertit vers l'enum `UserType` attendu par le hook.
+  const userType = useMemo<UserType | null>(
+    () => (role == null ? null : role === "manager" ? "MANAGER" : "COMMERCIAL"),
+    [role],
+  );
+  const { data: userZones } = useZonesForUser(userId, userType);
   const { data: quartiers } = useQuartiers();
   const { createMaison, loading: creatingMaison } = useCreateMaison();
   const { createQuartier } = useCreateQuartier();
@@ -277,8 +287,8 @@ export function useCarteTerrain({ embedded = false }: UseCarteTerrainParams = {}
     return full || undefined;
   }, [profile]);
 
-  // Zone(s) assignée(s) à l'utilisateur — exposées par le profil manager comme commercial.
-  const zones = useMemo(() => profile?.zones ?? [], [profile]);
+  // Zone(s) à afficher pour l'utilisateur — via `zonesForUser` (cf. userType).
+  const zones = useMemo(() => userZones ?? [], [userZones]);
 
   // Tap sur le contour d'une zone (VISUALISATION) : on retrouve la zone dans la
   // liste du profil, on ouvre le ZoneSheet et on ferme le BuildingSheet

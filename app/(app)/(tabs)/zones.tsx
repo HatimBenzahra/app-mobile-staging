@@ -1,6 +1,13 @@
-import { Card } from "@/components/ui";
+import { Card, Chip } from "@/components/ui";
+import {
+  ZoneListCard,
+  zoneAreaKm2,
+  type ZoneCommercial,
+} from "@/components/zones/ZoneListCard";
 import { colors, fontSize, fontWeight, radius, spacing } from "@/constants/theme";
 import { useWorkspaceProfile } from "@/hooks/api/use-workspace-profile";
+import { useZoneStatisticsList } from "@/hooks/api/use-zone-statistics-list";
+import { useZonesForUser } from "@/hooks/api/use-zones-for-user";
 import { authService } from "@/services/auth";
 import type { Manager } from "@/types/api";
 import { Feather } from "@expo/vector-icons";
@@ -12,15 +19,26 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+
+type SortKey = "nom" | "superficie" | "commerciaux";
+
+const SORT_OPTIONS: { key: SortKey; label: string }[] = [
+  { key: "nom", label: "Nom" },
+  { key: "superficie", label: "Superficie" },
+  { key: "commerciaux", label: "Commerciaux" },
+];
 
 export default function ZonesScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const [userId, setUserId] = useState<number | null>(null);
   const [role, setRole] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+  const [sort, setSort] = useState<SortKey>("nom");
 
   useEffect(() => {
     let isMounted = true;
@@ -37,26 +55,79 @@ export default function ZonesScreen() {
     };
   }, []);
 
-  const { data: profile, loading, refetch } = useWorkspaceProfile(userId, role);
+  const isManager = role === "manager";
+
+  const { data: profile, refetch: refetchProfile } = useWorkspaceProfile(
+    userId,
+    role,
+  );
+  const {
+    data: zonesData,
+    loading,
+    refetch: refetchZones,
+  } = useZonesForUser(isManager ? userId : null, "MANAGER");
+  const { data: statsData, refetch: refetchStats } = useZoneStatisticsList();
 
   const managerProfile = useMemo(
-    () => (role === "manager" ? (profile as Manager | null) : null),
-    [profile, role],
+    () => (isManager ? (profile as Manager | null) : null),
+    [profile, isManager],
   );
 
-  const zones = useMemo(() => managerProfile?.zones ?? [], [managerProfile]);
+  const zones = useMemo(() => zonesData ?? [], [zonesData]);
 
-  // Nombre de commerciaux assignés par zone : un commercial est assigné à une
-  // zone si sa liste `zones` contient l'id de celle-ci (profil manager).
-  const assignedCountByZone = useMemo(() => {
-    const counts = new Map<number, number>();
+  // Commerciaux assignés par zone : un commercial est assigné à une zone si sa
+  // liste `zones` (profil manager) contient l'id de celle-ci.
+  const commercialsByZone = useMemo(() => {
+    const map = new Map<number, ZoneCommercial[]>();
     (managerProfile?.commercials ?? []).forEach((commercial) => {
       (commercial.zones ?? []).forEach((zone) => {
-        counts.set(zone.id, (counts.get(zone.id) ?? 0) + 1);
+        const list = map.get(zone.id) ?? [];
+        list.push({
+          id: commercial.id,
+          prenom: commercial.prenom,
+          nom: commercial.nom,
+        });
+        map.set(zone.id, list);
       });
     });
-    return counts;
+    return map;
   }, [managerProfile]);
+
+  // Immeubles prospectés par zone (agrégat `zoneStatistics`), mappé par zoneId.
+  const prospectedByZone = useMemo(() => {
+    const map = new Map<number, number>();
+    (statsData ?? []).forEach((stat) => {
+      map.set(stat.zoneId, stat.totalImmeublesProspectes);
+    });
+    return map;
+  }, [statsData]);
+
+  const visibleZones = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    const filtered = query
+      ? zones.filter((zone) => zone.nom.toLowerCase().includes(query))
+      : zones;
+    const sorted = [...filtered];
+    sorted.sort((a, b) => {
+      if (sort === "superficie") {
+        return zoneAreaKm2(b) - zoneAreaKm2(a);
+      }
+      if (sort === "commerciaux") {
+        return (
+          (commercialsByZone.get(b.id)?.length ?? 0) -
+          (commercialsByZone.get(a.id)?.length ?? 0)
+        );
+      }
+      return a.nom.localeCompare(b.nom);
+    });
+    return sorted;
+  }, [zones, search, sort, commercialsByZone]);
+
+  const onRefresh = () => {
+    void refetchZones();
+    void refetchProfile();
+    void refetchStats();
+  };
 
   if (role === null) {
     return (
@@ -70,7 +141,7 @@ export default function ZonesScreen() {
     );
   }
 
-  if (role !== "manager") {
+  if (!isManager) {
     return (
       <View style={[styles.container, { paddingTop: insets.top + 24 }]}>
         <Card variant="outlined" padding="lg" style={styles.stateCard}>
@@ -86,11 +157,45 @@ export default function ZonesScreen() {
     <ScrollView
       style={styles.container}
       contentContainerStyle={[styles.content, { paddingTop: insets.top + 16 }]}
+      keyboardShouldPersistTaps="handled"
       refreshControl={
-        <RefreshControl refreshing={loading} onRefresh={() => void refetch()} tintColor={colors.primary} />
+        <RefreshControl refreshing={loading} onRefresh={onRefresh} tintColor={colors.primary} />
       }
     >
       <Text style={styles.heading}>Zones</Text>
+
+      <View style={styles.searchBar}>
+        <Feather name="search" size={18} color={colors.textSubtle} />
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Rechercher une zone"
+          placeholderTextColor={colors.textSubtle}
+          value={search}
+          onChangeText={setSearch}
+          returnKeyType="search"
+          autoCorrect={false}
+        />
+        {search.length > 0 ? (
+          <Pressable onPress={() => setSearch("")} hitSlop={8}>
+            <Feather name="x" size={18} color={colors.textSubtle} />
+          </Pressable>
+        ) : null}
+      </View>
+
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.sortRow}
+      >
+        {SORT_OPTIONS.map((option) => (
+          <Chip
+            key={option.key}
+            label={option.label}
+            selected={sort === option.key}
+            onPress={() => setSort(option.key)}
+          />
+        ))}
+      </ScrollView>
 
       <Pressable
         style={styles.createButton}
@@ -102,45 +207,30 @@ export default function ZonesScreen() {
         <Text style={styles.createText}>Créer une zone</Text>
       </Pressable>
 
-      {zones.length === 0 ? (
+      {visibleZones.length === 0 ? (
         <Card variant="outlined" padding="lg" style={styles.stateCard}>
-          <Feather name="grid" size={28} color={colors.textSubtle} />
-          <Text style={styles.stateTitle}>Aucune zone</Text>
+          <Feather name="layers" size={28} color={colors.textSubtle} />
+          <Text style={styles.stateTitle}>
+            {search.trim() ? "Aucun résultat" : "Aucune zone"}
+          </Text>
           <Text style={styles.stateText}>
-            Trace une zone sur la carte pour l&apos;assigner à ton équipe.
+            {search.trim()
+              ? "Aucune zone ne correspond à ta recherche."
+              : "Trace une zone sur la carte pour l'assigner à ton équipe."}
           </Text>
         </Card>
       ) : (
-        zones.map((zone) => {
-          const count = assignedCountByZone.get(zone.id) ?? 0;
-          return (
-            <Pressable
-              key={zone.id}
-              onPress={() =>
-                router.push(
-                  `/zone/${zone.id}` as Parameters<typeof router.push>[0],
-                )
-              }
-            >
-              <Card variant="elevated" padding="md" style={styles.zoneCard}>
-                <View style={styles.zoneIcon}>
-                  <Feather name="grid" size={18} color={colors.info} />
-                </View>
-                <View style={styles.zoneInfo}>
-                  <Text style={styles.zoneName} numberOfLines={1}>
-                    {zone.nom}
-                  </Text>
-                  <Text style={styles.zoneMeta}>
-                    {count > 1
-                      ? `${count} commerciaux assignés`
-                      : `${count} commercial assigné`}
-                  </Text>
-                </View>
-                <Feather name="chevron-right" size={20} color={colors.textSubtle} />
-              </Card>
-            </Pressable>
-          );
-        })
+        visibleZones.map((zone) => (
+          <ZoneListCard
+            key={zone.id}
+            zone={zone}
+            commercials={commercialsByZone.get(zone.id) ?? []}
+            prospectedCount={prospectedByZone.get(zone.id) ?? 0}
+            onPress={() =>
+              router.push(`/zone/${zone.id}` as Parameters<typeof router.push>[0])
+            }
+          />
+        ))
       )}
     </ScrollView>
   );
@@ -161,6 +251,27 @@ const styles = StyleSheet.create({
     fontWeight: fontWeight.bold,
     color: colors.text,
   },
+  searchBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    height: 44,
+    paddingHorizontal: spacing.md,
+    borderRadius: radius.lg,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: fontSize.md,
+    color: colors.text,
+    padding: 0,
+  },
+  sortRow: {
+    gap: spacing.sm,
+    paddingRight: spacing.lg,
+  },
   createButton: {
     height: 48,
     borderRadius: radius.lg,
@@ -174,32 +285,6 @@ const styles = StyleSheet.create({
     color: colors.textOnPrimary,
     fontSize: fontSize.md,
     fontWeight: fontWeight.bold,
-  },
-  zoneCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.md,
-  },
-  zoneIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: radius.md,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: colors.infoSoft,
-  },
-  zoneInfo: {
-    flex: 1,
-  },
-  zoneName: {
-    fontSize: fontSize.md,
-    fontWeight: fontWeight.bold,
-    color: colors.text,
-  },
-  zoneMeta: {
-    marginTop: 2,
-    fontSize: fontSize.sm,
-    color: colors.textMuted,
   },
   stateCard: {
     alignItems: "center",

@@ -1,10 +1,22 @@
 import { gql } from "@/services/core/graphql";
-import type { AssignZoneInput, CreateZoneInput, UserType, Zone } from "@/types/api";
+import type { AssignZoneInput, CreateZoneInput, Immeuble, UserType, Zone } from "@/types/api";
 import {
   ASSIGN_ZONE_TO_COMMERCIAL,
   ASSIGN_ZONE_TO_USER,
   CREATE_ZONE,
 } from "./zone.mutations";
+import { ZONES_FOR_USER } from "./zone.queries";
+
+/** Immeuble allégé embarqué par `zonesForUser` (compte + points de la zone). */
+export type ZoneForUserImmeuble = Pick<
+  Immeuble,
+  "id" | "adresse" | "latitude" | "longitude"
+>;
+
+/** Zone renvoyée par `zonesForUser` : métadonnées + immeubles de la zone. */
+export type ZoneForUser = Zone & {
+  immeubles?: ZoneForUserImmeuble[] | null;
+};
 
 export const zoneApi = {
   async create(input: CreateZoneInput): Promise<Zone> {
@@ -21,6 +33,16 @@ export const zoneApi = {
       { commercialId: number; zoneId: number }
     >(ASSIGN_ZONE_TO_COMMERCIAL, { commercialId, zoneId });
     return response.assignZoneToCommercial;
+  },
+
+  // Source de vérité des zones à afficher pour un utilisateur : commercial =
+  // ZoneEnCours ; manager = zones possédées OU assignées.
+  async getForUser(userId: number, userType: UserType): Promise<ZoneForUser[]> {
+    const response = await gql<
+      { zonesForUser: ZoneForUser[] },
+      { userId: number; userType: UserType }
+    >(ZONES_FOR_USER, { userId, userType });
+    return response.zonesForUser;
   },
 
   // Assignation générique : permet notamment au manager de s'assigner lui-même
