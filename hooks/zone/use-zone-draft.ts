@@ -1,0 +1,193 @@
+import { useToast } from "@/components/ui";
+import { useCreateZone } from "@/hooks/api/use-create-zone";
+import { useWorkspaceProfile } from "@/hooks/api/use-workspace-profile";
+import { DEFAULT_REGION } from "@/hooks/carte-terrain/constants";
+import { makeDraftPin } from "@/hooks/carte-terrain/helpers";
+import type { DraftPin, TerrainPoint } from "@/hooks/carte-terrain/types";
+import { api } from "@/services/api";
+import { authService } from "@/services/auth";
+import type { Commercial, Manager } from "@/types/api";
+import { type CameraRef } from "@maplibre/maplibre-react-native";
+import * as Location from "expo-location";
+import { router } from "expo-router";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Alert } from "react-native";
+
+/**
+ * Tracé d'une zone dans la page dédiée (`/zone/create`). Extrait de
+ * `useCarteTerrain` : gère les sommets du polygone, le recentrage GPS, la liste
+ * des commerciaux assignables (manager) et la création finale. Aucune dépendance
+ * à l'onglet Carte ni au signal inter-onglets : la page est autonome.
+ */
+export function useZoneDraft() {
+  const cameraRef = useRef<CameraRef | null>(null);
+  const [userId, setUserId] = useState<number | null>(null);
+  const [role, setRole] = useState<string | null>(null);
+  const [mapCenter, setMapCenter] = useState<TerrainPoint>(DEFAULT_REGION);
+  const [zonePins, setZonePins] = useState<DraftPin[]>([]);
+  const [activeZonePinId, setActiveZonePinId] = useState<string | null>(null);
+  const [loadingLocation, setLoadingLocation] = useState(true);
+  const [creating, setCreating] = useState(false);
+
+  const { data: profile, refetch } = useWorkspaceProfile(userId, role);
+  const { createZone } = useCreateZone();
+  const toast = useToast();
+
+  useEffect(() => {
+    let mounted = true;
+    const loadIdentity = async () => {
+      const [nextUserId, nextRole] = await Promise.all([
+        authService.getUserId(),
+        authService.getUserRole(),
+      ]);
+      if (!mounted) return;
+      setUserId(nextUserId);
+      setRole(nextRole);
+    };
+    void loadIdentity();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  // Commerciaux de l'équipe (manager uniquement) — cible d'assignation d'une zone.
+  const commercials = useMemo<Commercial[]>(
+    () => (role === "manager" ? ((profile as Manager | null)?.commercials ?? []) : []),
+    [profile, role],
+  );
+
+  // Un sommet de zone n'est qu'une coordonnée : pas d'adresse à résoudre.
+  const addZonePin = useCallback((point: TerrainPoint) => {
+    const nextPin = makeDraftPin(point);
+    setZonePins((current) => [...current, nextPin]);
+    setActiveZonePinId(nextPin.id);
+  }, []);
+
+  const selectZonePin = useCallback((pin: DraftPin) => {
+    setActiveZonePinId(pin.id);
+  }, []);
+
+  const removeActiveZonePin = useCallback(() => {
+    setActiveZonePinId((currentActive) => {
+      if (!currentActive) return currentActive;
+      setZonePins((current) => current.filter((pin) => pin.id !== currentActive));
+      return null;
+    });
+  }, []);
+
+  // Annuler le dernier point posé (undo), qu'il soit sélectionné ou non.
+  const removeLastZonePin = useCallback(() => {
+    setZonePins((current) => {
+      if (current.length === 0) return current;
+      const next = current.slice(0, -1);
+      setActiveZonePinId((active) =>
+        next.some((pin) => pin.id === active) ? active : null,
+      );
+      return next;
+    });
+  }, []);
+
+  const clearZonePins = useCallback(() => {
+    setZonePins([]);
+    setActiveZonePinId(null);
+  }, []);
+
+  const centerOnCurrentLocation = useCallback(async () => {
+    setLoadingLocation(true);
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== Location.PermissionStatus.GRANTED) {
+        Alert.alert(
+          "Position indisponible",
+          "Autorise la localisation pour centrer la carte sur le terrain.",
+        );
+        return;
+      }
+      const location = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.Balanced,
+      });
+      const nextRegion = {
+        latitude: location.coords.latitude,
+        longitude: location.coords.longitude,
+      };
+      setMapCenter(nextRegion);
+      cameraRef.current?.easeTo({
+        center: [nextRegion.longitude, nextRegion.latitude],
+        zoom: 16,
+        duration: 450,
+        padding: { top: 0, right: 0, bottom: 0, left: 0 },
+      });
+    } catch {
+      Alert.alert("Position indisponible", "Impossible de recuperer la position actuelle.");
+    } finally {
+      setLoadingLocation(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void centerOnCurrentLocation();
+    // La géolocalisation initiale ne doit se lancer qu'au montage.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const handleCreateZone = useCallback(
+    async (nom: string, commercialIds: number[]) => {
+      const trimmed = nom.trim();
+      if (!trimmed || zonePins.length < 3) {
+        Alert.alert("Zone incomplete", "Donne un nom et pose au moins 3 sommets.");
+        return;
+      }
+
+      setCreating(true);
+      try {
+        // Anneau [[lng,lat],…] fermé : on réappend le premier sommet en dernier.
+        const ring = zonePins.map((pin) => [pin.longitude, pin.latitude]);
+        const polygon = [...ring, ring[0]];
+
+        const newZone = await createZone({ nom: trimmed, polygon });
+        if (!newZone) {
+          Alert.alert("Creation impossible", "La zone n'a pas pu etre creee.");
+          return;
+        }
+
+        if (commercialIds.length > 0) {
+          await Promise.all(
+            commercialIds.map((id) => api.zones.assignToCommercial(id, newZone.id)),
+          );
+        }
+
+        await refetch();
+        toast.show({ message: "Zone creee", variant: "success" });
+        router.replace(
+          `/zone/${newZone.id}` as Parameters<typeof router.replace>[0],
+        );
+      } catch {
+        Alert.alert("Creation impossible", "La zone n'a pas pu etre creee.");
+      } finally {
+        setCreating(false);
+      }
+    },
+    [zonePins, createZone, refetch, toast],
+  );
+
+  // Une zone est un polygone : au moins 3 sommets (le nom est validé côté panneau).
+  const readyToCreateZone = zonePins.length >= 3 && !creating;
+
+  return {
+    cameraRef,
+    mapCenter,
+    zonePins,
+    activeZonePinId,
+    commercials,
+    loadingLocation,
+    creating,
+    readyToCreateZone,
+    addZonePin,
+    selectZonePin,
+    removeActiveZonePin,
+    removeLastZonePin,
+    clearZonePins,
+    centerOnCurrentLocation,
+    handleCreateZone,
+  };
+}

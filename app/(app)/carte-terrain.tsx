@@ -6,10 +6,8 @@ import { MapLegend } from "@/components/carte-terrain/MapLegend";
 import { ModeSwitch } from "@/components/carte-terrain/ModeSwitch";
 import { QuartierContours } from "@/components/carte-terrain/QuartierContours";
 import { ZoneContour } from "@/components/carte-terrain/ZoneContour";
-import { ZoneDraft } from "@/components/carte-terrain/ZoneDraft";
 import { CreatePanel } from "@/components/carte-terrain/panels/CreatePanel";
 import { EditLieuPanel } from "@/components/carte-terrain/panels/EditLieuPanel";
-import { ZonePanel } from "@/components/carte-terrain/panels/ZonePanel";
 import { styles } from "@/components/carte-terrain/styles";
 import { TerrainMarkers } from "@/components/carte-terrain/TerrainMarkers";
 import { useCarteTerrain } from "@/hooks/carte-terrain/useCarteTerrain";
@@ -39,9 +37,6 @@ export default function CarteTerrainScreen({
     buildingPin,
     quartierPins,
     activeQuartierPinId,
-    zonePins,
-    activeZonePinId,
-    commercials,
     suggestions,
     loadingLocation,
     loadingSuggestions,
@@ -73,11 +68,8 @@ export default function CarteTerrainScreen({
     handleMapPress,
     selectQuartierPin,
     removeActiveQuartierPin,
-    selectZonePin,
-    removeActiveZonePin,
     handleCreateBatiment,
     handleCreateQuartier,
-    handleCreateZone,
     openEditLieu,
     handleSaveEditLieu,
     handleDeleteLieu,
@@ -85,7 +77,6 @@ export default function CarteTerrainScreen({
     creating,
     readyToCreateBatiment,
     readyToCreateQuartier,
-    readyToCreateZone,
   } = useCarteTerrain({ embedded });
 
   // La BuildingSheet est une Card interne à l'écran : sa visibilité dépend
@@ -158,7 +149,6 @@ export default function CarteTerrainScreen({
         onPress={handleMapPress}
       >
         <ZoneContour zones={zones ?? []} />
-        {mode === "ZONE" && <ZoneDraft zonePins={zonePins} />}
         <QuartierContours quartiers={quartiers ?? []} immeubles={immeubles} mode={mode} />
         <TerrainMarkers
           immeubles={immeubles}
@@ -172,9 +162,6 @@ export default function CarteTerrainScreen({
           quartierPins={quartierPins}
           activeQuartierPinId={activeQuartierPinId}
           onSelectQuartierPin={selectQuartierPin}
-          zonePins={zonePins}
-          activeZonePinId={activeZonePinId}
-          onSelectZonePin={selectZonePin}
         />
       </CarteTerrainMap>
 
@@ -197,7 +184,6 @@ export default function CarteTerrainScreen({
       <ModeSwitch
         insets={insets}
         mode={mode}
-        showZone={role === "manager"}
         onSelectMode={handleSelectMode}
       />
 
@@ -225,18 +211,6 @@ export default function CarteTerrainScreen({
           onSelectType={setEditingType}
           onChangeNbMaisons={setEditingNbMaisons}
           onSave={handleSaveEditLieu}
-        />
-      ) : mode === "ZONE" ? (
-        <ZonePanel
-          insets={insets}
-          zonePins={zonePins}
-          activeZonePinId={activeZonePinId}
-          commercials={commercials}
-          creating={creating}
-          readyToCreateZone={readyToCreateZone}
-          onSelectZonePin={selectZonePin}
-          onRemoveActiveZonePin={removeActiveZonePin}
-          onCreateZone={handleCreateZone}
         />
       ) : mode !== "VISUALISATION" ? (
         <CreatePanel

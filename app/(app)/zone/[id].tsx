@@ -1,3 +1,6 @@
+import { CarteTerrainMap } from "@/components/carte-terrain/CarteTerrainMap";
+import { zoneBounds } from "@/components/carte-terrain/geo-hull";
+import { ZoneContour } from "@/components/carte-terrain/ZoneContour";
 import {
   Card,
   Chip,
@@ -14,10 +17,12 @@ import { useZoneCurrentAssignments } from "@/hooks/api/use-zone-current-assignme
 import { useZoneDetail } from "@/hooks/api/use-zone-detail";
 import { useZoneProspections } from "@/hooks/api/use-zone-prospections";
 import { useZoneStatistics } from "@/hooks/api/use-zone-statistics";
+import type { Zone } from "@/types/api";
 import type { ZoneProspection } from "@/types/graphql-schema";
 import { Feather } from "@expo/vector-icons";
+import { type CameraRef } from "@maplibre/maplibre-react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useCallback, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -111,6 +116,52 @@ export default function ZoneDetailScreen() {
     zone?.nom ?? stats?.zoneName ?? (zoneId != null ? `Zone #${zoneId}` : "Zone");
 
   const immeubles = useMemo(() => zone?.immeubles ?? [], [zone?.immeubles]);
+
+  // Mini-carte de cadrage (non interactive) : bbox + centre de la zone.
+  // `polygon` arrive du schéma GraphQL comme scalaire JSON : on le restreint au
+  // type géométrique attendu par l'overlay après un garde d'exécution.
+  const miniMapCameraRef = useRef<CameraRef | null>(null);
+  const zoneGeometry = useMemo<Zone | null>(() => {
+    if (!zone) return null;
+    return {
+      id: zone.id,
+      nom: zone.nom,
+      xOrigin: zone.xOrigin,
+      yOrigin: zone.yOrigin,
+      rayon: zone.rayon,
+      polygon: Array.isArray(zone.polygon)
+        ? (zone.polygon as unknown as number[][])
+        : null,
+    };
+  }, [zone]);
+  const bounds = useMemo(
+    () => (zoneGeometry ? zoneBounds(zoneGeometry) : null),
+    [zoneGeometry],
+  );
+  const mapCenter = useMemo(
+    () =>
+      bounds
+        ? {
+            longitude: (bounds[0] + bounds[2]) / 2,
+            latitude: (bounds[1] + bounds[3]) / 2,
+          }
+        : null,
+    [bounds],
+  );
+
+  // Cadre la caméra sur la zone. Appelé au chargement de la carte ET quand la
+  // bbox arrive (la donnée zone peut se charger après le montage de la carte).
+  const fitToZone = useCallback(() => {
+    if (!bounds) return;
+    miniMapCameraRef.current?.fitBounds(bounds, {
+      padding: { top: 28, right: 28, bottom: 28, left: 28 },
+      duration: 0,
+    });
+  }, [bounds]);
+
+  useEffect(() => {
+    fitToZone();
+  }, [fitToZone]);
 
   // Noms des commerciaux dérivés des prospections (l'assignation ne porte
   // que l'userId). Fallback "Commercial #id" si aucune prospection connue.
@@ -264,6 +315,22 @@ export default function ZoneDetailScreen() {
 
   const ListHeader = (
     <View style={styles.headerContent}>
+      {mapCenter ? (
+        <Card variant="outlined" padding="none" style={styles.miniMapCard}>
+          <CarteTerrainMap
+            cameraRef={miniMapCameraRef}
+            mapCenter={mapCenter}
+            satellite={false}
+            showUserLocation={false}
+            interactive={false}
+            onPress={() => {}}
+            onDidFinishLoadingMap={fitToZone}
+          >
+            {zoneGeometry ? <ZoneContour zones={[zoneGeometry]} /> : null}
+          </CarteTerrainMap>
+        </Card>
+      ) : null}
+
       {hasError ? (
         <ErrorState
           message="Impossible de charger les statistiques de la zone."
@@ -449,6 +516,10 @@ const styles = StyleSheet.create({
   },
   headerContent: {
     gap: spacing.md,
+  },
+  miniMapCard: {
+    height: 200,
+    overflow: "hidden",
   },
   statsGrid: {
     flexDirection: "row",

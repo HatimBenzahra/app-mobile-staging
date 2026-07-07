@@ -1,7 +1,6 @@
 import { Card } from "@/components/ui";
 import { colors, fontSize, fontWeight, radius, spacing } from "@/constants/theme";
 import { useWorkspaceProfile } from "@/hooks/api/use-workspace-profile";
-import { useTerrainModeRequest } from "@/hooks/use-terrain-mode-request";
 import { authService } from "@/services/auth";
 import type { Manager } from "@/types/api";
 import { Feather } from "@expo/vector-icons";
@@ -20,7 +19,6 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 export default function ZonesScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { requestTerrainMode } = useTerrainModeRequest();
   const [userId, setUserId] = useState<number | null>(null);
   const [role, setRole] = useState<string | null>(null);
 
@@ -94,7 +92,12 @@ export default function ZonesScreen() {
     >
       <Text style={styles.heading}>Zones</Text>
 
-      <Pressable style={styles.createButton} onPress={() => requestTerrainMode("ZONE")}>
+      <Pressable
+        style={styles.createButton}
+        onPress={() =>
+          router.push("/zone/create" as Parameters<typeof router.push>[0])
+        }
+      >
         <Feather name="plus" size={18} color={colors.textOnPrimary} />
         <Text style={styles.createText}>Créer une zone</Text>
       </Pressable>

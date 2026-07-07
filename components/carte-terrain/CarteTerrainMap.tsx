@@ -18,6 +18,12 @@ type CarteTerrainMapProps = {
   mapCenter: TerrainPoint;
   satellite: boolean;
   onPress: (event: NativeSyntheticEvent<PressEvent>) => void;
+  /** Affiche le marqueur de position utilisateur (défaut : true). */
+  showUserLocation?: boolean;
+  /** Active les gestes zoom/scroll/rotation/pitch (défaut : true). */
+  interactive?: boolean;
+  /** Notifié une fois la carte chargée (ex : cadrage `fitBounds` initial). */
+  onDidFinishLoadingMap?: () => void;
   children?: ReactNode;
 };
 
@@ -26,6 +32,9 @@ export function CarteTerrainMap({
   mapCenter,
   satellite,
   onPress,
+  showUserLocation = true,
+  interactive = true,
+  onDidFinishLoadingMap,
   children,
 }: CarteTerrainMapProps) {
   return (
@@ -33,12 +42,19 @@ export function CarteTerrainMap({
       style={StyleSheet.absoluteFill}
       mapStyle={MAP_STYLE_URL}
       onPress={onPress}
+      onDidFinishLoadingMap={onDidFinishLoadingMap}
       logo={false}
       compass
       scaleBar
       attribution
       preferredFramesPerSecond={30}
       androidView="surface"
+      dragPan={interactive}
+      touchZoom={interactive}
+      doubleTapZoom={interactive}
+      doubleTapHoldZoom={interactive}
+      touchRotate={interactive}
+      touchPitch={interactive}
     >
       {satellite && (
         <RasterSource
@@ -59,7 +75,7 @@ export function CarteTerrainMap({
         minZoom={5}
         maxZoom={20}
       />
-      <UserLocation animated accuracy heading />
+      {showUserLocation && <UserLocation animated accuracy heading />}
       {children}
     </MapLibreMap>
   );

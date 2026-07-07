@@ -11,20 +11,16 @@ const MODE_META: Record<TerrainMode, ModeMeta> = {
   VISUALISATION: { icon: "eye", label: "Voir" },
   BATIMENT: { icon: "map-pin", label: "Batiment" },
   QUARTIER: { icon: "map", label: "Quartier" },
-  ZONE: { icon: "grid", label: "Zone" },
 };
 
 type ModeSwitchProps = {
   insets: EdgeInsets;
   mode: TerrainMode;
-  /** Le mode ZONE (tracé de zone) est réservé au manager. */
-  showZone?: boolean;
   onSelectMode: (nextMode: TerrainMode) => void;
 };
 
-export function ModeSwitch({ insets, mode, showZone = false, onSelectMode }: ModeSwitchProps) {
+export function ModeSwitch({ insets, mode, onSelectMode }: ModeSwitchProps) {
   const modes: TerrainMode[] = ["VISUALISATION", "BATIMENT", "QUARTIER"];
-  if (showZone) modes.push("ZONE");
 
   return (
     <View style={[styles.modeSwitch, { top: insets.top + 10 }]}>

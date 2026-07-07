@@ -1,3 +1,4 @@
+import type { LngLatBounds } from "@maplibre/maplibre-react-native";
 import type { Feature, Polygon, Position } from "geojson";
 import type { Quartier } from "@/types/api";
 
@@ -8,6 +9,17 @@ import type { Quartier } from "@/types/api";
  */
 
 type Point = [number, number];
+
+/** 1° de latitude ≈ 111 320 m (cf. ZoneContour). */
+const METERS_PER_DEG_LAT = 111_320;
+
+/** Géométrie minimale d'une zone pour en calculer la bbox. */
+export type ZoneBoundsInput = {
+  polygon?: number[][] | null;
+  xOrigin?: number | null;
+  yOrigin?: number | null;
+  rayon?: number | null;
+};
 
 /**
  * Enveloppe convexe via la chaîne monotone d'Andrew. Renvoie un anneau OUVERT
@@ -137,6 +149,49 @@ export function buildQuartierFeature(
       coordinates: [closed],
     },
   };
+}
+
+/**
+ * Boîte englobante d'une zone au format `LngLatBounds` de MapLibre
+ * (`[west, south, east, north]` = `[minLng, minLat, maxLng, maxLat]`), prête à
+ * passer à `CameraRef.fitBounds`. Dérivée du `polygon` s'il existe (≥ 3 points),
+ * sinon du cercle `xOrigin/yOrigin/rayon` (mètres → degrés). `null` si aucune
+ * géométrie exploitable.
+ */
+export function zoneBounds(zone: ZoneBoundsInput): LngLatBounds | null {
+  let coords: Point[] = [];
+
+  if (zone.polygon && zone.polygon.length >= 3) {
+    coords = zone.polygon.map((p) => [p[0], p[1]]);
+  } else if (
+    zone.xOrigin != null &&
+    zone.yOrigin != null &&
+    zone.rayon != null &&
+    zone.rayon > 0
+  ) {
+    const radiusDegLat = zone.rayon / METERS_PER_DEG_LAT;
+    // Correction longitude par 1/cos(lat) pour rester géographiquement juste.
+    const lonScale = 1 / Math.max(Math.cos((zone.yOrigin * Math.PI) / 180), 1e-6);
+    coords = [
+      [zone.xOrigin - radiusDegLat * lonScale, zone.yOrigin - radiusDegLat],
+      [zone.xOrigin + radiusDegLat * lonScale, zone.yOrigin + radiusDegLat],
+    ];
+  }
+
+  if (coords.length === 0) return null;
+
+  let minLng = Infinity;
+  let minLat = Infinity;
+  let maxLng = -Infinity;
+  let maxLat = -Infinity;
+  for (const [lng, lat] of coords) {
+    if (lng < minLng) minLng = lng;
+    if (lat < minLat) minLat = lat;
+    if (lng > maxLng) maxLng = lng;
+    if (lat > maxLat) maxLat = lat;
+  }
+
+  return [minLng, minLat, maxLng, maxLat];
 }
 
 function dedupe(points: Point[]): Point[] {

@@ -1,18 +1,13 @@
 import { useCreateMaison } from "@/hooks/api/use-create-maison";
 import { useCreateQuartier } from "@/hooks/api/use-create-quartier";
-import { useCreateZone } from "@/hooks/api/use-create-zone";
 import { useMapFocus } from "@/hooks/use-map-focus";
-import { useTerrainModeRequest } from "@/hooks/use-terrain-mode-request";
 import { useQuartiers } from "@/hooks/api/use-quartiers";
 import { useWorkspaceProfile } from "@/hooks/api/use-workspace-profile";
-import { useToast } from "@/components/ui";
 import { api } from "@/services/api";
 import { authService } from "@/services/auth";
 import type {
-  Commercial,
   CreateQuartierPointInput,
   Immeuble,
-  Manager,
   TypeHabitat,
 } from "@/types/api";
 import { type CameraRef, type PressEvent } from "@maplibre/maplibre-react-native";
@@ -56,8 +51,6 @@ export function useCarteTerrain({ embedded = false }: UseCarteTerrainParams = {}
   const [buildingPin, setBuildingPin] = useState<DraftPin | null>(null);
   const [quartierPins, setQuartierPins] = useState<DraftPin[]>([]);
   const [activeQuartierPinId, setActiveQuartierPinId] = useState<string | null>(null);
-  const [zonePins, setZonePins] = useState<DraftPin[]>([]);
-  const [activeZonePinId, setActiveZonePinId] = useState<string | null>(null);
   const [suggestions, setSuggestions] = useState<AdresseFeature[]>([]);
   const [loadingLocation, setLoadingLocation] = useState(true);
   const [loadingSuggestions, setLoadingSuggestions] = useState(false);
@@ -106,10 +99,7 @@ export function useCarteTerrain({ embedded = false }: UseCarteTerrainParams = {}
   const { data: quartiers } = useQuartiers();
   const { createMaison, loading: creatingMaison } = useCreateMaison();
   const { createQuartier } = useCreateQuartier();
-  const { createZone } = useCreateZone();
   const { focusTarget, clearFocus } = useMapFocus();
-  const { requestedMode, clearTerrainModeRequest } = useTerrainModeRequest();
-  const toast = useToast();
 
   // "Voir sur la carte" : dès qu'une cible arrive, on centre la caméra et on
   // arme le highlight (via highlightedId), puis on CONSOMME la cible (clearFocus)
@@ -179,21 +169,11 @@ export function useCarteTerrain({ embedded = false }: UseCarteTerrainParams = {}
     return () => clearTimeout(clearTimer);
   }, [highlightedPorteId]);
 
-  // Demande de mode venue d'un autre onglet (ex: « Créer une zone » depuis
-  // l'onglet Zones) : on applique le mode puis on consomme la demande. L'écran
-  // d'accueil s'est déjà chargé de basculer sur l'onglet Carte.
-  useEffect(() => {
-    if (!requestedMode) return;
-    setMode(requestedMode);
-    clearTerrainModeRequest();
-  }, [requestedMode, clearTerrainModeRequest]);
-
   const activePin = useMemo(() => {
     if (mode === "VISUALISATION") return null;
     if (mode === "BATIMENT") return buildingPin;
-    if (mode === "ZONE") return zonePins.find((pin) => pin.id === activeZonePinId) ?? null;
     return quartierPins.find((pin) => pin.id === activeQuartierPinId) ?? null;
-  }, [activeQuartierPinId, activeZonePinId, buildingPin, mode, quartierPins, zonePins]);
+  }, [activeQuartierPinId, buildingPin, mode, quartierPins]);
 
   useEffect(() => {
     let mounted = true;
@@ -270,12 +250,6 @@ export function useCarteTerrain({ embedded = false }: UseCarteTerrainParams = {}
   // Zone(s) assignée(s) à l'utilisateur — exposées par le profil manager comme commercial.
   const zones = useMemo(() => profile?.zones ?? [], [profile]);
 
-  // Commerciaux de l'équipe (manager uniquement) — cible d'assignation d'une zone.
-  const commercials = useMemo<Commercial[]>(
-    () => (role === "manager" ? ((profile as Manager | null)?.commercials ?? []) : []),
-    [profile, role],
-  );
-
   const toggleShowTeam = useCallback(() => setShowTeam((current) => !current), []);
 
   const fetchAddressSuggestions = useCallback(async (point: TerrainPoint) => {
@@ -344,14 +318,6 @@ export function useCarteTerrain({ embedded = false }: UseCarteTerrainParams = {}
     },
     [fetchAddressSuggestions],
   );
-
-  // Un sommet de zone n'est qu'une coordonnée : pas d'adresse à résoudre
-  // (contrairement au quartier, dont chaque pin est un lieu à prospecter).
-  const addZonePin = useCallback((point: TerrainPoint) => {
-    const nextPin = makeDraftPin(point);
-    setZonePins((current) => [...current, nextPin]);
-    setActiveZonePinId(nextPin.id);
-  }, []);
 
   const centerOnCurrentLocation = useCallback(async () => {
     setLoadingLocation(true);
@@ -528,17 +494,11 @@ export function useCarteTerrain({ embedded = false }: UseCarteTerrainParams = {}
         setBuildingActivePin(point);
         return;
       }
-      if (mode === "ZONE") {
-        setSelectedExistingLieu(null);
-        setEditingLieu(null);
-        addZonePin(point);
-        return;
-      }
       setSelectedExistingLieu(null);
       setEditingLieu(null);
       addQuartierPin(point);
     },
-    [movingLieu, mode, handleMoveLieu, setBuildingActivePin, addQuartierPin, addZonePin],
+    [movingLieu, mode, handleMoveLieu, setBuildingActivePin, addQuartierPin],
   );
 
   const selectQuartierPin = useCallback(
@@ -563,16 +523,6 @@ export function useCarteTerrain({ embedded = false }: UseCarteTerrainParams = {}
     setActiveQuartierPinId(null);
     setSuggestions([]);
   }, [activeQuartierPinId]);
-
-  const selectZonePin = useCallback((pin: DraftPin) => {
-    setActiveZonePinId(pin.id);
-  }, []);
-
-  const removeActiveZonePin = useCallback(() => {
-    if (!activeZonePinId) return;
-    setZonePins((current) => current.filter((pin) => pin.id !== activeZonePinId));
-    setActiveZonePinId(null);
-  }, [activeZonePinId]);
 
   const handleCreateBatiment = useCallback(async () => {
     if (!buildingPin || !buildingPin.selectedAddress) {
@@ -656,46 +606,6 @@ export function useCarteTerrain({ embedded = false }: UseCarteTerrainParams = {}
     }
   }, [quartierPins, role, userId, createQuartier, refetch, embedded]);
 
-  const handleCreateZone = useCallback(
-    async (nom: string, commercialIds: number[]) => {
-      const trimmed = nom.trim();
-      if (!trimmed || zonePins.length < 3) {
-        Alert.alert("Zone incomplete", "Donne un nom et pose au moins 3 sommets.");
-        return;
-      }
-
-      setCreatingLieu(true);
-      try {
-        // Anneau [[lng,lat],…] fermé : on réappend le premier sommet en dernier.
-        const ring = zonePins.map((pin) => [pin.longitude, pin.latitude]);
-        const polygon = [...ring, ring[0]];
-
-        const newZone = await createZone({ nom: trimmed, polygon });
-        if (!newZone) {
-          Alert.alert("Creation impossible", "La zone n'a pas pu etre creee.");
-          return;
-        }
-
-        if (commercialIds.length > 0) {
-          await Promise.all(
-            commercialIds.map((id) => api.zones.assignToCommercial(id, newZone.id)),
-          );
-        }
-
-        await refetch();
-        setZonePins([]);
-        setActiveZonePinId(null);
-        setMode("VISUALISATION");
-        toast.show({ message: "Zone creee", variant: "success" });
-      } catch {
-        Alert.alert("Creation impossible", "La zone n'a pas pu etre creee.");
-      } finally {
-        setCreatingLieu(false);
-      }
-    },
-    [zonePins, createZone, refetch, toast],
-  );
-
   const openEditLieu = useCallback((immeuble: Immeuble) => {
     setSelectedExistingLieu(null);
     setEditingLieu(immeuble);
@@ -759,8 +669,6 @@ export function useCarteTerrain({ embedded = false }: UseCarteTerrainParams = {}
   const readyToCreateBatiment = !!buildingPin?.selectedAddress && !creating;
   const readyToCreateQuartier =
     quartierPins.length > 0 && quartierPins.every((pin) => !!pin.selectedAddress) && !creating;
-  // Une zone est un polygone : au moins 3 sommets (le nom est validé côté panneau).
-  const readyToCreateZone = zonePins.length >= 3 && !creating;
 
   return {
     cameraRef,
@@ -773,9 +681,6 @@ export function useCarteTerrain({ embedded = false }: UseCarteTerrainParams = {}
     buildingPin,
     quartierPins,
     activeQuartierPinId,
-    zonePins,
-    activeZonePinId,
-    commercials,
     suggestions,
     loadingLocation,
     loadingSuggestions,
@@ -808,11 +713,8 @@ export function useCarteTerrain({ embedded = false }: UseCarteTerrainParams = {}
     handleMapPress,
     selectQuartierPin,
     removeActiveQuartierPin,
-    selectZonePin,
-    removeActiveZonePin,
     handleCreateBatiment,
     handleCreateQuartier,
-    handleCreateZone,
     openEditLieu,
     handleSaveEditLieu,
     handleDeleteLieu,
@@ -820,6 +722,5 @@ export function useCarteTerrain({ embedded = false }: UseCarteTerrainParams = {}
     creating,
     readyToCreateBatiment,
     readyToCreateQuartier,
-    readyToCreateZone,
   };
 }
