@@ -1,4 +1,6 @@
 import { CarteTerrainMap } from "@/components/carte-terrain/CarteTerrainMap";
+import { TerrainMarkers } from "@/components/carte-terrain/TerrainMarkers";
+import { ZoneContour } from "@/components/carte-terrain/ZoneContour";
 import { ZoneDraft } from "@/components/carte-terrain/ZoneDraft";
 import { ZoneVertexPins } from "@/components/carte-terrain/ZoneVertexPins";
 import { ZonePanel } from "@/components/carte-terrain/panels/ZonePanel";
@@ -19,6 +21,8 @@ export default function ZoneCreateScreen() {
     zonePins,
     activeZonePinId,
     assignables,
+    existingZones,
+    immeubles,
     loadingLocation,
     creating,
     readyToCreateZone,
@@ -63,6 +67,13 @@ export default function ZoneCreateScreen() {
           longitude: event.nativeEvent.lngLat[0],
         })}
       >
+        {/* Contexte lecture seule (z-order dessous) : zones et bâtiments déjà */}
+        {/* créés, montés AVANT le tracé pour rester sous les pins/sommets. */}
+        {/* ZoneContour sans mode/onSelectZone → non interactif : son onPress */}
+        {/* sort avant tout stopPropagation, donc un tap dans une zone existante */}
+        {/* pose quand même un sommet. */}
+        <ZoneContour zones={existingZones} />
+        <TerrainMarkers immeubles={immeubles} mode="VISUALISATION" onSelectLieu={() => {}} />
         <ZoneDraft zonePins={zonePins} />
         <ZoneVertexPins
           zonePins={zonePins}

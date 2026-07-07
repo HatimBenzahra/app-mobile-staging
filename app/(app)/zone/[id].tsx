@@ -253,45 +253,54 @@ export default function ZoneDetailScreen() {
     fitToZone();
   }, [fitToZone]);
 
-  // Noms des commerciaux issus du profil workspace (le manager porte la liste
-  // de ses commerciaux avec prénom + nom, même sans prospection).
+  // Noms issus du profil workspace : le manager porte son propre prénom + nom
+  // ainsi que la liste de ses commerciaux (résolution même sans prospection).
   const profileNames = useMemo(() => {
     const names = new Map<number, string>();
-    const commercials =
-      role === "manager" ? (profile as Manager | null)?.commercials : null;
-    for (const c of commercials ?? []) {
-      names.set(c.id, `${c.prenom} ${c.nom}`.trim());
+    if (role === "manager") {
+      const manager = profile as Manager | null;
+      if (manager) {
+        names.set(manager.id, `${manager.prenom} ${manager.nom}`.trim());
+      }
+      for (const c of manager?.commercials ?? []) {
+        names.set(c.id, `${c.prenom} ${c.nom}`.trim());
+      }
     }
     return names;
   }, [profile, role]);
 
   // Noms dérivés des prospections (l'assignation ne porte que l'userId).
+  // Indexe commerciaux ET manager auteur d'une prospection.
   const prospectionNames = useMemo(() => {
     const names = new Map<number, string>();
     for (const p of prospections) {
       if (p.commercialId != null && p.commercialNom) {
         names.set(p.commercialId, p.commercialNom);
       }
+      if (p.managerId != null && p.managerNom) {
+        names.set(p.managerId, p.managerNom);
+      }
     }
     return names;
   }, [prospections]);
 
-  // Priorité : nom du profil > nom issu des prospections > "Commercial #id".
-  const resolveCommercialName = useCallback(
-    (commercialId: number | null | undefined): string => {
-      if (commercialId == null) return "Commercial inconnu";
+  // Priorité : nom du profil > nom issu des prospections > "#id".
+  const resolvePersonName = useCallback(
+    (id: number | null | undefined): string => {
+      if (id == null) return "Inconnu";
       return (
-        profileNames.get(commercialId) ??
-        prospectionNames.get(commercialId) ??
-        `Commercial #${commercialId}`
+        profileNames.get(id) ?? prospectionNames.get(id) ?? `#${id}`
       );
     },
     [profileNames, prospectionNames],
   );
 
-  const commerciaux = useMemo(
+  // Assignations affichées : commerciaux + manager (auto-assigné).
+  const assignes = useMemo(
     () =>
-      (assignmentsQuery.data ?? []).filter((a) => a.userType === "COMMERCIAL"),
+      (assignmentsQuery.data ?? []).filter(
+        (a) => a.userType === "COMMERCIAL" || a.userType === "MANAGER",
+      ),
     [assignmentsQuery.data],
   );
 
@@ -365,13 +374,14 @@ export default function ZoneDetailScreen() {
     ({ item }: { item: ZoneProspection }) => {
       const statusOption =
         STATUS_DISPLAY[item.statut] ?? DEFAULT_STATUS_OPTION;
+      const personId = item.commercialId ?? item.managerId;
       return (
         <Card variant="outlined" padding="sm" style={styles.prospectionRow}>
           <View style={styles.prospectionTop}>
             <Text style={styles.prospectionCommercial} numberOfLines={1}>
-              {item.commercialId != null
-                ? resolveCommercialName(item.commercialId)
-                : (item.commercialNom ?? "Commercial inconnu")}
+              {personId != null
+                ? resolvePersonName(personId)
+                : (item.commercialNom ?? item.managerNom ?? "Prospection")}
             </Text>
             <Chip
               label={statusOption.label}
@@ -397,7 +407,7 @@ export default function ZoneDetailScreen() {
         </Card>
       );
     },
-    [resolveCommercialName],
+    [resolvePersonName],
   );
 
   const isInitialLoading =
@@ -469,21 +479,27 @@ export default function ZoneDetailScreen() {
         </View>
       ) : null}
 
-      {/* Commerciaux concernés */}
-      <Text style={styles.sectionTitle}>
-        Commerciaux ({commerciaux.length})
-      </Text>
-      {commerciaux.length === 0 ? (
-        <Text style={styles.sectionEmpty}>Aucun commercial assigné.</Text>
+      {/* Assignés (commerciaux + manager) */}
+      <Text style={styles.sectionTitle}>Assignés ({assignes.length})</Text>
+      {assignes.length === 0 ? (
+        <Text style={styles.sectionEmpty}>Aucun assigné.</Text>
       ) : (
         <View style={styles.chipRow}>
-          {commerciaux.map((c) => (
-            <Chip
-              key={c.id}
-              icon="user"
-              label={resolveCommercialName(c.userId)}
-            />
-          ))}
+          {assignes.map((a) => {
+            const isManager = a.userType === "MANAGER";
+            return (
+              <Chip
+                key={a.id}
+                icon={isManager ? "briefcase" : "user"}
+                tone={isManager ? "info" : "neutral"}
+                label={
+                  isManager
+                    ? `${resolvePersonName(a.userId)} (manager)`
+                    : resolvePersonName(a.userId)
+                }
+              />
+            );
+          })}
         </View>
       )}
 

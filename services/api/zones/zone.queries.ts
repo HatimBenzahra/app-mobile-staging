@@ -64,6 +64,8 @@ export const GET_ZONE_PROSPECTIONS = `
       porteNumero
       commercialId
       commercialNom
+      managerId
+      managerNom
       statut
       date
       dureeSec

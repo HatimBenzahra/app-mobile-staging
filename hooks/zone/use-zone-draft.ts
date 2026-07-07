@@ -7,7 +7,7 @@ import { makeDraftPin } from "@/hooks/carte-terrain/helpers";
 import type { DraftPin, TerrainPoint } from "@/hooks/carte-terrain/types";
 import { api } from "@/services/api";
 import { authService } from "@/services/auth";
-import type { Manager, UserType } from "@/types/api";
+import type { Immeuble, Manager, UserType, Zone } from "@/types/api";
 import { type CameraRef } from "@maplibre/maplibre-react-native";
 import * as Location from "expo-location";
 import { router } from "expo-router";
@@ -23,6 +23,15 @@ export type ZoneAssignable = {
   label: string;
   role: UserType;
   self: boolean;
+};
+
+// Forme minimale d'un commercial d'équipe côté profil manager (mêmes champs que
+// dans `useCarteTerrain`), utilisée pour dériver les bâtiments d'équipe.
+type TeamCommercial = {
+  id: number;
+  prenom: string;
+  nom: string;
+  immeubles?: Immeuble[];
 };
 
 /**
@@ -83,6 +92,41 @@ export function useZoneDraft() {
     }
     return list;
   }, [profile, role, userId]);
+
+  // Zones déjà créées, affichées en contexte (lecture seule) pendant le tracé.
+  const existingZones = useMemo<Zone[]>(() => profile?.zones ?? [], [profile]);
+
+  // Bâtiments existants affichés en contexte : dérivation identique à
+  // `useCarteTerrain` (mes propres immeubles → MINE, ceux de l'équipe pour un
+  // manager → TEAM, stampés depuis leur commercial parent, dédoublonnés par id).
+  const immeubles = useMemo<Immeuble[]>(() => {
+    const ownImmeubles = ((profile?.immeubles || []) as Immeuble[]).map(
+      (immeuble): Immeuble => ({ ...immeuble, ownership: "MINE" }),
+    );
+
+    const teamCommercials =
+      role === "manager"
+        ? ((profile as { commercials?: TeamCommercial[] } | null)?.commercials ?? [])
+        : [];
+    const teamImmeubles: Immeuble[] = teamCommercials.flatMap((commercial) =>
+      (commercial.immeubles ?? []).map(
+        (immeuble): Immeuble => ({
+          ...immeuble,
+          ownership: "TEAM",
+          commercialId: commercial.id,
+          creatorName: `${commercial.prenom} ${commercial.nom}`,
+        }),
+      ),
+    );
+
+    const byId = new Map<number, Immeuble>();
+    [...ownImmeubles, ...teamImmeubles].forEach((immeuble) => {
+      if (immeuble.latitude != null && immeuble.longitude != null) {
+        byId.set(immeuble.id, immeuble);
+      }
+    });
+    return Array.from(byId.values());
+  }, [profile, role]);
 
   // Un sommet de zone n'est qu'une coordonnée : pas d'adresse à résoudre.
   const addZonePin = useCallback((point: TerrainPoint) => {
@@ -217,6 +261,8 @@ export function useZoneDraft() {
     zonePins,
     activeZonePinId,
     assignables,
+    existingZones,
+    immeubles,
     loadingLocation,
     creating,
     readyToCreateZone,

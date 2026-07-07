@@ -2346,6 +2346,8 @@ export type ZoneProspection = {
   dureeSec?: Maybe<Scalars['Int']['output']>;
   immeubleAdresse: Scalars['String']['output'];
   immeubleId: Scalars['Int']['output'];
+  managerId?: Maybe<Scalars['Int']['output']>;
+  managerNom?: Maybe<Scalars['String']['output']>;
   porteId: Scalars['Int']['output'];
   porteNumero: Scalars['String']['output'];
   statut: Scalars['String']['output'];
