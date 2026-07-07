@@ -2323,6 +2323,7 @@ export type WinleadPlusUser = {
 
 export type Zone = {
   __typename?: 'Zone';
+  assignedAt?: Maybe<Scalars['DateTime']['output']>;
   createdAt: Scalars['DateTime']['output'];
   createdById?: Maybe<Scalars['Int']['output']>;
   createdByName?: Maybe<Scalars['String']['output']>;

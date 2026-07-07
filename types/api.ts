@@ -88,6 +88,9 @@ export type Zone = {
   // Date de création (tri « Récent »). Optionnel : certaines sources de zones
   // (profil manager) ne la remontent pas.
   createdAt?: SchemaZone['createdAt'];
+  // Date d'assignation de l'utilisateur à la zone (filtre « Date d'assignation »).
+  // Nullable : une zone peut n'avoir jamais été assignée.
+  assignedAt?: SchemaZone['assignedAt'];
   // Créateur de la zone (affiché en lecture seule dans le modal « Mes zones »).
   // Optionnel : seules les requêtes qui le sélectionnent le remontent.
   createdByName?: SchemaZone['createdByName'];

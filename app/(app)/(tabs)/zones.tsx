@@ -1,7 +1,6 @@
 import { Card, Chip } from "@/components/ui";
 import {
   ZoneListCard,
-  zoneAreaKm2,
   type ZoneCommercial,
 } from "@/components/zones/ZoneListCard";
 import { colors, fontSize, fontWeight, radius, spacing } from "@/constants/theme";
@@ -27,14 +26,28 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-type SortKey = "recent" | "nom" | "superficie" | "commerciaux";
+type SortKey = "recent" | "nom" | "commerciaux";
 
 const SORT_OPTIONS: { key: SortKey; label: string }[] = [
   { key: "recent", label: "Récent" },
   { key: "nom", label: "Nom" },
-  { key: "superficie", label: "Superficie" },
   { key: "commerciaux", label: "Commerciaux" },
 ];
+
+type AssignedWindow = "all" | "7d" | "30d";
+
+const ASSIGNED_OPTIONS: { key: AssignedWindow; label: string }[] = [
+  { key: "all", label: "Tout" },
+  { key: "7d", label: "7 jours" },
+  { key: "30d", label: "30 jours" },
+];
+
+// Fenêtres relatives (en ms) pour le filtre « Date d'assignation », calculées à
+// partir de Date.now() au rendu — aucune date absolue en dur.
+const WINDOW_DAYS: Record<Exclude<AssignedWindow, "all">, number> = {
+  "7d": 7,
+  "30d": 30,
+};
 
 export default function ZonesScreen() {
   const insets = useSafeAreaInsets();
@@ -45,6 +58,8 @@ export default function ZonesScreen() {
   const [role, setRole] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState<SortKey>("recent");
+  const [creatorFilter, setCreatorFilter] = useState<string | null>(null);
+  const [assignedWindow, setAssignedWindow] = useState<AssignedWindow>("all");
   const shouldRefetchOnFocusRef = useRef(false);
   const wasFocusedRef = useRef(false);
 
@@ -140,11 +155,50 @@ export default function ZonesScreen() {
     return map;
   }, [statsData]);
 
+  // Créateurs distincts (createdByName) présents dans les zones chargées, pour
+  // alimenter le filtre « Créé par ».
+  const creators = useMemo(() => {
+    const set = new Set<string>();
+    zones.forEach((zone) => {
+      if (zone.createdByName) set.add(zone.createdByName);
+    });
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  }, [zones]);
+
+  const hasActiveFilters = creatorFilter !== null || assignedWindow !== "all";
+
+  const resetFilters = () => {
+    setCreatorFilter(null);
+    setAssignedWindow("all");
+  };
+
+  // Pipeline filtre → tri : recherche par nom, filtre « Créé par » et filtre
+  // « Date d'assignation » se cumulent, puis le tri s'applique sur le résultat.
   const visibleZones = useMemo(() => {
     const query = search.trim().toLowerCase();
-    const filtered = query
-      ? zones.filter((zone) => zone.nom.toLowerCase().includes(query))
-      : zones;
+    const windowMs =
+      assignedWindow === "all"
+        ? null
+        : WINDOW_DAYS[assignedWindow] * 24 * 60 * 60 * 1000;
+    const now = Date.now();
+
+    const filtered = zones.filter((zone) => {
+      if (query && !zone.nom.toLowerCase().includes(query)) return false;
+      if (creatorFilter !== null && zone.createdByName !== creatorFilter) {
+        return false;
+      }
+      if (windowMs !== null) {
+        // Preset actif : exclure les zones sans date d'assignation, ne garder
+        // que celles assignées dans la fenêtre relative.
+        if (!zone.assignedAt) return false;
+        const assignedMs = new Date(zone.assignedAt).getTime();
+        if (Number.isNaN(assignedMs) || now - assignedMs > windowMs) {
+          return false;
+        }
+      }
+      return true;
+    });
+
     const sorted = [...filtered];
     sorted.sort((a, b) => {
       if (sort === "recent") {
@@ -155,9 +209,6 @@ export default function ZonesScreen() {
         }
         return b.id - a.id;
       }
-      if (sort === "superficie") {
-        return zoneAreaKm2(b) - zoneAreaKm2(a);
-      }
       if (sort === "commerciaux") {
         return (
           (commercialsByZone.get(b.id)?.length ?? 0) -
@@ -167,7 +218,7 @@ export default function ZonesScreen() {
       return a.nom.localeCompare(b.nom);
     });
     return sorted;
-  }, [zones, search, sort, commercialsByZone]);
+  }, [zones, search, sort, creatorFilter, assignedWindow, commercialsByZone]);
 
   const onRefresh = () => {
     void refetchZones();
@@ -229,6 +280,61 @@ export default function ZonesScreen() {
         ) : null}
       </View>
 
+      <View style={styles.filterSection}>
+        {creators.length > 0 ? (
+          <View style={styles.filterGroup}>
+            <Text style={styles.filterLabel}>Créé par</Text>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.chipRow}
+            >
+              <Chip
+                label="Tous"
+                selected={creatorFilter === null}
+                onPress={() => setCreatorFilter(null)}
+              />
+              {creators.map((name) => (
+                <Chip
+                  key={name}
+                  label={name}
+                  selected={creatorFilter === name}
+                  onPress={() => setCreatorFilter(name)}
+                />
+              ))}
+            </ScrollView>
+          </View>
+        ) : null}
+
+        <View style={styles.filterGroup}>
+          <Text style={styles.filterLabel}>Date d&apos;assignation</Text>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.chipRow}
+          >
+            {ASSIGNED_OPTIONS.map((option) => (
+              <Chip
+                key={option.key}
+                label={option.label}
+                selected={assignedWindow === option.key}
+                onPress={() => setAssignedWindow(option.key)}
+              />
+            ))}
+          </ScrollView>
+        </View>
+
+        {hasActiveFilters ? (
+          <Chip
+            label="Réinitialiser"
+            icon="x"
+            tone="primary"
+            onPress={resetFilters}
+            style={styles.resetChip}
+          />
+        ) : null}
+      </View>
+
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -258,12 +364,18 @@ export default function ZonesScreen() {
         <Card variant="outlined" padding="lg" style={styles.stateCard}>
           <Feather name="layers" size={28} color={colors.textSubtle} />
           <Text style={styles.stateTitle}>
-            {search.trim() ? "Aucun résultat" : "Aucune zone"}
+            {zones.length === 0
+              ? "Aucune zone"
+              : hasActiveFilters
+                ? "Aucune zone pour ces filtres"
+                : "Aucun résultat"}
           </Text>
           <Text style={styles.stateText}>
-            {search.trim()
-              ? "Aucune zone ne correspond à ta recherche."
-              : "Trace une zone sur la carte pour l'assigner à ton équipe."}
+            {zones.length === 0
+              ? "Trace une zone sur la carte pour l'assigner à ton équipe."
+              : hasActiveFilters
+                ? "Aucune zone ne correspond à ces filtres. Ajuste-les ou réinitialise."
+                : "Aucune zone ne correspond à ta recherche."}
           </Text>
         </Card>
       ) : (
@@ -315,6 +427,26 @@ const styles = StyleSheet.create({
   sortRow: {
     gap: spacing.sm,
     paddingRight: spacing.lg,
+  },
+  filterSection: {
+    gap: spacing.sm,
+  },
+  filterGroup: {
+    gap: spacing.xs,
+  },
+  filterLabel: {
+    fontSize: fontSize.xs,
+    fontWeight: fontWeight.semibold,
+    color: colors.textMuted,
+    textTransform: "uppercase",
+    letterSpacing: 0.4,
+  },
+  chipRow: {
+    gap: spacing.sm,
+    paddingRight: spacing.lg,
+  },
+  resetChip: {
+    alignSelf: "flex-start",
   },
   createButton: {
     height: 48,

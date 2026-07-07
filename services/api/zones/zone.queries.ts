@@ -34,6 +34,7 @@ export const ZONES_FOR_USER = `
       yOrigin
       rayon
       createdAt
+      assignedAt
       createdByName
       createdByType
       immeubles {
