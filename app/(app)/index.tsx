@@ -2,11 +2,14 @@ import AnimatedHeader from "@/components/navigation/AnimatedHeader";
 import NavigationRail from "@/components/navigation/NavigationRail";
 import SwipeTabs, { buildRoutes } from "@/components/navigation/SwipeTabs";
 import ProfileSheet from "@/components/ProfileSheet";
+import { ZoneDetailView } from "@/components/zones/ZoneDetailView";
+import { colors } from "@/constants/theme";
 import {
   ProfileSheetProvider,
   useProfileSheet,
 } from "@/hooks/use-profile-sheet";
 import { useMapFocus } from "@/hooks/use-map-focus";
+import { useZoneDetailPanel } from "@/hooks/use-zone-detail-panel";
 import { useWorkspaceProfile } from "@/hooks/api/use-workspace-profile";
 import { sendOperator } from "@/modules/kiosk-bridge";
 import { authService } from "@/services/auth";
@@ -27,6 +30,7 @@ function AppContent() {
   const [showRail, setShowRail] = useState(true);
   const { sheetRef } = useProfileSheet();
   const { focusTarget } = useMapFocus();
+  const { zoneDetailId, closeZoneDetail } = useZoneDetailPanel();
   const didSetInitialTab = useRef(false);
   const currentIndexRef = useRef(0);
   const fromIndexRef = useRef(0);
@@ -50,17 +54,23 @@ function AppContent() {
   // départ « flashe ». On arme une garde qui n'ignore QUE ce cas précis, et qui
   // s'AUTO-EXPIRE : contrairement à l'ancienne version, elle ne peut pas rester
   // bloquée et faire échouer les swipes (qui restaient en chargement infini).
-  const goToTab = useCallback((next: number) => {
-    const prev = currentIndexRef.current;
-    if (prev === next) return;
-    fromIndexRef.current = prev;
-    settlingRef.current = true;
-    if (settleTimerRef.current) clearTimeout(settleTimerRef.current);
-    settleTimerRef.current = setTimeout(() => {
-      settlingRef.current = false;
-    }, 400);
-    setIndex(next);
-  }, []);
+  const goToTab = useCallback(
+    (next: number) => {
+      const prev = currentIndexRef.current;
+      if (prev === next) return;
+      // Naviguer via la rail (ou un focus carte) ferme le panneau de détail zone
+      // embarqué : on revient à la scène de l'onglet ciblé, rail toujours visible.
+      closeZoneDetail();
+      fromIndexRef.current = prev;
+      settlingRef.current = true;
+      if (settleTimerRef.current) clearTimeout(settleTimerRef.current);
+      settleTimerRef.current = setTimeout(() => {
+        settlingRef.current = false;
+      }, 400);
+      setIndex(next);
+    },
+    [closeZoneDetail],
+  );
 
   const handleIndexChange = useCallback((next: number) => {
     // Parasite : retour à l'index de départ pendant la stabilisation → ignoré.
@@ -224,6 +234,14 @@ function AppContent() {
           >
             <AnimatedHeader currentIndex={index} />
           </Animated.View>
+          {/* Détail zone en panneau embarqué : overlay absolu couvrant les scènes
+              ET le header overlay, mais PAS la rail (il est enfant de mainContent).
+              La rail reste donc visible et navigable ; naviguer ferme le panneau. */}
+          {zoneDetailId != null ? (
+            <View style={styles.zoneDetailPanel}>
+              <ZoneDetailView zoneId={zoneDetailId} onBack={closeZoneDetail} />
+            </View>
+          ) : null}
         </View>
       </View>
       <ProfileSheet ref={sheetRef} userId={userId} role={role} />
@@ -261,5 +279,14 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     zIndex: 10,
+  },
+  zoneDetailPanel: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: colors.background,
+    zIndex: 20,
   },
 });

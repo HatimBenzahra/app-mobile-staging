@@ -8,6 +8,7 @@ import { colors, fontSize, fontWeight, radius, spacing } from "@/constants/theme
 import { useWorkspaceProfile } from "@/hooks/api/use-workspace-profile";
 import { useZoneStatisticsList } from "@/hooks/api/use-zone-statistics-list";
 import { useZonesForUser } from "@/hooks/api/use-zones-for-user";
+import { useZoneDetailPanel } from "@/hooks/use-zone-detail-panel";
 import { authService } from "@/services/auth";
 import type { Manager } from "@/types/api";
 import { Feather } from "@expo/vector-icons";
@@ -35,6 +36,7 @@ const SORT_OPTIONS: { key: SortKey; label: string }[] = [
 export default function ZonesScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const { openZoneDetail } = useZoneDetailPanel();
   const [userId, setUserId] = useState<number | null>(null);
   const [role, setRole] = useState<string | null>(null);
   const [search, setSearch] = useState("");
@@ -226,9 +228,7 @@ export default function ZonesScreen() {
             zone={zone}
             commercials={commercialsByZone.get(zone.id) ?? []}
             prospectedCount={prospectedByZone.get(zone.id) ?? 0}
-            onPress={() =>
-              router.push(`/zone/${zone.id}` as Parameters<typeof router.push>[0])
-            }
+            onPress={() => openZoneDetail(zone.id)}
           />
         ))
       )}

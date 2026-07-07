@@ -1,13 +1,6 @@
-import { Chip, PressableCard, ProgressBar } from "@/components/ui";
+import { PressableCard } from "@/components/ui";
 import { polygonAreaKm2 } from "@/components/carte-terrain/geo-hull";
-import {
-  colors,
-  fontSize,
-  fontWeight,
-  habitat,
-  radius,
-  spacing,
-} from "@/constants/theme";
+import { colors, radius } from "@/constants/theme";
 import type { ZoneForUser } from "@/services/api/zones/zone.service";
 import type { Commercial } from "@/types/api";
 import { Feather } from "@expo/vector-icons";
@@ -15,25 +8,6 @@ import { memo, useMemo } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
 export type ZoneCommercial = Pick<Commercial, "id" | "prenom" | "nom">;
-
-/**
- * Petite palette stable pour dériver une couleur d'accent depuis un id (zone
- * ou commercial) de façon déterministe. Restreinte au thème + accents habitat
- * pour rester cohérente avec le reste de l'app.
- */
-const ACCENTS = [
-  colors.primary,
-  colors.info,
-  colors.success,
-  colors.warning,
-  habitat.pavillon,
-  habitat.quartier,
-] as const;
-
-function accentForId(id: number): string {
-  if (!Number.isFinite(id)) return colors.info;
-  return ACCENTS[Math.abs(id) % ACCENTS.length] ?? colors.info;
-}
 
 /**
  * Superficie approximative d'une zone en km² : contour exact via la formule du
@@ -65,16 +39,13 @@ function CommercialAvatars({ commercials }: { commercials: ZoneCommercial[] }) {
   return (
     <View style={styles.avatars}>
       {shown.map((commercial) => (
-        <View
-          key={commercial.id}
-          style={[styles.avatar, { backgroundColor: accentForId(commercial.id) }]}
-        >
+        <View key={commercial.id} style={styles.avatar}>
           <Text style={styles.avatarText}>{initials(commercial)}</Text>
         </View>
       ))}
       {extra > 0 ? (
         <View style={[styles.avatar, styles.avatarExtra]}>
-          <Text style={styles.avatarExtraText}>+{extra}</Text>
+          <Text style={styles.avatarText}>+{extra}</Text>
         </View>
       ) : null}
     </View>
@@ -90,46 +61,44 @@ type Props = {
 };
 
 function ZoneListCardBase({ zone, commercials, prospectedCount, onPress }: Props) {
-  const accent = accentForId(zone.id);
   const immeubleCount = zone.immeubles?.length ?? 0;
   const areaKm2 = useMemo(() => zoneAreaKm2(zone), [zone]);
-
   const areaLabel = `${areaKm2 < 1 ? areaKm2.toFixed(2) : areaKm2.toFixed(1)} km²`;
+
   const prospected = Math.min(Math.max(prospectedCount, 0), immeubleCount);
-  const progress = immeubleCount > 0 ? (prospected / immeubleCount) * 100 : 0;
+  const percent = immeubleCount > 0 ? Math.round((prospected / immeubleCount) * 100) : 0;
+  const progressColor = percent >= 100 ? colors.success : colors.primary;
 
   return (
-    <PressableCard variant="elevated" padding="none" style={styles.card} onPress={onPress}>
-      <View style={[styles.accentBar, { backgroundColor: accent }]} />
-      <View style={styles.body}>
-        <View style={styles.headerRow}>
-          <Text style={styles.name} numberOfLines={1}>
-            {zone.nom}
-          </Text>
-          <Feather name="chevron-right" size={20} color={colors.textSubtle} />
+    <PressableCard variant="outlined" padding="md" style={styles.card} onPress={onPress}>
+      <View style={styles.top}>
+        <View style={styles.icon}>
+          <Feather name="map" size={18} color={colors.primary} />
         </View>
-
-        <View style={styles.chipsRow}>
-          <Chip icon="maximize" label={areaLabel} tone="info" />
-          <Chip
-            icon="users"
-            label={`${commercials.length} comm.`}
-            tone="neutral"
-          />
-          <Chip icon="home" label={`${immeubleCount} imm.`} tone="neutral" />
-        </View>
-
-        <CommercialAvatars commercials={commercials} />
-
+        <Text style={styles.name} numberOfLines={1}>
+          {zone.nom}
+        </Text>
         {immeubleCount > 0 ? (
-          <View style={styles.progressBlock}>
-            <ProgressBar value={progress} color={accent} />
-            <Text style={styles.progressLabel}>
-              {prospected} / {immeubleCount} immeubles prospectés
-            </Text>
-          </View>
-        ) : null}
+          <Text style={[styles.pct, { color: progressColor }]}>{percent}%</Text>
+        ) : (
+          <Feather name="chevron-right" size={18} color={colors.textSubtle} />
+        )}
       </View>
+
+      <View style={styles.meta}>
+        <Text style={styles.metaText} numberOfLines={1}>
+          {areaLabel} · {commercials.length} comm. · {immeubleCount} imm.
+        </Text>
+        <View style={styles.metaRight}>
+          <CommercialAvatars commercials={commercials} />
+        </View>
+      </View>
+
+      {immeubleCount > 0 ? (
+        <View style={styles.bar}>
+          <View style={[styles.barFill, { width: `${percent}%`, backgroundColor: progressColor }]} />
+        </View>
+      ) : null}
     </PressableCard>
   );
 }
@@ -138,65 +107,82 @@ export const ZoneListCard = memo(ZoneListCardBase);
 
 const styles = StyleSheet.create({
   card: {
-    flexDirection: "row",
-    overflow: "hidden",
-  },
-  accentBar: {
-    width: 5,
-  },
-  body: {
     flex: 1,
-    padding: spacing.lg,
-    gap: spacing.md,
+    gap: 8,
   },
-  headerRow: {
+  top: {
     flexDirection: "row",
     alignItems: "center",
-    gap: spacing.sm,
+    gap: 11,
+  },
+  icon: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: `${colors.primary}1A`,
   },
   name: {
     flex: 1,
-    fontSize: fontSize.lg,
-    fontWeight: fontWeight.bold,
+    fontSize: 14,
+    fontWeight: "700",
     color: colors.text,
+    letterSpacing: -0.2,
   },
-  chipsRow: {
+  pct: {
+    fontSize: 15,
+    fontWeight: "800",
+    fontVariant: ["tabular-nums"],
+  },
+  meta: {
     flexDirection: "row",
-    flexWrap: "wrap",
-    gap: spacing.sm,
+    alignItems: "center",
+    gap: 8,
+    paddingLeft: 47,
+    minHeight: 24,
+  },
+  metaText: {
+    flexShrink: 1,
+    fontSize: 11.5,
+    color: colors.textMuted,
+    fontWeight: "600",
+  },
+  metaRight: {
+    marginLeft: "auto",
   },
   avatars: {
     flexDirection: "row",
-    gap: spacing.xs,
   },
   avatar: {
-    width: 32,
-    height: 32,
+    width: 24,
+    height: 24,
     borderRadius: radius.pill,
+    marginLeft: -6,
     alignItems: "center",
     justifyContent: "center",
+    backgroundColor: `${colors.primary}1A`,
     borderWidth: 1.5,
     borderColor: colors.surface,
-  },
-  avatarText: {
-    fontSize: fontSize.xs,
-    fontWeight: fontWeight.bold,
-    color: colors.textOnPrimary,
   },
   avatarExtra: {
     backgroundColor: colors.surfaceMuted,
   },
-  avatarExtraText: {
-    fontSize: fontSize.xs,
-    fontWeight: fontWeight.bold,
-    color: colors.textMuted,
+  avatarText: {
+    fontSize: 10,
+    fontWeight: "700",
+    color: colors.primary,
   },
-  progressBlock: {
-    gap: spacing.xs,
+  bar: {
+    height: 5,
+    borderRadius: 3,
+    backgroundColor: colors.surfaceMuted,
+    overflow: "hidden",
+    marginLeft: 47,
   },
-  progressLabel: {
-    fontSize: fontSize.sm,
-    color: colors.textMuted,
+  barFill: {
+    height: "100%",
+    borderRadius: 3,
   },
 });
 

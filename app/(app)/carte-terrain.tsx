@@ -13,6 +13,7 @@ import { styles } from "@/components/carte-terrain/styles";
 import { TerrainMarkers } from "@/components/carte-terrain/TerrainMarkers";
 import { useCarteTerrain } from "@/hooks/carte-terrain/useCarteTerrain";
 import type { TerrainMode } from "@/hooks/carte-terrain/types";
+import { useZoneDetailPanel } from "@/hooks/use-zone-detail-panel";
 import type { Immeuble } from "@/types/api";
 import { useIsFocused } from "@react-navigation/native";
 import { router } from "expo-router";
@@ -28,6 +29,7 @@ export default function CarteTerrainScreen({
   embedded = false,
 }: CarteTerrainScreenProps = {}) {
   const insets = useSafeAreaInsets();
+  const { openZoneDetail } = useZoneDetailPanel();
   const {
     cameraRef,
     navigatingRef,
@@ -208,9 +210,7 @@ export default function CarteTerrainScreen({
         open={!!selectedZone}
         zone={selectedZone}
         onClose={closeZoneSheet}
-        onViewDetail={(id) =>
-          router.push(`/zone/${id}` as Parameters<typeof router.push>[0])
-        }
+        onViewDetail={(id) => openZoneDetail(id)}
       />
 
       {editingLieu ? (
