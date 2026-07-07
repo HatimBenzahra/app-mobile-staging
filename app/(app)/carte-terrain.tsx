@@ -156,7 +156,12 @@ export default function CarteTerrainScreen({
         satellite={satellite}
         onPress={handleMapPress}
       >
-        <ZoneContour zones={zones ?? []} mode={mode} onSelectZone={handleSelectZone} />
+        <ZoneContour
+          zones={zones ?? []}
+          mode={mode}
+          onSelectZone={handleSelectZone}
+          activeZoneId={myZone?.id}
+        />
         <QuartierContours quartiers={quartiers ?? []} immeubles={immeubles} mode={mode} />
         <TerrainMarkers
           immeubles={immeubles}

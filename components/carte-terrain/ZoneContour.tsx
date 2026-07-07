@@ -21,9 +21,11 @@ import { circlePolygon } from "./geo-hull";
  */
 
 const ZONE_ACCENT = colors.info;
+// Zone active (en cours) mise en avant avec la couleur de marque.
+const ZONE_ACTIVE_ACCENT = colors.primary;
 const METERS_PER_DEG_LAT = 111_320;
 
-type ZoneFeatureProps = { zoneId: number; nom: string };
+type ZoneFeatureProps = { zoneId: number; nom: string; active: boolean };
 
 type ZoneContourProps = {
   zones: Zone[];
@@ -32,6 +34,8 @@ type ZoneContourProps = {
   // du détail zone) on l'omet et l'overlay reste purement visuel.
   mode?: TerrainMode;
   onSelectZone?: (zoneId: number) => void;
+  // Zone active (en cours) → colorée différemment pour la repérer.
+  activeZoneId?: number | null;
 };
 
 function closeRing(ring: Position[]): Position[] {
@@ -44,7 +48,10 @@ function closeRing(ring: Position[]): Position[] {
   return ring;
 }
 
-function buildZoneFeature(zone: Zone): Feature<Polygon, ZoneFeatureProps> | null {
+function buildZoneFeature(
+  zone: Zone,
+  active: boolean,
+): Feature<Polygon, ZoneFeatureProps> | null {
   let ring: Position[] | null = null;
 
   if (zone.polygon && zone.polygon.length >= 3) {
@@ -64,7 +71,7 @@ function buildZoneFeature(zone: Zone): Feature<Polygon, ZoneFeatureProps> | null
 
   return {
     type: "Feature",
-    properties: { zoneId: zone.id, nom: zone.nom },
+    properties: { zoneId: zone.id, nom: zone.nom, active },
     geometry: { type: "Polygon", coordinates: [ring] },
   };
 }
@@ -73,13 +80,14 @@ export const ZoneContour = memo(function ZoneContour({
   zones,
   mode,
   onSelectZone,
+  activeZoneId,
 }: ZoneContourProps) {
   const featureCollection = useMemo<FeatureCollection<Polygon, ZoneFeatureProps>>(() => {
     const features = zones
-      .map(buildZoneFeature)
+      .map((zone) => buildZoneFeature(zone, zone.id === activeZoneId))
       .filter((feature): feature is Feature<Polygon, ZoneFeatureProps> => feature !== null);
     return { type: "FeatureCollection", features };
-  }, [zones]);
+  }, [zones, activeZoneId]);
 
   if (featureCollection.features.length === 0) return null;
 
@@ -99,12 +107,19 @@ export const ZoneContour = memo(function ZoneContour({
       <Layer
         id="zone-fill"
         type="fill"
-        paint={{ "fill-color": ZONE_ACCENT, "fill-opacity": 0.1 }}
+        paint={{
+          "fill-color": ["case", ["get", "active"], ZONE_ACTIVE_ACCENT, ZONE_ACCENT],
+          "fill-opacity": ["case", ["get", "active"], 0.18, 0.1],
+        }}
       />
       <Layer
         id="zone-line"
         type="line"
-        paint={{ "line-color": ZONE_ACCENT, "line-width": 2, "line-opacity": 0.9 }}
+        paint={{
+          "line-color": ["case", ["get", "active"], ZONE_ACTIVE_ACCENT, ZONE_ACCENT],
+          "line-width": ["case", ["get", "active"], 3, 2],
+          "line-opacity": 0.9,
+        }}
       />
     </GeoJSONSource>
   );
