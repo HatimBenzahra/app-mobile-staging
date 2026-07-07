@@ -1,9 +1,9 @@
 import { PressableCard } from "@/components/ui";
 import { polygonAreaKm2 } from "@/components/carte-terrain/geo-hull";
-import { colors, radius } from "@/constants/theme";
+import { colors, fontSize, fontWeight, radius, spacing } from "@/constants/theme";
 import type { ZoneForUser } from "@/services/api/zones/zone.service";
 import type { Commercial } from "@/types/api";
-import { Feather } from "@expo/vector-icons";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { memo, useMemo } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
@@ -68,33 +68,50 @@ function ZoneListCardBase({ zone, commercials, prospectedCount, onPress }: Props
   const prospected = Math.min(Math.max(prospectedCount, 0), immeubleCount);
   const percent = immeubleCount > 0 ? Math.round((prospected / immeubleCount) * 100) : 0;
   const progressColor = percent >= 100 ? colors.success : colors.primary;
+  const showProgress = immeubleCount > 0;
 
   return (
     <PressableCard variant="outlined" padding="md" style={styles.card} onPress={onPress}>
       <View style={styles.top}>
         <View style={styles.icon}>
-          <Feather name="map" size={18} color={colors.primary} />
+          <MaterialCommunityIcons name="vector-polygon" size={18} color={colors.primary} />
         </View>
-        <Text style={styles.name} numberOfLines={1}>
-          {zone.nom}
-        </Text>
-        {immeubleCount > 0 ? (
-          <Text style={[styles.pct, { color: progressColor }]}>{percent}%</Text>
+
+        <View style={styles.titleBlock}>
+          <Text style={styles.name} numberOfLines={1}>
+            {zone.nom}
+          </Text>
+          <Text style={styles.subtitle} numberOfLines={1}>
+            {areaLabel}
+            {commercials.length > 0 ? ` · ${commercials.length} commercial${commercials.length !== 1 ? "s" : ""}` : ""}
+            {immeubleCount > 0 ? ` · ${immeubleCount} immeuble${immeubleCount !== 1 ? "s" : ""}` : ""}
+          </Text>
+        </View>
+
+        {showProgress ? (
+          <View style={[styles.pill, { borderColor: `${progressColor}33`, backgroundColor: `${progressColor}14` }]}>
+            <Text style={[styles.pillText, { color: progressColor }]}>{percent}%</Text>
+          </View>
         ) : (
-          <Feather name="chevron-right" size={18} color={colors.textSubtle} />
+          <MaterialCommunityIcons name="chevron-right" size={22} color={colors.textSubtle} />
         )}
       </View>
 
-      <View style={styles.meta}>
-        <Text style={styles.metaText} numberOfLines={1}>
-          {areaLabel} · {commercials.length} comm. · {immeubleCount} imm.
-        </Text>
-        <View style={styles.metaRight}>
-          <CommercialAvatars commercials={commercials} />
+      {commercials.length > 0 ? (
+        <View style={styles.bottomRow}>
+          <View style={styles.assigned}>
+            <MaterialCommunityIcons name="account-multiple-outline" size={16} color={colors.textMuted} />
+            <Text style={styles.assignedLabel} numberOfLines={1}>
+              Assignés
+            </Text>
+          </View>
+          <View style={styles.metaRight}>
+            <CommercialAvatars commercials={commercials} />
+          </View>
         </View>
-      </View>
+      ) : null}
 
-      {immeubleCount > 0 ? (
+      {showProgress ? (
         <View style={styles.bar}>
           <View style={[styles.barFill, { width: `${percent}%`, backgroundColor: progressColor }]} />
         </View>
@@ -108,49 +125,67 @@ export const ZoneListCard = memo(ZoneListCardBase);
 const styles = StyleSheet.create({
   card: {
     flex: 1,
-    gap: 8,
+    gap: spacing.sm,
   },
   top: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 11,
+    gap: spacing.md,
   },
   icon: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
+    width: 40,
+    height: 40,
+    borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: `${colors.primary}1A`,
   },
-  name: {
+  titleBlock: {
     flex: 1,
-    fontSize: 14,
-    fontWeight: "700",
+    gap: 2,
+  },
+  name: {
+    fontSize: fontSize.md,
+    fontWeight: fontWeight.extrabold,
     color: colors.text,
     letterSpacing: -0.2,
   },
-  pct: {
-    fontSize: 15,
-    fontWeight: "800",
+  subtitle: {
+    fontSize: fontSize.xs,
+    color: colors.textMuted,
+    fontWeight: fontWeight.semibold,
+  },
+  pill: {
+    minWidth: 54,
+    height: 28,
+    paddingHorizontal: spacing.sm,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  pillText: {
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.extrabold,
     fontVariant: ["tabular-nums"],
   },
-  meta: {
+  bottomRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
-    paddingLeft: 47,
-    minHeight: 24,
+    justifyContent: "space-between",
+    gap: spacing.md,
   },
-  metaText: {
-    flexShrink: 1,
-    fontSize: 11.5,
+  assigned: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.xs,
+  },
+  assignedLabel: {
+    fontSize: fontSize.xs,
+    fontWeight: fontWeight.semibold,
     color: colors.textMuted,
-    fontWeight: "600",
   },
-  metaRight: {
-    marginLeft: "auto",
-  },
+  metaRight: { marginLeft: "auto" },
   avatars: {
     flexDirection: "row",
   },
@@ -178,7 +213,6 @@ const styles = StyleSheet.create({
     borderRadius: 3,
     backgroundColor: colors.surfaceMuted,
     overflow: "hidden",
-    marginLeft: 47,
   },
   barFill: {
     height: "100%",
