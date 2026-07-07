@@ -21,8 +21,8 @@ import { circlePolygon } from "./geo-hull";
  */
 
 const ZONE_ACCENT = colors.info;
-// Zone active (en cours) mise en avant avec la couleur de marque.
-const ZONE_ACTIVE_ACCENT = colors.primary;
+// Zone active (en cours) mise en avant en rouge pour la repérer nettement.
+const ZONE_ACTIVE_ACCENT = colors.danger;
 const METERS_PER_DEG_LAT = 111_320;
 
 type ZoneFeatureProps = { zoneId: number; nom: string; active: boolean };
