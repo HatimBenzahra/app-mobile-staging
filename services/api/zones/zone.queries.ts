@@ -34,11 +34,42 @@ export const ZONES_FOR_USER = `
       yOrigin
       rayon
       createdAt
+      createdByName
+      createdByType
       immeubles {
         id
         adresse
         latitude
         longitude
+      }
+    }
+  }
+`;
+
+export const USER_ZONE_HISTORY = `
+  query UserZoneHistory($userId: Int!, $userType: UserType!) {
+    userZoneHistory(userId: $userId, userType: $userType) {
+      id
+      zoneId
+      userId
+      userType
+      assignedAt
+      unassignedAt
+      totalContratsSignes
+      totalImmeublesVisites
+      totalRendezVousPris
+      totalRefus
+      totalImmeublesProspectes
+      totalPortesProspectes
+      zone {
+        id
+        nom
+        polygon
+        xOrigin
+        yOrigin
+        rayon
+        createdByName
+        createdByType
       }
     }
   }

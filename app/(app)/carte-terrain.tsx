@@ -7,13 +7,16 @@ import { ModeSwitch } from "@/components/carte-terrain/ModeSwitch";
 import { QuartierContours } from "@/components/carte-terrain/QuartierContours";
 import { ZoneContour } from "@/components/carte-terrain/ZoneContour";
 import ZoneSheet from "@/components/carte-terrain/ZoneSheet";
+import ZonesHistoryModal from "@/components/carte-terrain/ZonesHistoryModal";
 import { CreatePanel } from "@/components/carte-terrain/panels/CreatePanel";
 import { EditLieuPanel } from "@/components/carte-terrain/panels/EditLieuPanel";
 import { styles } from "@/components/carte-terrain/styles";
 import { TerrainMarkers } from "@/components/carte-terrain/TerrainMarkers";
 import { useCarteTerrain } from "@/hooks/carte-terrain/useCarteTerrain";
 import type { TerrainMode } from "@/hooks/carte-terrain/types";
+import { useMapFocus } from "@/hooks/use-map-focus";
 import { useZoneDetailPanel } from "@/hooks/use-zone-detail-panel";
+import { useZonesHistoryModal } from "@/hooks/use-zones-history-modal";
 import type { Immeuble } from "@/types/api";
 import { useIsFocused } from "@react-navigation/native";
 import { router } from "expo-router";
@@ -31,9 +34,17 @@ export default function CarteTerrainScreen({
   const insets = useSafeAreaInsets();
   const { openZoneDetail } = useZoneDetailPanel();
   const {
+    open: zonesHistoryOpen,
+    openZonesHistory,
+    closeZonesHistory,
+  } = useZonesHistoryModal();
+  const { focusOnZone } = useMapFocus();
+  const {
     cameraRef,
     navigatingRef,
+    userId,
     role,
+    userType,
     mode,
     setMode,
     mapCenter,
@@ -191,6 +202,7 @@ export default function CarteTerrainScreen({
           onToggleTeam={toggleShowTeam}
           onRecenter={centerOnCurrentLocation}
           onFocusMyZone={focusMyZone}
+          onOpenZonesHistory={openZonesHistory}
         />
       )}
 
@@ -220,6 +232,15 @@ export default function CarteTerrainScreen({
         zone={selectedZone}
         onClose={closeZoneSheet}
         onViewDetail={(id) => openZoneDetail(id)}
+      />
+
+      <ZonesHistoryModal
+        open={zonesHistoryOpen}
+        onClose={closeZonesHistory}
+        userId={userId}
+        userType={userType}
+        onFocusZone={focusOnZone}
+        onViewDetail={openZoneDetail}
       />
 
       {editingLieu ? (

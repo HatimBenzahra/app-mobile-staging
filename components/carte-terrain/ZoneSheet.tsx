@@ -1,10 +1,11 @@
 import { Card } from "@/components/ui";
-import { colors, fontSize, fontWeight, radius, shadows, spacing } from "@/constants/theme";
+import { colors, fontSize, fontWeight, radius, spacing } from "@/constants/theme";
 import type { Zone } from "@/types/api";
 import { Feather } from "@expo/vector-icons";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { polygonAreaKm2 } from "./geo-hull";
+import { sheetStyles } from "./sheet-styles";
 
 type ZoneSheetProps = {
   zone: Zone | null;
@@ -39,14 +40,14 @@ export default function ZoneSheet({ zone, open, onClose, onViewDetail }: ZoneShe
     <Card
       variant="elevated"
       padding="md"
-      style={[styles.panel, { paddingBottom: Math.max(insets.bottom, spacing.md) }]}
+      style={[sheetStyles.panel, { paddingBottom: Math.max(insets.bottom, spacing.md) }]}
     >
-      <View style={styles.header}>
-        <View style={styles.headerIcon}>
+      <View style={sheetStyles.header}>
+        <View style={[sheetStyles.headerIcon, styles.headerIconInfo]}>
           <Feather name="grid" size={22} color={colors.info} />
         </View>
-        <View style={styles.headerText}>
-          <Text style={styles.title} numberOfLines={1}>
+        <View style={sheetStyles.headerText}>
+          <Text style={sheetStyles.title} numberOfLines={1}>
             {zone.nom}
           </Text>
           {areaLabel ? (
@@ -59,7 +60,7 @@ export default function ZoneSheet({ zone, open, onClose, onViewDetail }: ZoneShe
           ) : null}
         </View>
         <Pressable
-          style={styles.closeButton}
+          style={sheetStyles.closeButton}
           onPress={onClose}
           hitSlop={8}
           accessibilityRole="button"
@@ -82,39 +83,10 @@ export default function ZoneSheet({ zone, open, onClose, onViewDetail }: ZoneShe
 }
 
 const styles = StyleSheet.create({
-  // Même ancrage que BuildingSheet : Card flottante en bas de la zone carte.
-  panel: {
-    position: "absolute",
-    left: 14,
-    right: 14,
-    bottom: 14,
-    gap: spacing.md,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.md,
-  },
-  headerIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: radius.pill,
-    borderWidth: 1.5,
+  // Teinte info de l'icône (le châssis vient de `sheetStyles.headerIcon`).
+  headerIconInfo: {
     borderColor: colors.info,
     backgroundColor: colors.infoSoft,
-    alignItems: "center",
-    justifyContent: "center",
-    ...shadows.sm,
-  },
-  headerText: {
-    flex: 1,
-    minWidth: 0,
-  },
-  title: {
-    fontSize: fontSize.lg,
-    fontWeight: fontWeight.extrabold,
-    color: colors.text,
-    letterSpacing: -0.4,
   },
   subtitleRow: {
     flexDirection: "row",
@@ -134,14 +106,6 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     fontWeight: fontWeight.semibold,
     letterSpacing: 0.1,
-  },
-  closeButton: {
-    width: 32,
-    height: 32,
-    borderRadius: radius.md,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: colors.surfaceMuted,
   },
   action: {
     flexDirection: "row",

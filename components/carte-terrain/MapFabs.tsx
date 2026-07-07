@@ -17,6 +17,7 @@ type MapFabsProps = {
   onToggleTeam: () => void;
   onRecenter: () => void;
   onFocusMyZone: () => void;
+  onOpenZonesHistory: () => void;
 };
 
 export function MapFabs({
@@ -31,6 +32,7 @@ export function MapFabs({
   onToggleTeam,
   onRecenter,
   onFocusMyZone,
+  onOpenZonesHistory,
 }: MapFabsProps) {
   return (
     <>
@@ -42,6 +44,16 @@ export function MapFabs({
           <Feather name="chevron-left" size={22} color={colors.text} />
         </Pressable>
       )}
+
+      {/* « Mes zones » (en cours + historique), commercial ET manager. */}
+      <Pressable
+        style={[styles.recenterFab, { bottom: insets.bottom + 264 }]}
+        onPress={onOpenZonesHistory}
+        accessibilityRole="button"
+        accessibilityLabel="Mes zones"
+      >
+        <Feather name="clock" size={22} color={colors.primary} />
+      </Pressable>
 
       {hasZone && (
         <Pressable

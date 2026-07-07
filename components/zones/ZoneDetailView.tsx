@@ -21,7 +21,7 @@ import { useZoneProspections } from "@/hooks/api/use-zone-prospections";
 import { useZoneStatistics } from "@/hooks/api/use-zone-statistics";
 import { useWorkspaceProfile } from "@/hooks/api/use-workspace-profile";
 import { authService } from "@/services/auth";
-import type { Manager, Zone } from "@/types/api";
+import type { Commercial, Manager, Zone } from "@/types/api";
 import type { ZoneProspection } from "@/types/graphql-schema";
 import { Feather } from "@expo/vector-icons";
 import { type CameraRef } from "@maplibre/maplibre-react-native";
@@ -166,13 +166,9 @@ type ZoneDetailViewProps = {
 export function ZoneDetailView({ zoneId, onBack }: ZoneDetailViewProps) {
   const insets = useSafeAreaInsets();
 
-  const zoneQuery = useZoneDetail(zoneId);
-  const statsQuery = useZoneStatistics(zoneId);
-  const assignmentsQuery = useZoneCurrentAssignments(zoneId);
-  const prospectionsQuery = useZoneProspections(zoneId);
-
   // Identité de l'utilisateur courant → profil workspace (pour résoudre les
-  // noms des commerciaux assignés sans prospection connue).
+  // noms des commerciaux assignés sans prospection connue). Chargée en amont des
+  // requêtes car elle conditionne l'appel « assignés » (manager uniquement).
   const [userId, setUserId] = useState<number | null>(null);
   const [role, setRole] = useState<string | null>(null);
   useEffect(() => {
@@ -189,6 +185,16 @@ export function ZoneDetailView({ zoneId, onBack }: ZoneDetailViewProps) {
       isMounted = false;
     };
   }, []);
+
+  const zoneQuery = useZoneDetail(zoneId);
+  const statsQuery = useZoneStatistics(zoneId);
+  // « Assignés » est réservé au manager (403 pour un commercial) : on ne déclenche
+  // la requête que pour un manager ; sinon `zoneId` null ⇒ aucun appel réseau.
+  const assignmentsQuery = useZoneCurrentAssignments(
+    role === "manager" ? zoneId : null,
+  );
+  const prospectionsQuery = useZoneProspections(zoneId);
+
   const { data: profile } = useWorkspaceProfile(userId, role);
 
   // Immeubles dépliés (vue portes).
@@ -281,6 +287,13 @@ export function ZoneDetailView({ zoneId, onBack }: ZoneDetailViewProps) {
       }
       for (const c of manager?.commercials ?? []) {
         names.set(c.id, `${c.prenom} ${c.nom}`.trim());
+      }
+    } else if (role === "commercial") {
+      // Le commercial n'a accès qu'à son propre profil : on résout au moins son
+      // nom (le fallback prospections couvre les autres, évitant les « #id »).
+      const commercial = profile as Commercial | null;
+      if (commercial) {
+        names.set(commercial.id, `${commercial.prenom} ${commercial.nom}`.trim());
       }
     }
     return names;
@@ -496,29 +509,33 @@ export function ZoneDetailView({ zoneId, onBack }: ZoneDetailViewProps) {
         </View>
       ) : null}
 
-      {/* Assignés (commerciaux + manager) */}
-      <Text style={styles.sectionTitle}>Assignés ({assignes.length})</Text>
-      {assignes.length === 0 ? (
-        <Text style={styles.sectionEmpty}>Aucun assigné.</Text>
-      ) : (
-        <View style={styles.chipRow}>
-          {assignes.map((a) => {
-            const isManager = a.userType === "MANAGER";
-            return (
-              <Chip
-                key={a.id}
-                icon={isManager ? "briefcase" : "user"}
-                tone={isManager ? "info" : "neutral"}
-                label={
-                  isManager
-                    ? `${resolvePersonName(a.userId)} (manager)`
-                    : resolvePersonName(a.userId)
-                }
-              />
-            );
-          })}
-        </View>
-      )}
+      {/* Assignés (commerciaux + manager) — réservé au manager (403 commercial). */}
+      {role === "manager" ? (
+        <>
+          <Text style={styles.sectionTitle}>Assignés ({assignes.length})</Text>
+          {assignes.length === 0 ? (
+            <Text style={styles.sectionEmpty}>Aucun assigné.</Text>
+          ) : (
+            <View style={styles.chipRow}>
+              {assignes.map((a) => {
+                const isManager = a.userType === "MANAGER";
+                return (
+                  <Chip
+                    key={a.id}
+                    icon={isManager ? "briefcase" : "user"}
+                    tone={isManager ? "info" : "neutral"}
+                    label={
+                      isManager
+                        ? `${resolvePersonName(a.userId)} (manager)`
+                        : resolvePersonName(a.userId)
+                    }
+                  />
+                );
+              })}
+            </View>
+          )}
+        </>
+      ) : null}
 
       {/* Immeubles concernés */}
       <Text style={styles.sectionTitle}>Immeubles ({immeubles.length})</Text>

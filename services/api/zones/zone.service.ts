@@ -7,12 +7,13 @@ import type {
   Zone,
   ZoneEnCours,
 } from "@/types/api";
+import type { HistoriqueZone } from "@/types/graphql-schema";
 import {
   ASSIGN_ZONE_TO_COMMERCIAL,
   ASSIGN_ZONE_TO_USER,
   CREATE_ZONE,
 } from "./zone.mutations";
-import { ZONES_FOR_USER } from "./zone.queries";
+import { USER_ZONE_HISTORY, ZONES_FOR_USER } from "./zone.queries";
 
 /** Immeuble allégé embarqué par `zonesForUser` (compte + points de la zone). */
 export type ZoneForUserImmeuble = Pick<
@@ -23,6 +24,31 @@ export type ZoneForUserImmeuble = Pick<
 /** Zone renvoyée par `zonesForUser` : métadonnées + immeubles de la zone. */
 export type ZoneForUser = Zone & {
   immeubles?: ZoneForUserImmeuble[] | null;
+};
+
+/** Zone allégée embarquée par `userZoneHistory` (géométrie pour le focus carte + créateur). */
+export type UserZoneHistoryZone = Pick<
+  Zone,
+  "id" | "nom" | "polygon" | "xOrigin" | "yOrigin" | "rayon" | "createdByName" | "createdByType"
+>;
+
+/** Entrée d'historique d'assignation d'un utilisateur (`userZoneHistory`). */
+export type UserZoneHistoryEntry = Pick<
+  HistoriqueZone,
+  | "id"
+  | "zoneId"
+  | "userId"
+  | "userType"
+  | "assignedAt"
+  | "unassignedAt"
+  | "totalContratsSignes"
+  | "totalImmeublesVisites"
+  | "totalRendezVousPris"
+  | "totalRefus"
+  | "totalImmeublesProspectes"
+  | "totalPortesProspectes"
+> & {
+  zone?: UserZoneHistoryZone | null;
 };
 
 export const zoneApi = {
@@ -50,6 +76,19 @@ export const zoneApi = {
       { userId: number; userType: UserType }
     >(ZONES_FOR_USER, { userId, userType });
     return response.zonesForUser;
+  },
+
+  // Historique des assignations de zones d'un utilisateur (commercial ou
+  // manager) : « en cours » + passées, avec dates et totaux. Lecture seule.
+  async getUserHistory(
+    userId: number,
+    userType: UserType,
+  ): Promise<UserZoneHistoryEntry[]> {
+    const response = await gql<
+      { userZoneHistory: UserZoneHistoryEntry[] },
+      { userId: number; userType: UserType }
+    >(USER_ZONE_HISTORY, { userId, userType });
+    return response.userZoneHistory;
   },
 
   // Assignation générique : permet notamment au manager de s'assigner lui-même

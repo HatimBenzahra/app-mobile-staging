@@ -2324,6 +2324,9 @@ export type WinleadPlusUser = {
 export type Zone = {
   __typename?: 'Zone';
   createdAt: Scalars['DateTime']['output'];
+  createdById?: Maybe<Scalars['Int']['output']>;
+  createdByName?: Maybe<Scalars['String']['output']>;
+  createdByType?: Maybe<UserType>;
   directeurId?: Maybe<Scalars['Int']['output']>;
   id: Scalars['Int']['output'];
   immeubles?: Maybe<Array<Immeuble>>;

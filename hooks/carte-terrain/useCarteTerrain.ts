@@ -751,6 +751,7 @@ export function useCarteTerrain({ embedded = false }: UseCarteTerrainParams = {}
     navigatingRef,
     userId,
     role,
+    userType,
     mode,
     setMode,
     mapCenter,

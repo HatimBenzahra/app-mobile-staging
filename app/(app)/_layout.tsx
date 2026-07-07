@@ -1,6 +1,7 @@
 import { MapFocusProvider } from "@/hooks/use-map-focus";
 import { RequestedTabProvider } from "@/hooks/use-requested-tab";
 import { ZoneDetailPanelProvider } from "@/hooks/use-zone-detail-panel";
+import { ZonesHistoryModalProvider } from "@/hooks/use-zones-history-modal";
 import { LocationTrackingService } from "@/services/location/location-tracking.service";
 import { Stack } from "expo-router";
 import { useEffect } from "react";
@@ -26,7 +27,9 @@ export default function AppLayout() {
     <MapFocusProvider>
       <RequestedTabProvider>
         <ZoneDetailPanelProvider>
-          <Stack screenOptions={{ headerShown: false }} />
+          <ZonesHistoryModalProvider>
+            <Stack screenOptions={{ headerShown: false }} />
+          </ZonesHistoryModalProvider>
         </ZoneDetailPanelProvider>
       </RequestedTabProvider>
     </MapFocusProvider>
