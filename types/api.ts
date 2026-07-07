@@ -85,6 +85,9 @@ export type Zone = {
   rayon: SchemaZone['rayon'];
   // Anneau fermé [[lng,lat],…] (JSON scalar côté schéma). Nullable.
   polygon?: number[][] | null;
+  // Date de création (tri « Récent »). Optionnel : certaines sources de zones
+  // (profil manager) ne la remontent pas.
+  createdAt?: SchemaZone['createdAt'];
 };
 
 export type ZoneEnCours = {

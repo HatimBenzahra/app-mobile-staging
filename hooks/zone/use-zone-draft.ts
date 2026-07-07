@@ -1,6 +1,8 @@
 import { useToast } from "@/components/ui";
+import { syncWorkspaceMutation } from "@/hooks/api/data-sync";
 import { useCreateZone } from "@/hooks/api/use-create-zone";
 import { useMapFocus } from "@/hooks/use-map-focus";
+import { useRequestedTab } from "@/hooks/use-requested-tab";
 import { useWorkspaceProfile } from "@/hooks/api/use-workspace-profile";
 import { DEFAULT_REGION } from "@/hooks/carte-terrain/constants";
 import { makeDraftPin } from "@/hooks/carte-terrain/helpers";
@@ -54,6 +56,7 @@ export function useZoneDraft() {
   const { data: profile, refetch } = useWorkspaceProfile(userId, role);
   const { createZone } = useCreateZone();
   const { focusOnZone } = useMapFocus();
+  const { requestTab } = useRequestedTab();
   const toast = useToast();
 
   useEffect(() => {
@@ -242,14 +245,26 @@ export function useZoneDraft() {
                 : api.zones.assignToCommercial(target.id, newZone.id),
             ),
           );
+          // Les assignations sont désormais posées : on ré-invalide le cache des
+          // zones (carte + liste) APRÈS la boucle pour que le rechargement voie la
+          // géométrie ET les assignés (le sync émis par `createZone` partait avant).
+          syncWorkspaceMutation("ZONE_CREATED");
         }
 
         await refetch();
         toast.show({ message: "Zone creee", variant: "success" });
-        // On cadre la nouvelle zone sur la carte de prospection (fitBounds via le
-        // focus partagé) PUIS on revient à l'écran onglets : l'effet de focus y
-        // bascule sur l'onglet Carte. Le polygone fermé local suffit à zoneBounds.
-        focusOnZone({ id: newZone.id, polygon });
+
+        // Redirection selon les assignés : si le manager s'est inclus, il va
+        // prospecter → carte + focus sur la zone (l'effet de focus bascule sur
+        // l'onglet Carte). Sinon (uniquement des commerciaux), on l'emmène vers la
+        // liste des Zones sans poser de focus (qui rebasculerait sur la carte).
+        const managerSelected = targets.some((target) => target.self);
+        if (managerSelected) {
+          // Le polygone fermé local suffit à zoneBounds.
+          focusOnZone({ id: newZone.id, polygon });
+        } else {
+          requestTab("zones");
+        }
         router.back();
       } catch {
         Alert.alert("Creation impossible", "La zone n'a pas pu etre creee.");
@@ -257,7 +272,7 @@ export function useZoneDraft() {
         setCreating(false);
       }
     },
-    [zonePins, assignables, createZone, refetch, toast, focusOnZone],
+    [zonePins, assignables, createZone, refetch, toast, focusOnZone, requestTab],
   );
 
   // Une zone est un polygone : au moins 3 sommets (le nom est validé côté panneau).

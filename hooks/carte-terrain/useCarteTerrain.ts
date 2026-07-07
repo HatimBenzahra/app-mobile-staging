@@ -1,5 +1,6 @@
 import { useCreateMaison } from "@/hooks/api/use-create-maison";
 import { useCreateQuartier } from "@/hooks/api/use-create-quartier";
+import { useCurrentAssignment } from "@/hooks/api/use-current-assignment";
 import { useMapFocus } from "@/hooks/use-map-focus";
 import { useQuartiers } from "@/hooks/api/use-quartiers";
 import { useWorkspaceProfile } from "@/hooks/api/use-workspace-profile";
@@ -113,10 +114,11 @@ export function useCarteTerrain({ embedded = false }: UseCarteTerrainParams = {}
     [role],
   );
   const { data: userZones } = useZonesForUser(userId, userType);
+  const { data: currentAssignment } = useCurrentAssignment(userId, userType);
   const { data: quartiers } = useQuartiers();
   const { createMaison, loading: creatingMaison } = useCreateMaison();
   const { createQuartier } = useCreateQuartier();
-  const { focusTarget, clearFocus } = useMapFocus();
+  const { focusTarget, focusOnZone, clearFocus } = useMapFocus();
 
   // "Voir sur la carte" : dès qu'une cible arrive, on centre la caméra et on
   // arme le highlight (via highlightedId), puis on CONSOMME la cible (clearFocus)
@@ -289,6 +291,24 @@ export function useCarteTerrain({ embedded = false }: UseCarteTerrainParams = {}
 
   // Zone(s) à afficher pour l'utilisateur — via `zonesForUser` (cf. userType).
   const zones = useMemo(() => userZones ?? [], [userZones]);
+
+  // « Ma zone » = la zone ACTIVE de l'utilisateur (assignation en cours). À
+  // défaut d'assignation active, on retombe sur la plus récente (zones triées
+  // `createdAt desc` côté backend → premier élément).
+  const myZone = useMemo(() => {
+    if (zones.length === 0) return null;
+    const activeZoneId = currentAssignment?.zoneId;
+    const active =
+      activeZoneId != null ? zones.find((zone) => zone.id === activeZoneId) : undefined;
+    return active ?? zones[0];
+  }, [zones, currentAssignment]);
+
+  // Recentre la carte sur « ma zone » via le focus partagé (fitBounds sur son
+  // emprise, réutilise zoneBounds). No-op s'il n'existe aucune zone.
+  const focusMyZone = useCallback(() => {
+    if (!myZone) return;
+    focusOnZone(myZone);
+  }, [myZone, focusOnZone]);
 
   // Tap sur le contour d'une zone (VISUALISATION) : on retrouve la zone dans la
   // liste du profil, on ouvre le ZoneSheet et on ferme le BuildingSheet
@@ -766,6 +786,8 @@ export function useCarteTerrain({ embedded = false }: UseCarteTerrainParams = {}
     highlightedPorteId,
     quartiers,
     zones,
+    myZone,
+    focusMyZone,
     updateActivePin,
     searchAddresses,
     applyAddressToActivePin,

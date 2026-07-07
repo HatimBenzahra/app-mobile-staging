@@ -12,9 +12,11 @@ type MapFabsProps = {
   loadingLocation: boolean;
   showTeamToggle: boolean;
   showTeam: boolean;
+  hasZone: boolean;
   onToggleSatellite: () => void;
   onToggleTeam: () => void;
   onRecenter: () => void;
+  onFocusMyZone: () => void;
 };
 
 export function MapFabs({
@@ -24,9 +26,11 @@ export function MapFabs({
   loadingLocation,
   showTeamToggle,
   showTeam,
+  hasZone,
   onToggleSatellite,
   onToggleTeam,
   onRecenter,
+  onFocusMyZone,
 }: MapFabsProps) {
   return (
     <>
@@ -36,6 +40,17 @@ export function MapFabs({
           onPress={() => router.back()}
         >
           <Feather name="chevron-left" size={22} color={colors.text} />
+        </Pressable>
+      )}
+
+      {hasZone && (
+        <Pressable
+          style={[styles.recenterFab, { bottom: insets.bottom + 204 }]}
+          onPress={onFocusMyZone}
+          accessibilityRole="button"
+          accessibilityLabel="Recentrer sur ma zone"
+        >
+          <Feather name="map" size={22} color={colors.primary} />
         </Pressable>
       )}
 

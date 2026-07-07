@@ -68,6 +68,8 @@ export default function CarteTerrainScreen({
     highlightedPorteId,
     quartiers,
     zones,
+    myZone,
+    focusMyZone,
     updateActivePin,
     searchAddresses,
     applyAddressToActivePin,
@@ -179,9 +181,11 @@ export default function CarteTerrainScreen({
           loadingLocation={loadingLocation}
           showTeamToggle={role === "manager"}
           showTeam={showTeam}
+          hasZone={!!myZone}
           onToggleSatellite={handleToggleSatellite}
           onToggleTeam={toggleShowTeam}
           onRecenter={centerOnCurrentLocation}
+          onFocusMyZone={focusMyZone}
         />
       )}
 

@@ -33,6 +33,7 @@ export const ZONES_FOR_USER = `
       xOrigin
       yOrigin
       rayon
+      createdAt
       immeubles {
         id
         adresse
@@ -58,6 +59,14 @@ export const GET_ZONE_STATISTICS = `
       tauxSuccesRdv
       nombreCommerciaux
       performanceGlobale
+    }
+  }
+`;
+
+export const CURRENT_USER_ASSIGNMENT = `
+  query CurrentUserAssignment($userId: Int!, $userType: UserType!) {
+    currentUserAssignment(userId: $userId, userType: $userType) {
+      zoneId
     }
   }
 `;

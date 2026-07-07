@@ -9,6 +9,7 @@ import {
   useProfileSheet,
 } from "@/hooks/use-profile-sheet";
 import { useMapFocus } from "@/hooks/use-map-focus";
+import { useRequestedTab } from "@/hooks/use-requested-tab";
 import { useZoneDetailPanel } from "@/hooks/use-zone-detail-panel";
 import { useWorkspaceProfile } from "@/hooks/api/use-workspace-profile";
 import { sendOperator } from "@/modules/kiosk-bridge";
@@ -30,6 +31,7 @@ function AppContent() {
   const [showRail, setShowRail] = useState(true);
   const { sheetRef } = useProfileSheet();
   const { focusTarget } = useMapFocus();
+  const { requestedTabKey, clearRequestedTab } = useRequestedTab();
   const { zoneDetailId, closeZoneDetail } = useZoneDetailPanel();
   const didSetInitialTab = useRef(false);
   const currentIndexRef = useRef(0);
@@ -123,6 +125,16 @@ function AppContent() {
     const carteIdx = routes.findIndex((r) => r.key === "carte");
     if (carteIdx >= 0) goToTab(carteIdx);
   }, [focusTarget, routes, goToTab]);
+
+  // Demande d'onglet cible (ex. après création d'une zone assignée uniquement à
+  // des commerciaux → on va sur la liste des Zones). On bascule sur l'onglet
+  // demandé puis on CONSOMME la demande pour ne pas re-déclencher au remontage.
+  useEffect(() => {
+    if (!requestedTabKey) return;
+    const targetIdx = routes.findIndex((r) => r.key === requestedTabKey);
+    if (targetIdx >= 0) goToTab(targetIdx);
+    clearRequestedTab();
+  }, [requestedTabKey, routes, goToTab, clearRequestedTab]);
 
   useEffect(() => {
     const loadIdentity = async () => {

@@ -27,9 +27,10 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-type SortKey = "nom" | "superficie" | "commerciaux";
+type SortKey = "recent" | "nom" | "superficie" | "commerciaux";
 
 const SORT_OPTIONS: { key: SortKey; label: string }[] = [
+  { key: "recent", label: "Récent" },
   { key: "nom", label: "Nom" },
   { key: "superficie", label: "Superficie" },
   { key: "commerciaux", label: "Commerciaux" },
@@ -43,7 +44,7 @@ export default function ZonesScreen() {
   const [userId, setUserId] = useState<number | null>(null);
   const [role, setRole] = useState<string | null>(null);
   const [search, setSearch] = useState("");
-  const [sort, setSort] = useState<SortKey>("nom");
+  const [sort, setSort] = useState<SortKey>("recent");
   const shouldRefetchOnFocusRef = useRef(false);
   const wasFocusedRef = useRef(false);
 
@@ -146,6 +147,14 @@ export default function ZonesScreen() {
       : zones;
     const sorted = [...filtered];
     sorted.sort((a, b) => {
+      if (sort === "recent") {
+        // Plus récentes d'abord. `createdAt` (ISO) comparé lexicographiquement =
+        // ordre chronologique ; fallback sur l'id décroissant si absent.
+        if (a.createdAt && b.createdAt) {
+          return b.createdAt.localeCompare(a.createdAt);
+        }
+        return b.id - a.id;
+      }
       if (sort === "superficie") {
         return zoneAreaKm2(b) - zoneAreaKm2(a);
       }

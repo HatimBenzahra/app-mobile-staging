@@ -14,6 +14,11 @@ const PORTE_RELATED_PREFIXES = [
 // Une simple mutation de porte ne le rend pas périmé.
 const QUARTIERS_PREFIX = "quartiers:";
 
+// Le cache "zones-for-user:" alimente la carte terrain (contours de zones) ET la
+// liste des zones. Une zone créée/assignée le rend périmé : ses abonnés
+// (use-api-call) se rechargent alors seuls.
+const ZONES_FOR_USER_PREFIX = "zones-for-user:";
+
 function invalidateByEventType(eventType: DataSyncEventType): void {
   // Invalidation ciblée mais volontairement large en cas de doute.
   // - Mutations PORTE_* : les données porte sont périmées, PAS "quartiers:".
@@ -24,6 +29,11 @@ function invalidateByEventType(eventType: DataSyncEventType): void {
   }
   if (!eventType.startsWith("PORTE")) {
     invalidateApiCacheByPrefix(QUARTIERS_PREFIX);
+  }
+  // ZONE_CREATED : la géométrie/les assignés des zones changent → on invalide le
+  // cache des zones affichées (carte + liste) pour forcer leur rechargement.
+  if (eventType === "ZONE_CREATED") {
+    invalidateApiCacheByPrefix(ZONES_FOR_USER_PREFIX);
   }
 }
 

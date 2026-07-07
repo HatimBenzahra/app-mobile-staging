@@ -1,4 +1,5 @@
 import { MapFocusProvider } from "@/hooks/use-map-focus";
+import { RequestedTabProvider } from "@/hooks/use-requested-tab";
 import { ZoneDetailPanelProvider } from "@/hooks/use-zone-detail-panel";
 import { LocationTrackingService } from "@/services/location/location-tracking.service";
 import { Stack } from "expo-router";
@@ -23,9 +24,11 @@ export default function AppLayout() {
   // zone en panneau embarqué, sans passer par une route empilée plein écran.
   return (
     <MapFocusProvider>
-      <ZoneDetailPanelProvider>
-        <Stack screenOptions={{ headerShown: false }} />
-      </ZoneDetailPanelProvider>
+      <RequestedTabProvider>
+        <ZoneDetailPanelProvider>
+          <Stack screenOptions={{ headerShown: false }} />
+        </ZoneDetailPanelProvider>
+      </RequestedTabProvider>
     </MapFocusProvider>
   );
 }
