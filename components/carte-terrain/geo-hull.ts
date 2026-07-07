@@ -217,6 +217,51 @@ export function polygonAreaKm2(ring: number[][]): number {
   return Math.abs(doubleArea) / 2 / 1_000_000;
 }
 
+/**
+ * Test d'appartenance d'un point `[lng,lat]` à un anneau `[[lng,lat],…]` par
+ * lancer de rayon (ray casting). Miroir de `pointInRing` côté backend.
+ */
+export function pointInRing(lng: number, lat: number, ring: number[][]): boolean {
+  let inside = false;
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    const xi = ring[i][0];
+    const yi = ring[i][1];
+    const xj = ring[j][0];
+    const yj = ring[j][1];
+    const intersect =
+      yi > lat !== yj > lat &&
+      lng < ((xj - xi) * (lat - yi)) / (yj - yi) + xi;
+    if (intersect) inside = !inside;
+  }
+  return inside;
+}
+
+/**
+ * Un point `(lng,lat)` est-il DANS une zone ? Polygone (≥ 3 points) via
+ * `pointInRing` ; sinon disque hérité `xOrigin/yOrigin/rayon` (distance ≤ rayon,
+ * projection équirectangulaire locale, cohérente avec le reste du module).
+ * Miroir de `pointInZone` côté backend.
+ */
+export function pointInZone(lng: number, lat: number, zone: ZoneBoundsInput): boolean {
+  if (zone.polygon && zone.polygon.length >= 3) {
+    return pointInRing(lng, lat, zone.polygon);
+  }
+  if (
+    zone.xOrigin != null &&
+    zone.yOrigin != null &&
+    zone.rayon != null &&
+    zone.rayon > 0
+  ) {
+    const dy = (lat - zone.yOrigin) * METERS_PER_DEG_LAT;
+    const dx =
+      (lng - zone.xOrigin) *
+      METERS_PER_DEG_LAT *
+      Math.cos((zone.yOrigin * Math.PI) / 180);
+    return Math.hypot(dx, dy) <= zone.rayon;
+  }
+  return false;
+}
+
 function dedupe(points: Point[]): Point[] {
   const seen = new Set<string>();
   const out: Point[] = [];

@@ -20,6 +20,7 @@ import { router } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { NativeSyntheticEvent } from "react-native";
 import { Alert, useWindowDimensions } from "react-native";
+import { pointInZone } from "@/components/carte-terrain/geo-hull";
 import {
   downloadAreaPack,
   getAreaPackName,
@@ -600,11 +601,8 @@ export function useCarteTerrain({ embedded = false }: UseCarteTerrainParams = {}
     setSuggestions([]);
   }, [activeQuartierPinId]);
 
-  const handleCreateBatiment = useCallback(async () => {
-    if (!buildingPin || !buildingPin.selectedAddress) {
-      Alert.alert("Adresse requise", "Pose un pin puis choisis une adresse avant de creer.");
-      return;
-    }
+  const runCreateBatiment = useCallback(async () => {
+    if (!buildingPin || !buildingPin.selectedAddress) return;
 
     setCreatingLieu(true);
     try {
@@ -627,6 +625,42 @@ export function useCarteTerrain({ embedded = false }: UseCarteTerrainParams = {}
       setCreatingLieu(false);
     }
   }, [buildingPin, role, userId, createMaison, refetch]);
+
+  const handleCreateBatiment = useCallback(async () => {
+    if (!buildingPin || !buildingPin.selectedAddress) {
+      Alert.alert("Adresse requise", "Pose un pin puis choisis une adresse avant de creer.");
+      return;
+    }
+
+    // Garde-fou : si le bâtiment tombe hors de toute zone assignée à
+    // l'utilisateur, on demande confirmation (le backend rattachera zoneId=null).
+    // Aucune zone assignée → pas de garde-fou (rien à comparer).
+    const insideAssignedZone =
+      zones.length === 0 ||
+      zones.some((zone) =>
+        pointInZone(buildingPin.longitude, buildingPin.latitude, zone),
+      );
+
+    if (!insideAssignedZone) {
+      Alert.alert(
+        "Hors de votre zone",
+        "Ce bâtiment est en dehors de votre zone assignée. Créer quand même ?",
+        [
+          { text: "Annuler", style: "cancel" },
+          {
+            text: "Créer quand même",
+            style: "destructive",
+            onPress: () => {
+              void runCreateBatiment();
+            },
+          },
+        ],
+      );
+      return;
+    }
+
+    await runCreateBatiment();
+  }, [buildingPin, zones, runCreateBatiment]);
 
   const handleCreateQuartier = useCallback(async () => {
     if (quartierPins.length === 0) {
