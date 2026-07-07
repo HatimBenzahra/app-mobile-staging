@@ -158,14 +158,15 @@ export default function ZonesScreen() {
   return (
     <ScrollView
       style={styles.container}
-      contentContainerStyle={[styles.content, { paddingTop: insets.top + 16 }]}
+      contentContainerStyle={[
+        styles.content,
+        { paddingBottom: insets.bottom + spacing.xl },
+      ]}
       keyboardShouldPersistTaps="handled"
       refreshControl={
         <RefreshControl refreshing={loading} onRefresh={onRefresh} tintColor={colors.primary} />
       }
     >
-      <Text style={styles.heading}>Zones</Text>
-
       <View style={styles.searchBar}>
         <Feather name="search" size={18} color={colors.textSubtle} />
         <TextInput
@@ -243,7 +244,6 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.xl,
     gap: spacing.md,
   },
   heading: {
