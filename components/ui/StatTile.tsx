@@ -12,6 +12,8 @@ type Props = {
   emphasis?: "primary" | "default";
   iconTone?: IconBadgeTone;
   hint?: string;
+  /** "compact" reduces height/paddings/value size for dense grids. */
+  size?: "default" | "compact";
   style?: StyleProp<ViewStyle>;
 };
 
@@ -27,15 +29,21 @@ export function StatTile({
   emphasis = "default",
   iconTone,
   hint,
+  size = "default",
   style,
 }: Props) {
   const isPrimary = emphasis === "primary";
+  const isCompact = size === "compact";
   const cardVariant: CardVariant = isPrimary ? "primary" : "elevated";
   const resolvedTone: IconBadgeTone =
     iconTone ?? (isPrimary ? "inverse" : "primary");
 
   return (
-    <Card variant={cardVariant} padding="md" style={[styles.tile, style]}>
+    <Card
+      variant={cardVariant}
+      padding={isCompact ? "sm" : "md"}
+      style={[styles.tile, isCompact && styles.tileCompact, style]}
+    >
       <View style={styles.header}>
         <Text
           style={[styles.label, isPrimary && styles.labelOnPrimary]}
@@ -43,9 +51,15 @@ export function StatTile({
         >
           {label}
         </Text>
-        <IconBadge icon={icon} tone={resolvedTone} size="md" />
+        <IconBadge icon={icon} tone={resolvedTone} size={isCompact ? "sm" : "md"} />
       </View>
-      <Text style={[styles.value, isPrimary && styles.valueOnPrimary]}>
+      <Text
+        style={[
+          styles.value,
+          isCompact && styles.valueCompact,
+          isPrimary && styles.valueOnPrimary,
+        ]}
+      >
         {value}
       </Text>
       {hint ? (
@@ -61,6 +75,9 @@ const styles = StyleSheet.create({
   tile: {
     flex: 1,
     minHeight: 110,
+  },
+  tileCompact: {
+    minHeight: 78,
   },
   header: {
     flexDirection: "row",
@@ -82,6 +99,10 @@ const styles = StyleSheet.create({
     fontSize: fontSize["4xl"],
     fontWeight: fontWeight.bold,
     color: colors.text,
+  },
+  valueCompact: {
+    marginTop: spacing.xs,
+    fontSize: fontSize["2xl"],
   },
   valueOnPrimary: {
     color: colors.textOnPrimary,

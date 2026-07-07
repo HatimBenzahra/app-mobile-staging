@@ -1,14 +1,16 @@
 import { colors } from "@/constants/theme";
+import type { TerrainMode } from "@/hooks/carte-terrain/types";
 import type { Zone } from "@/types/api";
 import { GeoJSONSource, Layer } from "@maplibre/maplibre-react-native";
 import type { Feature, FeatureCollection, Polygon, Position } from "geojson";
 import { memo, useMemo } from "react";
+import type { NativeSyntheticEvent } from "react-native";
 import { circlePolygon } from "./geo-hull";
 
 /**
  * Contour translucide de la (des) zone(s) assignée(s) à l'utilisateur, affiché
- * sous les contours de quartier (z-order inférieur). Overlay purement visuel :
- * pas d'interaction en v1.
+ * sous les contours de quartier (z-order inférieur). Tap sur le remplissage en
+ * VISUALISATION → ouverture du ZoneSheet (calqué sur QuartierContours).
  *
  * Géométrie par zone :
  *  - `polygon` (anneau [[lng,lat],…], ≥ 3 points) → contour exact ;
@@ -21,10 +23,15 @@ import { circlePolygon } from "./geo-hull";
 const ZONE_ACCENT = colors.info;
 const METERS_PER_DEG_LAT = 111_320;
 
-type ZoneFeatureProps = { zoneId: number };
+type ZoneFeatureProps = { zoneId: number; nom: string };
 
 type ZoneContourProps = {
   zones: Zone[];
+  // Interaction optionnelle : sur la carte de prospection on passe `mode` +
+  // `onSelectZone` pour rendre le contour cliquable ; en aperçu statique (mini-map
+  // du détail zone) on l'omet et l'overlay reste purement visuel.
+  mode?: TerrainMode;
+  onSelectZone?: (zoneId: number) => void;
 };
 
 function closeRing(ring: Position[]): Position[] {
@@ -57,12 +64,16 @@ function buildZoneFeature(zone: Zone): Feature<Polygon, ZoneFeatureProps> | null
 
   return {
     type: "Feature",
-    properties: { zoneId: zone.id },
+    properties: { zoneId: zone.id, nom: zone.nom },
     geometry: { type: "Polygon", coordinates: [ring] },
   };
 }
 
-export const ZoneContour = memo(function ZoneContour({ zones }: ZoneContourProps) {
+export const ZoneContour = memo(function ZoneContour({
+  zones,
+  mode,
+  onSelectZone,
+}: ZoneContourProps) {
   const featureCollection = useMemo<FeatureCollection<Polygon, ZoneFeatureProps>>(() => {
     const features = zones
       .map(buildZoneFeature)
@@ -73,7 +84,18 @@ export const ZoneContour = memo(function ZoneContour({ zones }: ZoneContourProps
   if (featureCollection.features.length === 0) return null;
 
   return (
-    <GeoJSONSource id="zone-contours" data={featureCollection}>
+    <GeoJSONSource
+      id="zone-contours"
+      data={featureCollection}
+      onPress={(event: NativeSyntheticEvent<{ features: Feature[] }>) => {
+        if (mode !== "VISUALISATION" || !onSelectZone) return;
+        // Empêche le handleMapPress de la carte de se déclencher aussi.
+        event.stopPropagation?.();
+        const feature = event.nativeEvent.features?.[0];
+        const zoneId = (feature?.properties as ZoneFeatureProps | undefined)?.zoneId;
+        if (zoneId != null) onSelectZone(zoneId);
+      }}
+    >
       <Layer
         id="zone-fill"
         type="fill"

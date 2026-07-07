@@ -1,13 +1,18 @@
 import { GET_ZONE_DETAIL } from "@/services/api/zones/zone.queries";
 import { gql } from "@/services/core/graphql";
-import type { Immeuble, Zone } from "@/types/graphql-schema";
+import type { Immeuble, Porte, Zone } from "@/types/graphql-schema";
 import { useCallback } from "react";
 import { useApiCall, type UseApiState } from "./use-api-call";
+
+export type ZoneDetailPorte = Pick<Porte, "id" | "numero" | "etage" | "statut">;
 
 export type ZoneDetailImmeuble = Pick<
   Immeuble,
   "id" | "adresse" | "latitude" | "longitude"
->;
+> & {
+  typeHabitat?: Immeuble["typeHabitat"];
+  portes?: ZoneDetailPorte[] | null;
+};
 
 export type ZoneDetail = Pick<
   Zone,

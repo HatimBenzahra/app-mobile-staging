@@ -1,3 +1,4 @@
+import { MapFocusProvider } from "@/hooks/use-map-focus";
 import { LocationTrackingService } from "@/services/location/location-tracking.service";
 import { Stack } from "expo-router";
 import { useEffect } from "react";
@@ -13,5 +14,12 @@ export default function AppLayout() {
     };
   }, []);
 
-  return <Stack screenOptions={{ headerShown: false }} />;
+  // MapFocusProvider enveloppe TOUTE la pile (index + zone/create + …) : le focus
+  // carte (bâtiment ou zone) doit survivre à la navigation entre routes sœurs.
+  // C'est pourquoi il vit ici et non plus dans l'écran onglets (index).
+  return (
+    <MapFocusProvider>
+      <Stack screenOptions={{ headerShown: false }} />
+    </MapFocusProvider>
+  );
 }

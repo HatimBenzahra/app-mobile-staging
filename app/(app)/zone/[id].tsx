@@ -12,17 +12,21 @@ import {
   DEFAULT_STATUS_OPTION,
   STATUS_DISPLAY,
 } from "@/components/immeubles/prospection/status-display";
+import { HabitatIcon } from "@/components/immeubles/habitat-icon";
+import { getLieuTerms } from "@/components/immeubles/lieu-terms";
 import { colors, fontSize, fontWeight, radius, spacing } from "@/constants/theme";
 import { useZoneCurrentAssignments } from "@/hooks/api/use-zone-current-assignments";
-import { useZoneDetail } from "@/hooks/api/use-zone-detail";
+import { useZoneDetail, type ZoneDetailImmeuble } from "@/hooks/api/use-zone-detail";
 import { useZoneProspections } from "@/hooks/api/use-zone-prospections";
 import { useZoneStatistics } from "@/hooks/api/use-zone-statistics";
-import type { Zone } from "@/types/api";
+import { useWorkspaceProfile } from "@/hooks/api/use-workspace-profile";
+import { authService } from "@/services/auth";
+import type { Manager, Zone } from "@/types/api";
 import type { ZoneProspection } from "@/types/graphql-schema";
 import { Feather } from "@expo/vector-icons";
 import { type CameraRef } from "@maplibre/maplibre-react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -94,6 +98,59 @@ function statusToChipTone(accent: string): ChipTone {
   }
 }
 
+/**
+ * Libellé + couleur d'un statut de porte brut (`StatutPorte`).
+ * Réutilise `STATUS_DISPLAY` pour les statuts partagés et complète les statuts
+ * bruts absents de la palette de prospection (ABSENT / repassage / non visité).
+ */
+const PORTE_STATUS_EXTRA: Record<string, { label: string; accent: string }> = {
+  ABSENT: { label: "Absent", accent: "#F59E0B" },
+  NECESSITE_REPASSAGE: { label: "À repasser", accent: "#6366F1" },
+  NON_VISITE: {
+    label: DEFAULT_STATUS_OPTION.label,
+    accent: DEFAULT_STATUS_OPTION.accent,
+  },
+};
+
+function porteStatusMeta(statut: string): { label: string; accent: string } {
+  const option = STATUS_DISPLAY[statut];
+  if (option) return { label: option.label, accent: option.accent };
+  return (
+    PORTE_STATUS_EXTRA[statut] ?? {
+      label: statut,
+      accent: DEFAULT_STATUS_OPTION.accent,
+    }
+  );
+}
+
+type PorteBreakdownEntry = {
+  statut: string;
+  count: number;
+  label: string;
+  accent: string;
+};
+
+/** Répartition des portes d'un immeuble par statut, triée par effectif. */
+function buildPorteBreakdown(
+  portes: ZoneDetailImmeuble["portes"],
+): PorteBreakdownEntry[] {
+  const counts = new Map<string, number>();
+  for (const porte of portes ?? []) {
+    counts.set(porte.statut, (counts.get(porte.statut) ?? 0) + 1);
+  }
+  return [...counts.entries()]
+    .map(([statut, count]) => ({ statut, count, ...porteStatusMeta(statut) }))
+    .sort((a, b) => b.count - a.count);
+}
+
+/** Type d'habitat lisible dérivé de `getLieuTerms` (source unique de vérité). */
+function habitatLabel(typeHabitat?: ZoneDetailImmeuble["typeHabitat"]): string {
+  const terms = getLieuTerms(typeHabitat);
+  if (terms.isMaison) return "Maison";
+  if (terms.isPavillon) return "Pavillon";
+  return "Immeuble";
+}
+
 export default function ZoneDetailScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -104,6 +161,39 @@ export default function ZoneDetailScreen() {
   const statsQuery = useZoneStatistics(zoneId);
   const assignmentsQuery = useZoneCurrentAssignments(zoneId);
   const prospectionsQuery = useZoneProspections(zoneId);
+
+  // Identité de l'utilisateur courant → profil workspace (pour résoudre les
+  // noms des commerciaux assignés sans prospection connue).
+  const [userId, setUserId] = useState<number | null>(null);
+  const [role, setRole] = useState<string | null>(null);
+  useEffect(() => {
+    let isMounted = true;
+    const loadIdentity = async () => {
+      const id = await authService.getUserId();
+      const userRole = await authService.getUserRole();
+      if (!isMounted) return;
+      setUserId(id);
+      setRole(userRole);
+    };
+    void loadIdentity();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+  const { data: profile } = useWorkspaceProfile(userId, role);
+
+  // Immeubles dépliés (vue portes).
+  const [expandedImmeubles, setExpandedImmeubles] = useState<Set<number>>(
+    () => new Set(),
+  );
+  const toggleImmeuble = useCallback((immeubleId: number) => {
+    setExpandedImmeubles((prev) => {
+      const next = new Set(prev);
+      if (next.has(immeubleId)) next.delete(immeubleId);
+      else next.add(immeubleId);
+      return next;
+    });
+  }, []);
 
   const zone = zoneQuery.data;
   const stats = statsQuery.data;
@@ -163,9 +253,20 @@ export default function ZoneDetailScreen() {
     fitToZone();
   }, [fitToZone]);
 
-  // Noms des commerciaux dérivés des prospections (l'assignation ne porte
-  // que l'userId). Fallback "Commercial #id" si aucune prospection connue.
-  const commercialNames = useMemo(() => {
+  // Noms des commerciaux issus du profil workspace (le manager porte la liste
+  // de ses commerciaux avec prénom + nom, même sans prospection).
+  const profileNames = useMemo(() => {
+    const names = new Map<number, string>();
+    const commercials =
+      role === "manager" ? (profile as Manager | null)?.commercials : null;
+    for (const c of commercials ?? []) {
+      names.set(c.id, `${c.prenom} ${c.nom}`.trim());
+    }
+    return names;
+  }, [profile, role]);
+
+  // Noms dérivés des prospections (l'assignation ne porte que l'userId).
+  const prospectionNames = useMemo(() => {
     const names = new Map<number, string>();
     for (const p of prospections) {
       if (p.commercialId != null && p.commercialNom) {
@@ -174,6 +275,19 @@ export default function ZoneDetailScreen() {
     }
     return names;
   }, [prospections]);
+
+  // Priorité : nom du profil > nom issu des prospections > "Commercial #id".
+  const resolveCommercialName = useCallback(
+    (commercialId: number | null | undefined): string => {
+      if (commercialId == null) return "Commercial inconnu";
+      return (
+        profileNames.get(commercialId) ??
+        prospectionNames.get(commercialId) ??
+        `Commercial #${commercialId}`
+      );
+    },
+    [profileNames, prospectionNames],
+  );
 
   const commerciaux = useMemo(
     () =>
@@ -252,10 +366,12 @@ export default function ZoneDetailScreen() {
       const statusOption =
         STATUS_DISPLAY[item.statut] ?? DEFAULT_STATUS_OPTION;
       return (
-        <Card variant="outlined" padding="md" style={styles.prospectionRow}>
+        <Card variant="outlined" padding="sm" style={styles.prospectionRow}>
           <View style={styles.prospectionTop}>
             <Text style={styles.prospectionCommercial} numberOfLines={1}>
-              {item.commercialNom ?? "Commercial inconnu"}
+              {item.commercialId != null
+                ? resolveCommercialName(item.commercialId)
+                : (item.commercialNom ?? "Commercial inconnu")}
             </Text>
             <Chip
               label={statusOption.label}
@@ -281,7 +397,7 @@ export default function ZoneDetailScreen() {
         </Card>
       );
     },
-    [],
+    [resolveCommercialName],
   );
 
   const isInitialLoading =
@@ -346,6 +462,7 @@ export default function ZoneDetailScreen() {
               icon={tile.icon}
               label={tile.label}
               value={tile.value}
+              size="compact"
               style={styles.statTile}
             />
           ))}
@@ -364,9 +481,7 @@ export default function ZoneDetailScreen() {
             <Chip
               key={c.id}
               icon="user"
-              label={
-                commercialNames.get(c.userId) ?? `Commercial #${c.userId}`
-              }
+              label={resolveCommercialName(c.userId)}
             />
           ))}
         </View>
@@ -378,20 +493,86 @@ export default function ZoneDetailScreen() {
         <Text style={styles.sectionEmpty}>Aucun immeuble dans la zone.</Text>
       ) : (
         <Card variant="outlined" padding="none" style={styles.immeubleList}>
-          {immeubles.map((imm, index) => (
-            <View
-              key={imm.id}
-              style={[
-                styles.immeubleRow,
-                index < immeubles.length - 1 && styles.immeubleRowBorder,
-              ]}
-            >
-              <Feather name="map-pin" size={14} color={colors.primary} />
-              <Text style={styles.immeubleAdresse} numberOfLines={1}>
-                {imm.adresse}
-              </Text>
-            </View>
-          ))}
+          {immeubles.map((imm, index) => {
+            const portes = imm.portes ?? [];
+            const breakdown = buildPorteBreakdown(portes);
+            const isExpanded = expandedImmeubles.has(imm.id);
+            const canExpand = portes.length > 0;
+            return (
+              <View
+                key={imm.id}
+                style={[
+                  index < immeubles.length - 1 && styles.immeubleRowBorder,
+                ]}
+              >
+                <Pressable
+                  style={styles.immeubleRow}
+                  onPress={
+                    canExpand ? () => toggleImmeuble(imm.id) : undefined
+                  }
+                  disabled={!canExpand}
+                >
+                  <HabitatIcon
+                    type={imm.typeHabitat}
+                    size={18}
+                    color={colors.primary}
+                  />
+                  <View style={styles.immeubleInfo}>
+                    <Text style={styles.immeubleAdresse} numberOfLines={1}>
+                      {imm.adresse}
+                    </Text>
+                    <Text style={styles.immeubleType}>
+                      {habitatLabel(imm.typeHabitat)} · {portes.length} porte
+                      {portes.length !== 1 ? "s" : ""}
+                    </Text>
+                  </View>
+                  {canExpand ? (
+                    <Feather
+                      name={isExpanded ? "chevron-up" : "chevron-down"}
+                      size={18}
+                      color={colors.textMuted}
+                    />
+                  ) : null}
+                </Pressable>
+
+                {breakdown.length > 0 ? (
+                  <View style={styles.porteChipRow}>
+                    {breakdown.map((entry) => (
+                      <Chip
+                        key={entry.statut}
+                        label={`${entry.count} ${entry.label}`}
+                        tone={statusToChipTone(entry.accent)}
+                      />
+                    ))}
+                  </View>
+                ) : null}
+
+                {isExpanded ? (
+                  <View style={styles.porteList}>
+                    {portes.map((porte) => {
+                      const meta = porteStatusMeta(porte.statut);
+                      return (
+                        <View key={porte.id} style={styles.porteRow}>
+                          <View
+                            style={[
+                              styles.porteDot,
+                              { backgroundColor: meta.accent },
+                            ]}
+                          />
+                          <Text style={styles.porteLabel} numberOfLines={1}>
+                            Porte {porte.numero} · Étage {porte.etage}
+                          </Text>
+                          <Text style={styles.porteStatut} numberOfLines={1}>
+                            {meta.label}
+                          </Text>
+                        </View>
+                      );
+                    })}
+                  </View>
+                ) : null}
+              </View>
+            );
+          })}
         </Card>
       )}
 
@@ -437,7 +618,10 @@ export default function ZoneDetailScreen() {
         }
         renderItem={renderProspection}
         ListHeaderComponent={ListHeader}
-        contentContainerStyle={styles.list}
+        contentContainerStyle={[
+          styles.list,
+          { paddingBottom: insets.bottom + spacing.xl },
+        ]}
         ListEmptyComponent={
           !hasError ? (
             <View style={styles.emptyBox}>
@@ -515,21 +699,21 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   headerContent: {
-    gap: spacing.md,
+    gap: spacing.sm,
   },
   miniMapCard: {
-    height: 200,
+    height: 160,
     overflow: "hidden",
   },
   statsGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: spacing.md,
+    gap: spacing.sm,
   },
   statTile: {
-    minWidth: "46%",
     flexGrow: 1,
-    flexBasis: "46%",
+    flexShrink: 0,
+    flexBasis: 140,
   },
   sectionTitle: {
     marginTop: spacing.sm,
@@ -554,16 +738,54 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: spacing.sm,
     paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
+    paddingVertical: spacing.sm,
   },
   immeubleRowBorder: {
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
   },
-  immeubleAdresse: {
+  immeubleInfo: {
     flex: 1,
+  },
+  immeubleAdresse: {
     fontSize: fontSize.base,
     color: colors.text,
+  },
+  immeubleType: {
+    marginTop: 1,
+    fontSize: fontSize.xs,
+    color: colors.textMuted,
+  },
+  porteChipRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: spacing.xs,
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.sm,
+  },
+  porteList: {
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.sm,
+    gap: spacing.xs,
+  },
+  porteRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  porteDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  porteLabel: {
+    flex: 1,
+    fontSize: fontSize.sm,
+    color: colors.textStrong,
+  },
+  porteStatut: {
+    fontSize: fontSize.xs,
+    color: colors.textMuted,
   },
   prospectionsHeader: {
     flexDirection: "row",

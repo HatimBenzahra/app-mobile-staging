@@ -1,14 +1,28 @@
+import { zoneBounds, type ZoneBoundsInput } from "@/components/carte-terrain/geo-hull";
+import type { LngLatBounds } from "@maplibre/maplibre-react-native";
 import { createContext, useCallback, useContext, useMemo, useState } from "react";
 
-export type MapFocusTarget = {
-  id: number;
-  longitude: number;
-  latitude: number;
-  // Porte à mettre en avant dans le BuildingSheet (agenda : on s'intéresse à la
-  // porte du RDV/repassage). Absent depuis Lieux : on met alors juste le
-  // bâtiment en avant, sans ouvrir le sheet ni cibler de porte.
-  porteId?: number;
-};
+/**
+ * Cible de focus carte. Deux formes discriminées par `kind` :
+ *  - `point` : un bâtiment (recentrage + highlight), avec porte optionnelle à
+ *    mettre en avant dans le BuildingSheet (agenda : on s'intéresse à la porte du
+ *    RDV/repassage ; absent depuis Lieux → on met juste le bâtiment en avant).
+ *  - `zone` : une zone, cadrée via `fitBounds` sur ses `bounds`
+ *    (`[minLng,minLat,maxLng,maxLat]`, ordre `LngLatBounds` MapLibre).
+ */
+export type MapFocusTarget =
+  | {
+      kind: "point";
+      id: number;
+      longitude: number;
+      latitude: number;
+      porteId?: number;
+    }
+  | {
+      kind: "zone";
+      id: number;
+      bounds: LngLatBounds;
+    };
 
 type MapFocusContextValue = {
   focusTarget: MapFocusTarget | null;
@@ -20,6 +34,7 @@ type MapFocusContextValue = {
     },
     options?: { porteId?: number },
   ) => void;
+  focusOnZone: (zone: ZoneBoundsInput & { id: number }) => void;
   clearFocus: () => void;
 };
 
@@ -36,6 +51,7 @@ export function MapFocusProvider({ children }: { children: React.ReactNode }) {
       // On ignore les bâtiments sans coordonnées valides (rien à centrer).
       if (immeuble.latitude == null || immeuble.longitude == null) return;
       setFocusTarget({
+        kind: "point",
         id: immeuble.id,
         latitude: immeuble.latitude,
         longitude: immeuble.longitude,
@@ -45,13 +61,20 @@ export function MapFocusProvider({ children }: { children: React.ReactNode }) {
     [],
   );
 
+  const focusOnZone = useCallback((zone: ZoneBoundsInput & { id: number }) => {
+    const bounds = zoneBounds(zone);
+    // Pas de géométrie exploitable → rien à cadrer.
+    if (!bounds) return;
+    setFocusTarget({ kind: "zone", id: zone.id, bounds });
+  }, []);
+
   const clearFocus = useCallback(() => {
     setFocusTarget(null);
   }, []);
 
   const value = useMemo(
-    () => ({ focusTarget, focusOnMap, clearFocus }),
-    [focusTarget, focusOnMap, clearFocus],
+    () => ({ focusTarget, focusOnMap, focusOnZone, clearFocus }),
+    [focusTarget, focusOnMap, focusOnZone, clearFocus],
   );
 
   return (

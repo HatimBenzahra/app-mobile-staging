@@ -6,6 +6,7 @@ import { MapLegend } from "@/components/carte-terrain/MapLegend";
 import { ModeSwitch } from "@/components/carte-terrain/ModeSwitch";
 import { QuartierContours } from "@/components/carte-terrain/QuartierContours";
 import { ZoneContour } from "@/components/carte-terrain/ZoneContour";
+import ZoneSheet from "@/components/carte-terrain/ZoneSheet";
 import { CreatePanel } from "@/components/carte-terrain/panels/CreatePanel";
 import { EditLieuPanel } from "@/components/carte-terrain/panels/EditLieuPanel";
 import { styles } from "@/components/carte-terrain/styles";
@@ -42,6 +43,9 @@ export default function CarteTerrainScreen({
     loadingSuggestions,
     selectedExistingLieu,
     setSelectedExistingLieu,
+    selectedZone,
+    handleSelectZone,
+    closeZoneSheet,
     setMovingLieu,
     editingLieu,
     setEditingLieu,
@@ -148,7 +152,7 @@ export default function CarteTerrainScreen({
         satellite={satellite}
         onPress={handleMapPress}
       >
-        <ZoneContour zones={zones ?? []} />
+        <ZoneContour zones={zones ?? []} mode={mode} onSelectZone={handleSelectZone} />
         <QuartierContours quartiers={quartiers ?? []} immeubles={immeubles} mode={mode} />
         <TerrainMarkers
           immeubles={immeubles}
@@ -198,6 +202,15 @@ export default function CarteTerrainScreen({
         onEdit={openEditLieu}
         onMove={handleMoveFromSheet}
         onDelete={handleDeleteLieu}
+      />
+
+      <ZoneSheet
+        open={!!selectedZone}
+        zone={selectedZone}
+        onClose={closeZoneSheet}
+        onViewDetail={(id) =>
+          router.push(`/zone/${id}` as Parameters<typeof router.push>[0])
+        }
       />
 
       {editingLieu ? (

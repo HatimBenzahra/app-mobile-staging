@@ -9,6 +9,7 @@ import type {
   CreateQuartierPointInput,
   Immeuble,
   TypeHabitat,
+  Zone,
 } from "@/types/api";
 import { type CameraRef, type PressEvent } from "@maplibre/maplibre-react-native";
 import * as Location from "expo-location";
@@ -56,6 +57,8 @@ export function useCarteTerrain({ embedded = false }: UseCarteTerrainParams = {}
   const [loadingSuggestions, setLoadingSuggestions] = useState(false);
   const [creatingLieu, setCreatingLieu] = useState(false);
   const [selectedExistingLieu, setSelectedExistingLieu] = useState<Immeuble | null>(null);
+  // Zone sélectionnée (tap sur son contour en VISUALISATION) → ouvre le ZoneSheet.
+  const [selectedZone, setSelectedZone] = useState<Zone | null>(null);
   const [movingLieu, setMovingLieu] = useState<Immeuble | null>(null);
   const [editingLieu, setEditingLieu] = useState<Immeuble | null>(null);
   const [editingType, setEditingType] = useState<TypeHabitat>("IMMEUBLE");
@@ -92,6 +95,10 @@ export function useCarteTerrain({ embedded = false }: UseCarteTerrainParams = {}
     if (selectedExistingLieu === null) {
       navigatingRef.current = false;
       setHighlightedPorteId(null);
+    } else {
+      // Exclusivité BuildingSheet / ZoneSheet : ouvrir un bâtiment ferme la zone.
+      // Couvre tous les points d'entrée (tap marqueur, focus porte agenda).
+      setSelectedZone(null);
     }
   }, [selectedExistingLieu]);
 
@@ -110,8 +117,31 @@ export function useCarteTerrain({ embedded = false }: UseCarteTerrainParams = {}
     if (!focusTarget) return;
 
     const target = focusTarget;
-    const withPorte = target.porteId != null;
     let retryTimer: ReturnType<typeof setTimeout> | undefined;
+
+    // Focus ZONE (création de zone) : on cadre toute l'emprise via `fitBounds`.
+    // Comme le focus point, la caméra peut ne pas être montée au premier rendu
+    // (onglet Carte lazy) → même retry unique ~300 ms.
+    if (target.kind === "zone") {
+      const bounds = target.bounds;
+      const fit = () => {
+        if (!cameraRef.current) return false;
+        cameraRef.current.fitBounds(bounds, {
+          padding: { top: 80, right: 60, bottom: 80, left: 60 },
+          duration: 650,
+        });
+        return true;
+      };
+      if (!fit()) {
+        retryTimer = setTimeout(fit, 300);
+      }
+      clearFocus();
+      return () => {
+        if (retryTimer) clearTimeout(retryTimer);
+      };
+    }
+
+    const withPorte = target.porteId != null;
 
     // Focus porte (agenda) : le BuildingSheet recouvre le bas de l'écran. On donne
     // à la caméra un `padding` bas égal à la zone couverte par le sheet : MapLibre
@@ -249,6 +279,21 @@ export function useCarteTerrain({ embedded = false }: UseCarteTerrainParams = {}
 
   // Zone(s) assignée(s) à l'utilisateur — exposées par le profil manager comme commercial.
   const zones = useMemo(() => profile?.zones ?? [], [profile]);
+
+  // Tap sur le contour d'une zone (VISUALISATION) : on retrouve la zone dans la
+  // liste du profil, on ouvre le ZoneSheet et on ferme le BuildingSheet
+  // (exclusivité des deux cartes flottantes).
+  const handleSelectZone = useCallback(
+    (zoneId: number) => {
+      const zone = zones.find((z) => z.id === zoneId);
+      if (!zone) return;
+      setSelectedExistingLieu(null);
+      setSelectedZone(zone);
+    },
+    [zones],
+  );
+
+  const closeZoneSheet = useCallback(() => setSelectedZone(null), []);
 
   const toggleShowTeam = useCallback(() => setShowTeam((current) => !current), []);
 
@@ -485,6 +530,7 @@ export function useCarteTerrain({ embedded = false }: UseCarteTerrainParams = {}
       }
       if (mode === "VISUALISATION") {
         setSelectedExistingLieu(null);
+        setSelectedZone(null);
         setEditingLieu(null);
         return;
       }
@@ -686,6 +732,9 @@ export function useCarteTerrain({ embedded = false }: UseCarteTerrainParams = {}
     loadingSuggestions,
     selectedExistingLieu,
     setSelectedExistingLieu,
+    selectedZone,
+    handleSelectZone,
+    closeZoneSheet,
     movingLieu,
     setMovingLieu,
     editingLieu,

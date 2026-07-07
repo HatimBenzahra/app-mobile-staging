@@ -12,6 +12,13 @@ export const GET_ZONE_DETAIL = `
         adresse
         latitude
         longitude
+        typeHabitat
+        portes {
+          id
+          numero
+          etage
+          statut
+        }
       }
     }
   }

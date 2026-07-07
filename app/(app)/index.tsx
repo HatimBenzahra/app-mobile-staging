@@ -6,7 +6,7 @@ import {
   ProfileSheetProvider,
   useProfileSheet,
 } from "@/hooks/use-profile-sheet";
-import { MapFocusProvider, useMapFocus } from "@/hooks/use-map-focus";
+import { useMapFocus } from "@/hooks/use-map-focus";
 import { useWorkspaceProfile } from "@/hooks/api/use-workspace-profile";
 import { sendOperator } from "@/modules/kiosk-bridge";
 import { authService } from "@/services/auth";
@@ -232,13 +232,13 @@ function AppContent() {
 }
 
 export default function AppIndex() {
+  // MapFocusProvider est désormais monté dans (app)/_layout au-dessus de la pile
+  // (voir AppLayout) : AppContent le consomme via useMapFocus depuis ce parent.
   return (
     <ProfileSheetProvider>
-      <MapFocusProvider>
-        <View style={styles.container}>
-          <AppContent />
-        </View>
-      </MapFocusProvider>
+      <View style={styles.container}>
+        <AppContent />
+      </View>
     </ProfileSheetProvider>
   );
 }

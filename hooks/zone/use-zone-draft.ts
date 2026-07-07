@@ -1,5 +1,6 @@
 import { useToast } from "@/components/ui";
 import { useCreateZone } from "@/hooks/api/use-create-zone";
+import { useMapFocus } from "@/hooks/use-map-focus";
 import { useWorkspaceProfile } from "@/hooks/api/use-workspace-profile";
 import { DEFAULT_REGION } from "@/hooks/carte-terrain/constants";
 import { makeDraftPin } from "@/hooks/carte-terrain/helpers";
@@ -42,6 +43,7 @@ export function useZoneDraft() {
 
   const { data: profile, refetch } = useWorkspaceProfile(userId, role);
   const { createZone } = useCreateZone();
+  const { focusOnZone } = useMapFocus();
   const toast = useToast();
 
   useEffect(() => {
@@ -192,16 +194,18 @@ export function useZoneDraft() {
 
         await refetch();
         toast.show({ message: "Zone creee", variant: "success" });
-        router.replace(
-          `/zone/${newZone.id}` as Parameters<typeof router.replace>[0],
-        );
+        // On cadre la nouvelle zone sur la carte de prospection (fitBounds via le
+        // focus partagé) PUIS on revient à l'écran onglets : l'effet de focus y
+        // bascule sur l'onglet Carte. Le polygone fermé local suffit à zoneBounds.
+        focusOnZone({ id: newZone.id, polygon });
+        router.back();
       } catch {
         Alert.alert("Creation impossible", "La zone n'a pas pu etre creee.");
       } finally {
         setCreating(false);
       }
     },
-    [zonePins, assignables, createZone, refetch, toast],
+    [zonePins, assignables, createZone, refetch, toast, focusOnZone],
   );
 
   // Une zone est un polygone : au moins 3 sommets (le nom est validé côté panneau).

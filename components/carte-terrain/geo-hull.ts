@@ -194,6 +194,29 @@ export function zoneBounds(zone: ZoneBoundsInput): LngLatBounds | null {
   return [minLng, minLat, maxLng, maxLat];
 }
 
+/**
+ * Superficie approximative d'un anneau `[[lng,lat],…]` en km², via la formule du
+ * lacet (shoelace) appliquée après projection équirectangulaire locale autour de
+ * la latitude moyenne (degrés → mètres). Suffisamment juste aux échelles d'une
+ * zone de prospection. Renvoie `0` si l'anneau a moins de 3 sommets.
+ */
+export function polygonAreaKm2(ring: number[][]): number {
+  if (!ring || ring.length < 3) return 0;
+  const latMean = ring.reduce((sum, p) => sum + p[1], 0) / ring.length;
+  const cosLat = Math.cos((latMean * Math.PI) / 180);
+  const projected: Point[] = ring.map(([lng, lat]) => [
+    lng * METERS_PER_DEG_LAT * cosLat,
+    lat * METERS_PER_DEG_LAT,
+  ]);
+  let doubleArea = 0;
+  for (let i = 0; i < projected.length; i++) {
+    const [x1, y1] = projected[i];
+    const [x2, y2] = projected[(i + 1) % projected.length];
+    doubleArea += x1 * y2 - x2 * y1;
+  }
+  return Math.abs(doubleArea) / 2 / 1_000_000;
+}
+
 function dedupe(points: Point[]): Point[] {
   const seen = new Set<string>();
   const out: Point[] = [];
