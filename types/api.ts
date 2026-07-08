@@ -165,6 +165,35 @@ export type Immeuble = {
   creatorName?: string;
 };
 
+export type ImmeubleProgressFilter =
+  | "ALL"
+  | "INCOMPLETE"
+  | "LOW"
+  | "MID"
+  | "HIGH"
+  | "COMPLETE";
+
+export type ImmeublesPageInput = {
+  cursor?: string | null;
+  limit?: number;
+  search?: string | null;
+  typeHabitat?: TypeHabitat | null;
+  progress?: ImmeubleProgressFilter;
+};
+
+export type ImmeublesPageSummary = {
+  coveragePercent: number;
+  standaloneCount: number;
+};
+
+export type ImmeublesPage = {
+  items: Immeuble[];
+  nextCursor?: string | null;
+  hasMore: boolean;
+  totalCount: number;
+  summary: ImmeublesPageSummary;
+};
+
 export type CommercialInfo = {
   id: SchemaCommercialInfo['id'];
   nom: SchemaCommercialInfo['nom'];

@@ -72,6 +72,7 @@ export const GET_MANAGER_PERSONAL = `
             rdvTime
             commentaire
             derniereVisite
+            duree
           }
         }
         statistics {

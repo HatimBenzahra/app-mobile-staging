@@ -2,6 +2,7 @@ import { Card, Chip, ProgressBar, Icon, type IconName } from "@/components/ui";
 import { HabitatIcon } from "@/components/immeubles/habitat-icon";
 import { getImmeubleProgress } from "@/components/immeubles/lieu-progress";
 import FloorSection from "@/components/immeubles/prospection/FloorSection";
+import PorteDetailSheet from "@/components/immeubles/PorteDetailSheet";
 import {
   DEFAULT_STATUS_OPTION,
   STATUS_DISPLAY,
@@ -302,12 +303,21 @@ export default function BuildingSheet({
     return m;
   }, [portes, immeuble, habitatType]);
 
+  // Porte affichée dans le modal de détail READ-ONLY (bâtiment d'équipe).
+  const [detailPorte, setDetailPorte] = useState<Porte | null>(null);
+
   const handlePorteTap = useCallback(
     (porte: Porte) => {
       if (!immeuble) return;
+      // Bâtiment d'équipe (manager en consultation) → lecture seule : on ouvre
+      // le modal de détail de la porte, JAMAIS l'écran de prospection.
+      if (!isMine) {
+        setDetailPorte(porte);
+        return;
+      }
       router.push(`/lieu/${immeuble.id}?porteId=${porte.id}`);
     },
-    [immeuble],
+    [immeuble, isMine],
   );
 
   if (!open || !immeuble) return null;
@@ -491,53 +501,57 @@ export default function BuildingSheet({
         ) : null}
       </ScrollView>
 
-      {/* ACTIONS */}
-      <View style={styles.actions}>
-        {isMine ? (
-          <>
-            <Pressable style={styles.action} onPress={() => onProspect(immeuble)}>
-              <Icon name="arrow-right-circle" size={18} color={colors.primary} />
-              <Text style={styles.actionText}>Prospecter</Text>
-            </Pressable>
-            <Pressable
-              style={styles.action}
-              onPress={() => onEdit?.(immeuble)}
-              disabled={updatingLieu}
-            >
-              <Icon name="edit-3" size={18} color={colors.primary} />
-              <Text style={styles.actionText}>Modifier</Text>
-            </Pressable>
-            <Pressable
-              style={styles.action}
-              onPress={() => onMove?.(immeuble)}
-              disabled={updatingLieu}
-            >
-              <Icon name="move" size={18} color={colors.primary} />
-              <Text style={styles.actionText}>Déplacer</Text>
-            </Pressable>
-            <Pressable
-              style={[styles.action, styles.actionDanger]}
-              onPress={() => onDelete?.(immeuble)}
-              disabled={updatingLieu}
-            >
-              {updatingLieu ? (
-                <ActivityIndicator size="small" color={colors.danger} />
-              ) : (
-                <Icon name="trash-2" size={18} color={colors.danger} />
-              )}
-              <Text style={[styles.actionText, styles.actionDangerText]}>Supprimer</Text>
-            </Pressable>
-          </>
-        ) : (
-          <Pressable
-            style={[styles.action, styles.actionFull]}
-            onPress={() => onProspect(immeuble)}
-          >
-            <Icon name="eye" size={18} color={colors.primary} />
-            <Text style={styles.actionText}>Voir le détail</Text>
+      {/* ACTIONS — réservées à MES bâtiments. Un bâtiment d'équipe est en
+          consultation seule : pas de bouton d'action ; le détail se lit dans le
+          sheet et, par porte, dans le modal read-only (taper une porte). */}
+      {isMine ? (
+        <View style={styles.actions}>
+          <Pressable style={styles.action} onPress={() => onProspect(immeuble)}>
+            <Icon name="arrow-right-circle" size={18} color={colors.primary} />
+            <Text style={styles.actionText}>Prospecter</Text>
           </Pressable>
-        )}
-      </View>
+          <Pressable
+            style={styles.action}
+            onPress={() => onEdit?.(immeuble)}
+            disabled={updatingLieu}
+          >
+            <Icon name="edit-3" size={18} color={colors.primary} />
+            <Text style={styles.actionText}>Modifier</Text>
+          </Pressable>
+          <Pressable
+            style={styles.action}
+            onPress={() => onMove?.(immeuble)}
+            disabled={updatingLieu}
+          >
+            <Icon name="move" size={18} color={colors.primary} />
+            <Text style={styles.actionText}>Déplacer</Text>
+          </Pressable>
+          <Pressable
+            style={[styles.action, styles.actionDanger]}
+            onPress={() => onDelete?.(immeuble)}
+            disabled={updatingLieu}
+          >
+            {updatingLieu ? (
+              <ActivityIndicator size="small" color={colors.danger} />
+            ) : (
+              <Icon name="trash-2" size={18} color={colors.danger} />
+            )}
+            <Text style={[styles.actionText, styles.actionDangerText]}>Supprimer</Text>
+          </Pressable>
+        </View>
+      ) : null}
+
+      {/* Détail porte en LECTURE SEULE (consultation d'un bâtiment d'équipe). */}
+      <PorteDetailSheet
+        open={detailPorte !== null}
+        porte={detailPorte}
+        durationMs={detailPorte?.duree != null ? detailPorte.duree * 1000 : null}
+        typeHabitat={habitatType}
+        readOnly
+        onClose={() => setDetailPorte(null)}
+        onResume={() => {}}
+        onEdit={() => {}}
+      />
     </Card>
   );
 }

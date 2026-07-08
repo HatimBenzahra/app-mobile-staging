@@ -3,6 +3,8 @@ import type {
   CreateImmeubleInput,
   CreateQuartierInput,
   Immeuble,
+  ImmeublesPage,
+  ImmeublesPageInput,
   Quartier,
   UpdateImmeubleInput,
 } from "@/types/api";
@@ -17,7 +19,7 @@ import {
   REMOVE_PORTE_FROM_ETAGE,
   UPDATE_IMMEUBLE,
 } from "./immeuble.mutations";
-import { GET_QUARTIERS } from "./immeuble.queries";
+import { GET_IMMEUBLES_PAGE, GET_QUARTIERS } from "./immeuble.queries";
 
 export const immeubleApi = {
   async create(input: CreateImmeubleInput): Promise<Immeuble> {
@@ -93,6 +95,14 @@ export const immeubleApi = {
       { immeubleId: number; etage: number }
     >(REMOVE_PORTE_FROM_ETAGE, { immeubleId, etage });
     return response.removePorteFromEtage;
+  },
+
+  async getPage(input: ImmeublesPageInput): Promise<ImmeublesPage> {
+    const response = await gql<
+      { immeublesPage: ImmeublesPage },
+      { input: ImmeublesPageInput }
+    >(GET_IMMEUBLES_PAGE, { input });
+    return response.immeublesPage;
   },
 
   async getQuartiers(): Promise<Quartier[]> {

@@ -58,6 +58,10 @@ export function useCarteTerrain({ embedded = false }: UseCarteTerrainParams = {}
   const [activeQuartierPinId, setActiveQuartierPinId] = useState<string | null>(null);
   const [suggestions, setSuggestions] = useState<AdresseFeature[]>([]);
   const [loadingLocation, setLoadingLocation] = useState(true);
+  // Acquisition GPS INITIALE (au montage) uniquement : pilote l'overlay
+  // « Localisation en cours ». Passe à false une fois le 1er centrage terminé.
+  // `loadingLocation` (recentrage manuel via FAB) reste géré séparément.
+  const [initialLocating, setInitialLocating] = useState(true);
   const [loadingSuggestions, setLoadingSuggestions] = useState(false);
   const [creatingLieu, setCreatingLieu] = useState(false);
   const [selectedExistingLieu, setSelectedExistingLieu] = useState<Immeuble | null>(null);
@@ -432,7 +436,9 @@ export function useCarteTerrain({ embedded = false }: UseCarteTerrainParams = {}
   }, [buildingPin, mode, quartierPins.length, setBuildingActivePin]);
 
   useEffect(() => {
-    void centerOnCurrentLocation();
+    // Centrage initial sur la position du commercial. L'overlay de localisation
+    // reste affiché jusqu'à la fin de cette 1re acquisition (succès ou échec).
+    void centerOnCurrentLocation().finally(() => setInitialLocating(false));
     // La geolocalisation initiale ne doit se lancer qu'au montage.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -794,6 +800,7 @@ export function useCarteTerrain({ embedded = false }: UseCarteTerrainParams = {}
     activeQuartierPinId,
     suggestions,
     loadingLocation,
+    initialLocating,
     loadingSuggestions,
     selectedExistingLieu,
     setSelectedExistingLieu,

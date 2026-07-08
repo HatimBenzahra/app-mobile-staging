@@ -2,14 +2,14 @@ import AddImmeubleSheet from "@/components/immeubles/AddImmeubleSheet";
 import { Card, Chip, ErrorState, PressableCard, Icon, type IconName } from "@/components/ui";
 import { useCreateImmeuble } from "@/hooks/api/use-create-immeuble";
 import { useMapFocus } from "@/hooks/use-map-focus";
-import { useWorkspaceProfile } from "@/hooks/api/use-workspace-profile";
+import { useImmeublesPage } from "@/hooks/api/use-immeubles-page";
 import { useQuartiers } from "@/hooks/api/use-quartiers";
 import { colors, habitat, progressColors } from "@/constants/theme";
 import { authService } from "@/services/auth";
 import { effectiveTypeHabitat, getLieuTerms } from "@/components/immeubles/lieu-terms";
 import { getImmeubleProgress } from "@/components/immeubles/lieu-progress";
 import { HabitatIcon } from "@/components/immeubles/habitat-icon";
-import type { Immeuble, Quartier, TypeHabitat } from "@/types/api";
+import type { Immeuble, ImmeubleProgressFilter, Quartier, TypeHabitat } from "@/types/api";
 import { useRouter } from "expo-router";
 import { memo, useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -333,20 +333,36 @@ export default function ImmeublesScreen(_props: ImmeublesScreenProps) {
     Animated.stagger(30, animations).start();
   };
 
-  const {
-    data: profile,
-    loading,
-    error,
-    refetch,
-  } = useWorkspaceProfile(userId, role);
   const { data: quartiersData } = useQuartiers();
   const {
     create,
     cancel: cancelCreate,
     loading: creating,
   } = useCreateImmeuble();
+
+  // Filtres poussés côté serveur (recherche/type/progression). La liste des
+  // lieux autonomes est paginée par curseur ; les quartiers restent chargés en
+  // une fois via `useQuartiers`.
+  const serverTypeHabitat: TypeHabitat | null =
+    typeFilter === "MAISON" || typeFilter === "PAVILLON" || typeFilter === "IMMEUBLE"
+      ? typeFilter
+      : null;
+  const serverProgress = progressFilter.toUpperCase() as ImmeubleProgressFilter;
+  const {
+    items,
+    summary,
+    loadingInitial,
+    loadingMore,
+    error,
+    loadMore,
+    reload,
+  } = useImmeublesPage({
+    search: deferredQuery,
+    typeHabitat: serverTypeHabitat,
+    progress: serverProgress,
+  });
   const isProfileReady = userId !== null && role !== null;
-  const isInitialLoading = !isProfileReady || (loading && !profile);
+  const isInitialLoading = !isProfileReady || (loadingInitial && items.length === 0);
 
   useEffect(() => {
     let isMounted = true;
@@ -365,33 +381,6 @@ export default function ImmeublesScreen(_props: ImmeublesScreenProps) {
     };
   }, []);
 
-  const immeubles = useMemo(
-    () => (profile?.immeubles || []) as Immeuble[],
-    [profile],
-  );
-
-  // Les immeubles enfants d'un quartier sont aussi présents dans
-  // `profile.immeubles`. On les dédoublonne pour qu'ils n'apparaissent que sous
-  // leur quartier (catégorie "Quartiers") et jamais comme cartes autonomes.
-  const quartierMemberIds = useMemo(() => {
-    const s = new Set<number>();
-    for (const q of quartiersData ?? [])
-      for (const imm of q.immeubles ?? []) s.add(imm.id);
-    return s;
-  }, [quartiersData]);
-
-  const filteredImmeubles = useMemo(() => {
-    if (typeFilter === "quartiers") return [];
-    const standalone = immeubles.filter((imm) => !quartierMemberIds.has(imm.id));
-    const byType =
-      typeFilter === "all"
-        ? standalone
-        : standalone.filter((imm) => imm.typeHabitat === typeFilter);
-    if (!deferredQuery.trim()) return byType;
-    const lower = deferredQuery.toLowerCase();
-    return byType.filter((imm) => imm.adresse.toLowerCase().includes(lower));
-  }, [immeubles, deferredQuery, typeFilter, quartierMemberIds]);
-
   const filteredQuartiers = useMemo((): Quartier[] => {
     if (typeFilter !== "quartiers") return [];
     const all = quartiersData ?? [];
@@ -403,10 +392,10 @@ export default function ImmeublesScreen(_props: ImmeublesScreenProps) {
     return [...matched].sort((a, b) => recencyMs(b) - recencyMs(a));
   }, [quartiersData, deferredQuery, typeFilter]);
 
-  // Pré-calcul unique du progress par immeuble (à partir des immeubles filtrés
-  // par type/recherche). Sert à la fois au filtrage par progression
-  // (immeublesEnCours) et au rendu des cartes (renderLieuCard) — un seul appel
-  // à getImmeubleProgress par immeuble et par cycle.
+  // Pré-calcul unique du progress par immeuble (à partir des lieux `items`
+  // renvoyés par le serveur). Sert au rendu des cartes (renderLieuCard) — un
+  // seul appel à getImmeubleProgress par immeuble et par cycle. Le FILTRAGE par
+  // progression est désormais fait côté serveur.
   const progressByImmeubleId = useMemo(() => {
     const entries: Record<
       number,
@@ -422,7 +411,7 @@ export default function ImmeublesScreen(_props: ImmeublesScreenProps) {
       }
     > = {};
 
-    for (const immeuble of filteredImmeubles) {
+    for (const immeuble of items) {
       const { total, prospectees, percent, color } = getImmeubleProgress(immeuble);
       // Signaux actionnables : RDV à honorer, absents à repasser.
       let rdv = 0;
@@ -444,29 +433,18 @@ export default function ImmeublesScreen(_props: ImmeublesScreenProps) {
     }
 
     return entries;
-  }, [filteredImmeubles]);
+  }, [items]);
 
-  const immeublesEnCours = useMemo(() => {
-    const filtered = filteredImmeubles.filter((imm) => {
-      const percent = progressByImmeubleId[imm.id]?.percent ?? 0;
-      if (progressFilter === "all") return true;
-      if (progressFilter === "incomplete") return percent < 100;
-      if (progressFilter === "low") return percent < 35;
-      if (progressFilter === "mid") return percent >= 35 && percent < 70;
-      if (progressFilter === "high") return percent >= 70 && percent < 100;
-      if (progressFilter === "complete") return percent === 100;
-      return true;
-    });
-    return [...filtered].sort((a, b) => recencyMs(b) - recencyMs(a));
-  }, [filteredImmeubles, progressByImmeubleId, progressFilter]);
-
+  // Les lieux (`items`) arrivent déjà filtrés (type/recherche/progression) et
+  // triés par le serveur (createdAt DESC). On se contente de les découper en
+  // lignes pour la FlatList.
   const immeubleRows = useMemo(() => {
     const rows: Immeuble[][] = [];
-    for (let i = 0; i < immeublesEnCours.length; i += columnsPerRow) {
-      rows.push(immeublesEnCours.slice(i, i + columnsPerRow));
+    for (let i = 0; i < items.length; i += columnsPerRow) {
+      rows.push(items.slice(i, i + columnsPerRow));
     }
     return rows;
-  }, [immeublesEnCours, columnsPerRow]);
+  }, [items, columnsPerRow]);
 
   const quartierRows = useMemo((): Quartier[][] => {
     const rows: Quartier[][] = [];
@@ -476,9 +454,11 @@ export default function ImmeublesScreen(_props: ImmeublesScreenProps) {
     return rows;
   }, [filteredQuartiers, columnsPerRow]);
 
-  // "Tous" — quartiers (search-filtered) + standalone buildings, mixed and
-  // sorted together by recency (most recent first). Buildings come from
-  // immeublesEnCours so they stay progress-filtered and dedup-excluded.
+  // "Tous" — quartiers (recherche client, non paginés) affichés EN TÊTE, puis
+  // le flux paginé des lieux autonomes (`items`, déjà trié serveur par récence).
+  // On ne réentrelace pas quartiers/lieux par récence : incompatible avec un
+  // flux paginé (un lieu d'une page ultérieure trierait avant un quartier déjà
+  // rendu). Les quartiers restent groupés en tête, les lieux suivent.
   const mixedRows = useMemo((): LieuxItem[][] => {
     if (typeFilter !== "all") return [];
     const matchedQuartiers = !deferredQuery.trim()
@@ -486,21 +466,19 @@ export default function ImmeublesScreen(_props: ImmeublesScreenProps) {
       : (quartiersData ?? []).filter((q) =>
           (q.nom ?? "").toLowerCase().includes(deferredQuery.toLowerCase()),
         );
-    const items: LieuxItem[] = [
-      ...matchedQuartiers.map((quartier): LieuxItem => ({ kind: "quartier", quartier })),
-      ...immeublesEnCours.map((immeuble): LieuxItem => ({ kind: "lieu", immeuble })),
+    const sortedQuartiers = [...matchedQuartiers].sort(
+      (a, b) => recencyMs(b) - recencyMs(a),
+    );
+    const mixed: LieuxItem[] = [
+      ...sortedQuartiers.map((quartier): LieuxItem => ({ kind: "quartier", quartier })),
+      ...items.map((immeuble): LieuxItem => ({ kind: "lieu", immeuble })),
     ];
-    items.sort((a, b) => {
-      const ra = a.kind === "quartier" ? recencyMs(a.quartier) : recencyMs(a.immeuble);
-      const rb = b.kind === "quartier" ? recencyMs(b.quartier) : recencyMs(b.immeuble);
-      return rb - ra;
-    });
     const rows: LieuxItem[][] = [];
-    for (let i = 0; i < items.length; i += columnsPerRow) {
-      rows.push(items.slice(i, i + columnsPerRow));
+    for (let i = 0; i < mixed.length; i += columnsPerRow) {
+      rows.push(mixed.slice(i, i + columnsPerRow));
     }
     return rows;
-  }, [typeFilter, deferredQuery, quartiersData, immeublesEnCours, columnsPerRow]);
+  }, [typeFilter, deferredQuery, quartiersData, items, columnsPerRow]);
 
   const listData = useMemo<ListRow[]>(() => {
     if (typeFilter === "quartiers") {
@@ -610,16 +588,10 @@ export default function ImmeublesScreen(_props: ImmeublesScreenProps) {
   );
 
   // Couverture globale du terrain (portes prospectées / total, tous lieux) —
-  // l'info reine de la page, affichée en tête. Indépendante des filtres.
+  // l'info reine de la page, affichée en tête. Calculée côté serveur
+  // (indépendante des filtres) et renvoyée dans `summary`.
   const coverage = useMemo(() => {
-    let total = 0;
-    let prospectees = 0;
-    for (const imm of immeubles) {
-      const p = getImmeubleProgress(imm);
-      total += p.total;
-      prospectees += p.prospectees;
-    }
-    const percent = total === 0 ? 0 : Math.round((prospectees / total) * 100);
+    const percent = summary?.coveragePercent ?? 0;
     const color =
       percent < 35
         ? progressColors.low
@@ -629,24 +601,22 @@ export default function ImmeublesScreen(_props: ImmeublesScreenProps) {
             ? progressColors.high
             : progressColors.complete;
     return { percent, color };
-  }, [immeubles]);
+  }, [summary]);
 
   const lieuxCount = useMemo(
-    () =>
-      immeubles.filter((imm) => !quartierMemberIds.has(imm.id)).length +
-      (quartiersData?.length ?? 0),
-    [immeubles, quartierMemberIds, quartiersData],
+    () => (summary?.standaloneCount ?? 0) + (quartiersData?.length ?? 0),
+    [summary, quartiersData],
   );
 
   const [refreshing, setRefreshing] = useState(false);
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     try {
-      await refetch();
+      await reload();
     } finally {
       setRefreshing(false);
     }
-  }, [refetch]);
+  }, [reload]);
 
   const renderItem = useCallback(
     ({ item: row }: { item: ListRow }) =>
@@ -859,6 +829,8 @@ export default function ImmeublesScreen(_props: ImmeublesScreenProps) {
           keyExtractor={getRowKey}
           contentContainerStyle={styles.content}
           stickyHeaderIndices={[1]}
+          onEndReachedThreshold={0.5}
+          onEndReached={typeFilter === "quartiers" ? undefined : loadMore}
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
@@ -890,22 +862,29 @@ export default function ImmeublesScreen(_props: ImmeublesScreenProps) {
                 </View>
               </View>
 
-              {loading && !profile && (
+              {loadingInitial && items.length === 0 && (
                 <Text style={styles.helper}>Chargement...</Text>
               )}
-              {error && !profile && (
+              {error && items.length === 0 && (
                 <View style={{ paddingVertical: 40 }}>
                   <ErrorState
                     title="Impossible de charger les données"
                     message={error}
-                    onRetry={() => { void refetch(); }}
+                    onRetry={() => { void reload(); }}
                   />
                 </View>
               )}
             </View>
           }
+          ListFooterComponent={
+            loadingMore ? (
+              <View style={styles.footerLoading}>
+                <Text style={styles.helper}>Chargement...</Text>
+              </View>
+            ) : null
+          }
           ListEmptyComponent={
-            !loading && !error ? (
+            !loadingInitial && !error ? (
               <Card variant="elevated" padding="md" style={{ alignItems: "center", gap: 8 }}>
                 <Icon name="map-pin" size={32} color={colors.textSubtle} />
                 <Text style={styles.emptyText}>Aucun lieu trouve</Text>
@@ -937,7 +916,7 @@ export default function ImmeublesScreen(_props: ImmeublesScreenProps) {
             const result = await create(payload);
             if (result) {
               console.log("[Immeuble] added", result.id);
-              await refetch();
+              await reload();
               setQuery("");
             } else {
               console.log("[Immeuble] add failed");
@@ -969,6 +948,10 @@ const styles = StyleSheet.create({
   helper: {
     fontSize: 13,
     color: colors.textStrong,
+  },
+  footerLoading: {
+    paddingVertical: 20,
+    alignItems: "center",
   },
   error: {
     fontSize: 13,

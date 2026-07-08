@@ -30,6 +30,12 @@ type PorteDetailSheetProps = {
   onResume: (porte: Porte) => void;
   onEdit: (porte: Porte) => void;
   typeHabitat?: TypeHabitat;
+  /**
+   * Consultation pure (ex. manager sur un bâtiment d'équipe) : masque les
+   * actions Reprendre/Modifier → seul le détail (durée, statut, historique…)
+   * reste visible. Aucune modification possible.
+   */
+  readOnly?: boolean;
 };
 
 // Only ABSENT (matin/soir) and RDV_PRIS are eligible for re-prospection.
@@ -92,6 +98,7 @@ export default function PorteDetailSheet({
   onResume,
   onEdit,
   typeHabitat,
+  readOnly = false,
 }: PorteDetailSheetProps) {
   const opacity = useRef(new Animated.Value(0)).current;
   const translateY = useRef(new Animated.Value(36)).current;
@@ -307,45 +314,47 @@ export default function PorteDetailSheet({
               ) : null}
             </ScrollView>
 
-            <View style={styles.footer}>
-              {canResume ? (
+            {!readOnly ? (
+              <View style={styles.footer}>
+                {canResume ? (
+                  <Pressable
+                    style={({ pressed }) => [
+                      styles.primaryBtn,
+                      pressed && styles.primaryBtnPressed,
+                    ]}
+                    onPress={() => onResume(porte)}
+                  >
+                    <Icon name="arrow-right" size={15} color={colors.textInverse} />
+                    <Text style={styles.primaryBtnText}>
+                      Reprendre la prospection
+                    </Text>
+                  </Pressable>
+                ) : null}
                 <Pressable
                   style={({ pressed }) => [
-                    styles.primaryBtn,
-                    pressed && styles.primaryBtnPressed,
+                    canResume ? styles.ghostBtn : styles.primaryBtn,
+                    pressed &&
+                      (canResume
+                        ? styles.ghostBtnPressed
+                        : styles.primaryBtnPressed),
                   ]}
-                  onPress={() => onResume(porte)}
+                  onPress={() => onEdit(porte)}
                 >
-                  <Icon name="arrow-right" size={15} color={colors.textInverse} />
-                  <Text style={styles.primaryBtnText}>
-                    Reprendre la prospection
+                  <Icon
+                    name="edit-3"
+                    size={15}
+                    color={canResume ? colors.text : colors.textInverse}
+                  />
+                  <Text
+                    style={
+                      canResume ? styles.ghostBtnText : styles.primaryBtnText
+                    }
+                  >
+                    Modifier la fiche
                   </Text>
                 </Pressable>
-              ) : null}
-              <Pressable
-                style={({ pressed }) => [
-                  canResume ? styles.ghostBtn : styles.primaryBtn,
-                  pressed &&
-                    (canResume
-                      ? styles.ghostBtnPressed
-                      : styles.primaryBtnPressed),
-                ]}
-                onPress={() => onEdit(porte)}
-              >
-                <Icon
-                  name="edit-3"
-                  size={15}
-                  color={canResume ? colors.text : colors.textInverse}
-                />
-                <Text
-                  style={
-                    canResume ? styles.ghostBtnText : styles.primaryBtnText
-                  }
-                >
-                  Modifier la fiche
-                </Text>
-              </Pressable>
-            </View>
+              </View>
+            ) : null}
           </Animated.View>
         </Pressable>
       </Pressable>

@@ -3,6 +3,7 @@ import { CarteTerrainMap } from "@/components/carte-terrain/CarteTerrainMap";
 import { DraftPins } from "@/components/carte-terrain/DraftPins";
 import { MapFabs } from "@/components/carte-terrain/MapFabs";
 import { MapLegend } from "@/components/carte-terrain/MapLegend";
+import { MapLocatingOverlay } from "@/components/carte-terrain/MapLocatingOverlay";
 import { ModeSwitch } from "@/components/carte-terrain/ModeSwitch";
 import { QuartierContours } from "@/components/carte-terrain/QuartierContours";
 import { ZoneContour } from "@/components/carte-terrain/ZoneContour";
@@ -53,6 +54,7 @@ export default function CarteTerrainScreen({
     activeQuartierPinId,
     suggestions,
     loadingLocation,
+    initialLocating,
     loadingSuggestions,
     selectedExistingLieu,
     setSelectedExistingLieu,
@@ -188,6 +190,8 @@ export default function CarteTerrainScreen({
           onSelectQuartierPin={selectQuartierPin}
         />
       </CarteTerrainMap>
+
+      <MapLocatingOverlay visible={initialLocating} />
 
       {!selectedExistingLieu && (
         <MapFabs
