@@ -8,7 +8,7 @@ import { forwardRef, useEffect, useMemo, useState } from "react";
 import { StyleSheet, Text, View, Pressable, useWindowDimensions } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Card, Chip } from "@/components/ui";
-import { colors } from "@/constants/theme";
+import { colors, palette } from "@/constants/theme";
 import { APP_VERSION, APP_VERSION_LABEL } from "@/constants/version";
 
 type ProfileSheetProps = {
@@ -113,7 +113,7 @@ const ProfileSheet = forwardRef<BottomSheetModal, ProfileSheetProps>(
 
           {/* Logout */}
           {confirmingLogout ? (
-            <Card variant="filled" padding="md" style={{ backgroundColor: colors.dangerSoft }}>
+            <Card variant="filled" padding="md" style={styles.confirmCard}>
               <View style={styles.confirmHeader}>
                 <View style={styles.confirmIcon}>
                   <Feather name="log-out" size={14} color={colors.danger} />
@@ -292,6 +292,11 @@ const styles = StyleSheet.create({
     marginTop: 2,
     fontSize: 12,
     color: colors.textSubtle,
+  },
+  confirmCard: {
+    backgroundColor: palette.danger[100],
+    borderWidth: 1,
+    borderColor: "#FECACA",
   },
   confirmHeader: {
     flexDirection: "row",

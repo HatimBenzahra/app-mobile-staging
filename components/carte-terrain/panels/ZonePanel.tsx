@@ -10,6 +10,7 @@ import {
   ScrollView,
   Text,
   TextInput,
+  useWindowDimensions,
   View,
 } from "react-native";
 import type { EdgeInsets } from "react-native-safe-area-context";
@@ -40,9 +41,23 @@ export function ZonePanel({
 }: ZonePanelProps) {
   const [nom, setNom] = useState("");
   const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
+  const { width, height } = useWindowDimensions();
+
+  // Paysage : la pleine largeur recouvrait la carte. On passe le panneau en
+  // colonne compacte ancrée en bas à gauche (la carte reste visible à droite),
+  // et on borne sa hauteur — le corps devient scrollable (cf. plus bas).
+  const landscape = width > height;
 
   const totalSommets = zonePins.length;
-  const cardStyle = [styles.panel, { paddingBottom: Math.max(insets.bottom, 12) }];
+  const cardStyle = [
+    styles.panel,
+    { paddingBottom: Math.max(insets.bottom, 12) },
+    landscape && {
+      right: undefined,
+      width: 360,
+      maxHeight: height - insets.top - insets.bottom - 28,
+    },
+  ];
   const canCreate = readyToCreateZone && nom.trim().length > 0;
 
   const toggleAssignable = (key: string) => {
@@ -51,8 +66,8 @@ export function ZonePanel({
     );
   };
 
-  return (
-    <Card variant="elevated" padding="md" style={cardStyle}>
+  const body = (
+    <>
       <View style={styles.panelHeader}>
         <View style={styles.panelTitleBlock}>
           <Text style={styles.panelTitle}>{`Zone · ${totalSommets} sommets`}</Text>
@@ -136,6 +151,21 @@ export function ZonePanel({
           </>
         )}
       </Pressable>
+    </>
+  );
+
+  return (
+    <Card variant="elevated" padding="md" style={cardStyle}>
+      {landscape ? (
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ gap: 12 }}
+        >
+          {body}
+        </ScrollView>
+      ) : (
+        body
+      )}
     </Card>
   );
 }
