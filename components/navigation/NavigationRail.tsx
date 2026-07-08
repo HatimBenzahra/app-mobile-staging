@@ -223,7 +223,11 @@ export default function NavigationRail({
         <ProwinLogo size={56} interactive />
       </View>
 
-      <View style={styles.navSection}>
+      <ScrollView
+        style={styles.navSection}
+        contentContainerStyle={styles.navSectionContent}
+        showsVerticalScrollIndicator={false}
+      >
         {indicatorTranslateY ? (
           <Animated.View
             style={[
@@ -248,7 +252,7 @@ export default function NavigationRail({
             onLayout={(e) => handleItemLayout(i, e.nativeEvent.layout.y)}
           />
         ))}
-      </View>
+      </ScrollView>
     </View>
   );
 }
@@ -268,6 +272,9 @@ const styles = StyleSheet.create({
   },
   navSection: {
     flex: 1,
+    alignSelf: "stretch",
+  },
+  navSectionContent: {
     alignItems: "center",
     gap: 4,
   },
