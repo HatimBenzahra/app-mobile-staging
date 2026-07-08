@@ -1,7 +1,9 @@
 import ProwinLogo from "@/components/navigation/ProwinLogo";
+import { colors, gradients } from "@/constants/theme";
 import { authService } from "@/services/auth";
 import { Feather } from "@expo/vector-icons";
 import Constants from "expo-constants";
+import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { useState, useEffect, useCallback } from "react";
 import {
@@ -84,7 +86,7 @@ export default function LoginScreen() {
         <View style={styles.bootLogo}>
           <ProwinLogo size={64} />
         </View>
-        <ActivityIndicator size="small" color="#005BFF" style={{ marginTop: 24 }} />
+        <ActivityIndicator size="small" color={colors.primary} style={{ marginTop: 24 }} />
         <Text style={styles.bootText}>Connexion en cours…</Text>
       </SafeAreaView>
     );
@@ -215,21 +217,28 @@ export default function LoginScreen() {
                   onPress={handleLogin}
                   disabled={isLoading}
                   style={({ pressed }) => [
-                    styles.cta,
+                    styles.ctaWrap,
                     pressed && !isLoading && styles.ctaPressed,
                     isLoading && styles.ctaDisabled,
                   ]}
                   accessibilityRole="button"
                   accessibilityLabel="Se connecter"
                 >
-                  {isLoading ? (
-                    <ActivityIndicator color="#FFFFFF" size="small" />
-                  ) : (
-                    <>
-                      <Text style={styles.ctaText}>Se connecter</Text>
-                      <Feather name="arrow-right" size={18} color="#FFFFFF" />
-                    </>
-                  )}
+                  <LinearGradient
+                    colors={gradients.brand}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                    style={styles.cta}
+                  >
+                    {isLoading ? (
+                      <ActivityIndicator color="#FFFFFF" size="small" />
+                    ) : (
+                      <>
+                        <Text style={styles.ctaText}>Se connecter</Text>
+                        <Feather name="arrow-right" size={18} color="#FFFFFF" />
+                      </>
+                    )}
+                  </LinearGradient>
                 </Pressable>
               </View>
             </View>
@@ -307,12 +316,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1,
-    borderColor: "#E2E8F0",
-    shadowColor: "#0F172A",
-    shadowOpacity: 0.06,
-    shadowRadius: 18,
-    shadowOffset: { width: 0, height: 10 },
-    elevation: 3,
+    borderColor: "#FEE9D6",
+    shadowColor: "#F97316",
+    shadowOpacity: 0.28,
+    shadowRadius: 24,
+    shadowOffset: { width: 0, height: 12 },
+    elevation: 4,
   },
   wordmarkRow: {
     flexDirection: "row",
@@ -327,13 +336,13 @@ const styles = StyleSheet.create({
   wordmarkBlue: {
     fontSize: 30,
     fontWeight: "800",
-    color: "#005BFF",
+    color: colors.primary,
     letterSpacing: -0.5,
   },
   tagline: {
     fontSize: 12,
     fontWeight: "700",
-    color: "#005BFF",
+    color: colors.primary,
     textTransform: "uppercase",
     letterSpacing: 1.5,
   },
@@ -418,21 +427,29 @@ const styles = StyleSheet.create({
     padding: 6,
     marginLeft: 4,
   },
-  cta: {
+  ctaWrap: {
     marginTop: 8,
+    height: 54,
+    borderRadius: 16,
+    overflow: "hidden",
+    shadowColor: "#F97316",
+    shadowOpacity: 0.32,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 4,
+  },
+  cta: {
+    flex: 1,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: 10,
-    backgroundColor: "#0F172A",
-    height: 54,
-    borderRadius: 16,
   },
   ctaPressed: {
     opacity: 0.92,
   },
   ctaDisabled: {
-    backgroundColor: "#94A3B8",
+    opacity: 0.6,
   },
   ctaText: {
     color: "#FFFFFF",

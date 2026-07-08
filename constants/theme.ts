@@ -1,23 +1,24 @@
 // Design tokens for Pro-Win mobile app.
 // Source of truth for colors, spacing, radii, shadows, and typography.
-// Brand palette derived from the Pro-Win logo (loupe = primary blue,
-// inner face = navy, "Pro" bars = light accent).
+// Brand palette aligned with Pro-Win web : accent orange (dégradé
+// orange→rouge du logo) sur fond blanc, avec un bleu marine réservé au
+// chrome de la sidebar (voir `sidebar`).
 
 import type { TextStyle, ViewStyle } from "react-native";
 
 export const palette = {
-  // Brand — derived from the logo
+  // Brand — orange (échelle Tailwind orange), accent principal de l'app
   primary: {
-    50: "#E5EEFF",
-    100: "#CCDEFF",
-    200: "#99BDFF",
-    300: "#669CFF",
-    400: "#337BFF",
-    500: "#2F80FF", // logo "Pro" bars / soft accent
-    600: "#005BFF", // logo loupe circle — PRIMARY
-    700: "#0049CC",
-    800: "#001B5E", // logo inner face — deep navy
-    900: "#001145",
+    50: "#FFF7ED",
+    100: "#FFEDD5",
+    200: "#FED7AA",
+    300: "#FDBA74",
+    400: "#FB923C",
+    500: "#F97316", // orange de marque — PRIMARY (logo, CTA, actifs)
+    600: "#EA580C", // orange soutenu (pressed / hover)
+    700: "#C2410C",
+    800: "#9A3412",
+    900: "#7C2D12",
   },
 
   // Neutrals — slate-style scale
@@ -67,9 +68,9 @@ export const palette = {
 // Convenience aliases used throughout the app
 export const colors = {
   // Brand
-  primary: palette.primary[600],
-  primaryDark: palette.primary[800],
-  primaryLight: palette.primary[500],
+  primary: palette.primary[500],
+  primaryDark: palette.primary[600],
+  primaryLight: palette.primary[400],
   primarySoft: palette.primary[50],
   primaryMuted: palette.primary[100],
   primaryRing: palette.primary[200],
@@ -103,12 +104,31 @@ export const colors = {
   info: palette.info[500],
   infoSoft: palette.info[50],
 
-  // RGBA helpers (charts, overlays)
-  primaryAlpha12: "rgba(0, 91, 255, 0.12)",
-  primaryAlpha20: "rgba(0, 91, 255, 0.20)",
-  primaryAlpha0: "rgba(0, 91, 255, 0)",
+  // RGBA helpers (charts, overlays) — keyés sur l'orange de marque #F97316
+  primaryAlpha12: "rgba(249, 115, 22, 0.12)",
+  primaryAlpha20: "rgba(249, 115, 22, 0.20)",
+  primaryAlpha0: "rgba(249, 115, 22, 0)",
   whiteAlpha20: "rgba(255, 255, 255, 0.20)",
   whiteAlpha25: "rgba(255, 255, 255, 0.25)",
+} as const;
+
+// Dégradés de marque (RN : tableau de stops pour expo-linear-gradient).
+// Le dégradé orange→rouge est la signature visuelle (logo, CTA login).
+export const gradients = {
+  brand: ["#F97316", "#EF4444"],
+} as const;
+
+// Chrome de la sidebar — bleu marine foncé repris du web. C'est le seul
+// endroit où le bleu subsiste : fond navy, texte clair, accent actif orange.
+export const sidebar = {
+  bg: "#1C2432", // fond bleu marine foncé
+  surface: "#2A3444", // fond hover / actif (navy plus clair)
+  border: "#333C4A",
+  text: "#DFE1E6", // texte clair
+  textMuted: "#94A3B8", // texte / icône inactif
+  active: colors.primary, // accent actif = orange de marque
+  activeText: "#FFFFFF",
+  activeSurface: "rgba(249, 115, 22, 0.14)", // fond doux sous l'item actif
 } as const;
 
 export const radius = {
@@ -203,7 +223,7 @@ export const progressColors = {
 export const habitat = {
   immeuble: colors.primary,
   maison: colors.success,
-  pavillon: "#F97316",
+  pavillon: "#0EA5E9", // sky — distinct de l'orange immeuble depuis le passage à l'orange
   quartier: "#7C3AED",
 } as const;
 
@@ -224,6 +244,8 @@ export const ownership = {
 export const theme = {
   colors,
   palette,
+  gradients,
+  sidebar,
   radius,
   spacing,
   fontSize,

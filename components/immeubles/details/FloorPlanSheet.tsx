@@ -93,7 +93,7 @@ function FloorPlanSheet({
           <>
             <View style={styles.floorPlanHero}>
               <View style={styles.floorPlanHeroIcon}>
-                <Feather name="grid" size={22} color="#005BFF" />
+                <Feather name="grid" size={22} color="#F97316" />
               </View>
               <View style={styles.floorPlanHeroText}>
                 <Text style={styles.floorPlanTitle}>{planTitle}</Text>

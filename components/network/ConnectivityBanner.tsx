@@ -50,8 +50,8 @@ const styles = StyleSheet.create({
     borderColor: "#FCA5A5",
   },
   containerSync: {
-    backgroundColor: "#0049CC",
-    borderColor: "#93C5FD",
+    backgroundColor: "#EA580C",
+    borderColor: "#FDBA74",
   },
   title: {
     fontSize: 12,

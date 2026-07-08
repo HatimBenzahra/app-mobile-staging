@@ -5,16 +5,18 @@ import {
   Animated,
   type LayoutChangeEvent,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { sidebar } from "@/constants/theme";
 import ProwinLogo from "./ProwinLogo";
 
-const COLOR_INACTIVE = "#64748B";
-const COLOR_ACTIVE = "#005BFF";
-const ICON_ACTIVE = "#FFFFFF";
+const COLOR_INACTIVE = sidebar.textMuted;
+const COLOR_ACTIVE = sidebar.active;
+const ICON_ACTIVE = sidebar.activeText;
 const PILL_TOP_OFFSET = 8; // padding haut du navItem : place l'indicateur sur la pastille icône
 
 type TabPosition = Animated.AnimatedInterpolation<number>;
@@ -254,9 +256,9 @@ export default function NavigationRail({
 const styles = StyleSheet.create({
   container: {
     width: 80,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: sidebar.bg,
     borderRightWidth: 1,
-    borderRightColor: "#E2E8F0",
+    borderRightColor: sidebar.border,
     alignItems: "center",
     justifyContent: "space-between",
   },

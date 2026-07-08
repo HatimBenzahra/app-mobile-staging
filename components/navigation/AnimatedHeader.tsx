@@ -161,15 +161,15 @@ const styles = StyleSheet.create({
     width: 38,
     height: 38,
     borderRadius: 19,
-    backgroundColor: "#E5EEFF",
+    backgroundColor: "#FFF7ED",
     borderWidth: 1.5,
-    borderColor: "#CCDEFF",
+    borderColor: "#FED7AA",
     alignItems: "center",
     justifyContent: "center",
   },
   profileInitials: {
     fontSize: 14,
     fontWeight: "700",
-    color: "#005BFF",
+    color: "#F97316",
   },
 });

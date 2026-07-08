@@ -5,6 +5,7 @@ import { BlurView } from "expo-blur";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Animated, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { sidebar } from "@/constants/theme";
 
 type MenuItemProps = {
   icon: keyof typeof Feather.glyphMap;
@@ -68,7 +69,7 @@ const MenuItem = memo(function MenuItem({
           <Feather
             name={icon}
             size={20}
-            color={isActive ? "#005BFF" : "#64748B"}
+            color={isActive ? sidebar.active : sidebar.textMuted}
           />
         </View>
         <Text
@@ -274,7 +275,7 @@ export default function HamburgerMenuOverlay({
         <View style={styles.profileSection}>
           <View style={styles.avatarContainer}>
             <View style={styles.avatar}>
-              <Feather name="user" size={24} color="#005BFF" />
+              <Feather name="user" size={24} color={sidebar.active} />
             </View>
             <View style={styles.onlineIndicator} />
           </View>
@@ -286,7 +287,7 @@ export default function HamburgerMenuOverlay({
             </View>
           </View>
           <Pressable style={styles.closeButton} onPress={close}>
-            <Feather name="x" size={18} color="#64748B" />
+            <Feather name="x" size={18} color={sidebar.textMuted} />
           </Pressable>
         </View>
 
@@ -333,11 +334,11 @@ const styles = StyleSheet.create({
     top: 0,
     bottom: 0,
     width: 288,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: sidebar.bg,
     borderTopRightRadius: 24,
     borderBottomRightRadius: 24,
     shadowColor: "#0F172A",
-    shadowOpacity: 0.2,
+    shadowOpacity: 0.3,
     shadowRadius: 24,
     shadowOffset: { width: 8, height: 0 },
     elevation: 12,
@@ -357,9 +358,9 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: "#E5EEFF",
+    backgroundColor: sidebar.activeSurface,
     borderWidth: 2,
-    borderColor: "#CCDEFF",
+    borderColor: sidebar.active,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -372,7 +373,7 @@ const styles = StyleSheet.create({
     borderRadius: 7,
     backgroundColor: "#10B981",
     borderWidth: 2.5,
-    borderColor: "#FFFFFF",
+    borderColor: sidebar.bg,
   },
   profileInfo: {
     flex: 1,
@@ -380,7 +381,7 @@ const styles = StyleSheet.create({
   profileName: {
     fontSize: 17,
     fontWeight: "700",
-    color: "#0F172A",
+    color: sidebar.text,
     letterSpacing: -0.3,
   },
   roleBadge: {
@@ -388,7 +389,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 6,
     marginTop: 5,
-    backgroundColor: "#E5EEFF",
+    backgroundColor: sidebar.activeSurface,
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 12,
@@ -398,25 +399,25 @@ const styles = StyleSheet.create({
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: "#005BFF",
+    backgroundColor: sidebar.active,
   },
   roleText: {
     fontSize: 12,
     fontWeight: "600",
-    color: "#005BFF",
+    color: sidebar.active,
   },
   closeButton: {
     width: 36,
     height: 36,
     borderRadius: 12,
-    backgroundColor: "#F8FAFC",
+    backgroundColor: sidebar.surface,
     alignItems: "center",
     justifyContent: "center",
   },
 
   divider: {
     height: 1,
-    backgroundColor: "#E2E8F0",
+    backgroundColor: sidebar.border,
     marginHorizontal: 20,
   },
 
@@ -431,7 +432,7 @@ const styles = StyleSheet.create({
   sectionLabel: {
     fontSize: 11,
     fontWeight: "700",
-    color: "#94A3B8",
+    color: sidebar.textMuted,
     textTransform: "uppercase",
     letterSpacing: 0.8,
     marginBottom: 8,
@@ -447,35 +448,35 @@ const styles = StyleSheet.create({
     position: "relative",
   },
   menuItemActive: {
-    backgroundColor: "#E5EEFF",
+    backgroundColor: sidebar.surface,
   },
   menuIconContainer: {
     width: 40,
     height: 40,
     borderRadius: 12,
-    backgroundColor: "#F8FAFC",
+    backgroundColor: sidebar.surface,
     alignItems: "center",
     justifyContent: "center",
     marginRight: 12,
   },
   menuIconContainerActive: {
-    backgroundColor: "#CCDEFF",
+    backgroundColor: sidebar.activeSurface,
   },
   menuItemText: {
     fontSize: 15,
     fontWeight: "600",
-    color: "#64748B",
+    color: sidebar.text,
     flex: 1,
   },
   menuItemTextActive: {
-    color: "#005BFF",
+    color: sidebar.active,
     fontWeight: "700",
   },
   activeBar: {
     width: 4,
     height: 24,
     borderRadius: 999,
-    backgroundColor: "#005BFF",
+    backgroundColor: sidebar.active,
     position: "absolute",
     left: 0,
   },

@@ -88,7 +88,7 @@ function statusToChipTone(accent: string): ChipTone {
       return "danger";
     case "#F59E0B":
       return "warning";
-    case "#005BFF":
+    case "#F97316":
       return "primary";
     case "#6366F1":
       return "info";

@@ -63,9 +63,9 @@ const STATUS_VISUAL: Record<string, StatusVisual> = {
   },
   RENDEZ_VOUS_PRIS: {
     label: "RDV pris",
-    bg: "#E5EEFF",
-    fg: "#001B5E",
-    accent: "#005BFF",
+    bg: "#FFF7ED",
+    fg: "#9A3412",
+    accent: "#F97316",
     icon: "calendar",
   },
   ARGUMENTE: {
