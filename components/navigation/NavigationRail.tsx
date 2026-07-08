@@ -10,6 +10,13 @@ import {
   Text,
   View,
 } from "react-native";
+import Reanimated, {
+  interpolate,
+  type SharedValue,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { sidebar } from "@/constants/theme";
 import ProwinLogo from "./ProwinLogo";
@@ -18,6 +25,16 @@ const COLOR_INACTIVE = sidebar.textMuted;
 const COLOR_ACTIVE = sidebar.active;
 const ICON_ACTIVE = sidebar.activeText;
 const PILL_TOP_OFFSET = 8; // padding haut du navItem : place l'indicateur sur la pastille icône
+
+// Collapse : le rail se plie (icônes seules) / se déplie (icône + label à côté).
+const COLLAPSED_WIDTH = 72;
+const EXPANDED_WIDTH = 220;
+const INDICATOR_LEFT = 12; // aligne indicateur ET pastille icône dans les deux modes
+const ICON_PILL_WIDTH = 48;
+const LABEL_GAP = 12;
+const LABEL_TEXT_WIDTH = 132;
+const LABEL_SLOT_WIDTH = LABEL_GAP + LABEL_TEXT_WIDTH; // largeur révélée quand déplié
+const INDICATOR_EXPANDED_WIDTH = EXPANDED_WIDTH - INDICATOR_LEFT - 12;
 
 type TabPosition = Animated.AnimatedInterpolation<number>;
 
@@ -28,6 +45,8 @@ type NavItemProps = {
   isActive: boolean;
   /** Position animée du pager ; si absente, rendu statique via isActive. */
   position: TabPosition | null;
+  /** Progression du collapse (0 = étroit, 1 = large), pour révéler le label. */
+  progress: SharedValue<number>;
   onPress: () => void;
   onLayout: (event: LayoutChangeEvent) => void;
 };
@@ -38,6 +57,7 @@ const NavItem = memo(function NavItem({
   index,
   isActive,
   position,
+  progress,
   onPress,
   onLayout,
 }: NavItemProps) {
@@ -45,7 +65,7 @@ const NavItem = memo(function NavItem({
 
   const handlePressIn = useCallback(() => {
     Animated.spring(scaleAnim, {
-      toValue: 0.9,
+      toValue: 0.97,
       useNativeDriver: true,
     }).start();
   }, [scaleAnim]);
@@ -74,9 +94,15 @@ const NavItem = memo(function NavItem({
 
   const animated = position != null && proximity != null;
 
+  // Label révélé par le collapse : largeur + opacité pilotées par `progress`.
+  const labelClipStyle = useAnimatedStyle(() => ({
+    width: interpolate(progress.value, [0, 1], [0, LABEL_SLOT_WIDTH]),
+    opacity: progress.value,
+  }));
+
   return (
     <Animated.View
-      style={{ transform: [{ scale: scaleAnim }] }}
+      style={[styles.navItemOuter, { transform: [{ scale: scaleAnim }] }]}
       onLayout={onLayout}
     >
       <Pressable
@@ -108,33 +134,41 @@ const NavItem = memo(function NavItem({
           ) : null}
         </View>
 
-        {animated ? (
-          <View style={styles.labelWrap}>
-            <Text style={[styles.navLabel, styles.labelBase]} numberOfLines={1}>
-              {label}
-            </Text>
-            {/* Copie active (bleu/gras) fondue par-dessus selon la proximité. */}
-            <Animated.Text
-              style={[
-                styles.navLabel,
-                styles.navLabelActive,
-                styles.labelOverlay,
-                { opacity: proximity! },
-              ]}
-              numberOfLines={1}
-              pointerEvents="none"
-            >
-              {label}
-            </Animated.Text>
+        {/* Label à droite de l'icône, clippé (largeur 0) quand le rail est étroit. */}
+        <Reanimated.View
+          style={[styles.labelClip, labelClipStyle]}
+          pointerEvents="none"
+        >
+          <View style={styles.labelInner}>
+            {animated ? (
+              <>
+                <Text style={styles.navLabel} numberOfLines={1}>
+                  {label}
+                </Text>
+                {/* Copie active (blanche) fondue par-dessus selon la proximité :
+                    le label est au-dessus de l'indicateur orange en mode large. */}
+                <Animated.Text
+                  style={[
+                    styles.navLabel,
+                    styles.navLabelActive,
+                    styles.labelOverlay,
+                    { opacity: proximity! },
+                  ]}
+                  numberOfLines={1}
+                >
+                  {label}
+                </Animated.Text>
+              </>
+            ) : (
+              <Text
+                style={[styles.navLabel, isActive && styles.navLabelActive]}
+                numberOfLines={1}
+              >
+                {label}
+              </Text>
+            )}
           </View>
-        ) : (
-          <Text
-            style={[styles.navLabel, isActive && styles.navLabelActive]}
-            numberOfLines={1}
-          >
-            {label}
-          </Text>
-        )}
+        </Reanimated.View>
       </Pressable>
     </Animated.View>
   );
@@ -155,6 +189,24 @@ export default function NavigationRail({
   const insets = useSafeAreaInsets();
   const [isManager, setIsManager] = useState(false);
   const [itemYs, setItemYs] = useState<number[]>([]);
+  const [expanded, setExpanded] = useState(false); // défaut : étroit (icônes)
+
+  // Progression partagée du collapse (thread UI). 0 = étroit, 1 = large.
+  const progress = useSharedValue(0);
+  useEffect(() => {
+    progress.value = withTiming(expanded ? 1 : 0, { duration: 220 });
+  }, [expanded, progress]);
+
+  const railStyle = useAnimatedStyle(() => ({
+    width: interpolate(progress.value, [0, 1], [COLLAPSED_WIDTH, EXPANDED_WIDTH]),
+  }));
+  const indicatorWidthStyle = useAnimatedStyle(() => ({
+    width: interpolate(
+      progress.value,
+      [0, 1],
+      [ICON_PILL_WIDTH, INDICATOR_EXPANDED_WIDTH],
+    ),
+  }));
 
   useEffect(() => {
     const loadRole = async () => {
@@ -210,9 +262,10 @@ export default function NavigationRail({
   }, [animated, position, itemYs, navItems]);
 
   return (
-    <View
+    <Reanimated.View
       style={[
         styles.container,
+        railStyle,
         {
           paddingTop: insets.top + 16,
           paddingBottom: insets.bottom + 12,
@@ -236,7 +289,8 @@ export default function NavigationRail({
             ]}
             pointerEvents="none"
           >
-            <View style={styles.indicatorPill} />
+            {/* Largeur animée (Reanimated) imbriquée sous le translateY (RN Animated). */}
+            <Reanimated.View style={[styles.indicatorPill, indicatorWidthStyle]} />
           </Animated.View>
         ) : null}
 
@@ -248,23 +302,38 @@ export default function NavigationRail({
             index={i}
             isActive={currentIndex === i}
             position={animated ? position : null}
+            progress={progress}
             onPress={() => onNavigate(i)}
             onLayout={(e) => handleItemLayout(i, e.nativeEvent.layout.y)}
           />
         ))}
       </ScrollView>
-    </View>
+
+      {/* Toggle plier / déplier. */}
+      <Pressable
+        style={styles.toggleBtn}
+        onPress={() => setExpanded((e) => !e)}
+        accessibilityRole="button"
+        accessibilityLabel={expanded ? "Réduire le menu" : "Agrandir le menu"}
+      >
+        <Feather
+          name={expanded ? "chevron-left" : "chevron-right"}
+          size={22}
+          color={COLOR_INACTIVE}
+        />
+      </Pressable>
+    </Reanimated.View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    width: 80,
     backgroundColor: sidebar.bg,
     borderRightWidth: 1,
     borderRightColor: sidebar.border,
     alignItems: "center",
     justifyContent: "space-between",
+    overflow: "hidden", // clippe les labels pendant la transition de largeur
   },
   logoSection: {
     alignItems: "center",
@@ -275,31 +344,32 @@ const styles = StyleSheet.create({
     alignSelf: "stretch",
   },
   navSectionContent: {
-    alignItems: "center",
+    alignItems: "stretch",
     gap: 4,
   },
   indicatorWrap: {
     position: "absolute",
     top: 0,
-    left: 0,
-    right: 0,
-    alignItems: "center",
+    left: INDICATOR_LEFT,
   },
   indicatorPill: {
-    width: 48,
+    width: ICON_PILL_WIDTH,
     height: 32,
     borderRadius: 16,
     backgroundColor: COLOR_ACTIVE,
   },
+  navItemOuter: {
+    alignSelf: "stretch",
+  },
   navItem: {
+    flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
-    width: 64,
+    paddingLeft: INDICATOR_LEFT,
     paddingVertical: 8,
     borderRadius: 14,
   },
   navIconPill: {
-    width: 48,
+    width: ICON_PILL_WIDTH,
     height: 32,
     borderRadius: 16,
     alignItems: "center",
@@ -313,26 +383,37 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  labelWrap: {
-    marginTop: 4,
-    alignSelf: "stretch",
+  labelClip: {
+    overflow: "hidden",
+    justifyContent: "center",
+  },
+  labelInner: {
+    width: LABEL_SLOT_WIDTH,
+    paddingLeft: LABEL_GAP,
   },
   navLabel: {
-    fontSize: 10,
+    fontSize: 14,
     fontWeight: "600",
     color: COLOR_INACTIVE,
-    marginTop: 4,
-    textAlign: "center",
-  },
-  labelBase: {
-    marginTop: 0,
   },
   labelOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    marginTop: 0,
+    position: "absolute",
+    left: LABEL_GAP,
+    top: 0,
+    bottom: 0,
+    textAlignVertical: "center",
   },
   navLabelActive: {
-    color: COLOR_ACTIVE,
+    color: ICON_ACTIVE,
     fontWeight: "700",
+  },
+  toggleBtn: {
+    marginTop: 8,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: sidebar.surface,
   },
 });
