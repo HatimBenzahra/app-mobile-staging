@@ -13,6 +13,8 @@ import type { ReactNode, RefObject } from "react";
 import type { NativeSyntheticEvent } from "react-native";
 import { StyleSheet } from "react-native";
 
+const SATELLITE_BEFORE_LAYER_ID = "road_one_way_arrow";
+
 type CarteTerrainMapProps = {
   cameraRef: RefObject<CameraRef | null>;
   mapCenter: TerrainPoint;
@@ -63,7 +65,12 @@ export function CarteTerrainMap({
           tileSize={256}
           maxzoom={19}
         >
-          <Layer id="esri-satellite-layer" type="raster" source="esri-satellite" />
+          <Layer
+            id="esri-satellite-layer"
+            type="raster"
+            source="esri-satellite"
+            beforeId={SATELLITE_BEFORE_LAYER_ID}
+          />
         </RasterSource>
       )}
       <Camera

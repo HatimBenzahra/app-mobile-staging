@@ -161,6 +161,14 @@ export default function CarteTerrainScreen({
     setEditingLieu(null);
   }, [setEditingLieu]);
 
+  if (initialLocating) {
+    return (
+      <View style={styles.container}>
+        <MapLocatingOverlay visible />
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
       <CarteTerrainMap
@@ -190,8 +198,6 @@ export default function CarteTerrainScreen({
           onSelectQuartierPin={selectQuartierPin}
         />
       </CarteTerrainMap>
-
-      <MapLocatingOverlay visible={initialLocating} />
 
       {!selectedExistingLieu && (
         <MapFabs
