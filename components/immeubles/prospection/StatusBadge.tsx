@@ -1,5 +1,5 @@
-import { Feather } from "@expo/vector-icons";
 import { memo } from "react";
+import { Icon } from "@/components/ui";
 import { StyleSheet, Text, View } from "react-native";
 
 import {
@@ -27,7 +27,7 @@ function StatusBadgeImpl({ statusKey, size = "sm" }: StatusBadgeProps) {
         { backgroundColor: `${status.accent}1A`, borderColor: `${status.accent}33` },
       ]}
     >
-      <Feather
+      <Icon
         name={status.icon}
         size={isMd ? 12 : 10}
         color={status.accent}

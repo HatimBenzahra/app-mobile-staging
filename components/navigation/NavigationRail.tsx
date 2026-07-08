@@ -1,5 +1,5 @@
 import { authService } from "@/services/auth";
-import { Feather } from "@expo/vector-icons";
+import { Icon, type IconName } from "@/components/ui";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Animated,
@@ -39,7 +39,7 @@ const INDICATOR_EXPANDED_WIDTH = EXPANDED_WIDTH - INDICATOR_LEFT - 12;
 type TabPosition = Animated.AnimatedInterpolation<number>;
 
 type NavItemProps = {
-  icon: keyof typeof Feather.glyphMap;
+  icon: IconName;
   label: string;
   index: number;
   isActive: boolean;
@@ -119,7 +119,7 @@ const NavItem = memo(function NavItem({
         >
           {/* Icône neutre (base). En mode animé, une copie blanche se fond
               par-dessus quand l'indicateur arrive (opacité = proximité). */}
-          <Feather
+          <Icon
             name={icon}
             size={20}
             color={animated ? COLOR_INACTIVE : isActive ? ICON_ACTIVE : COLOR_INACTIVE}
@@ -129,7 +129,7 @@ const NavItem = memo(function NavItem({
               style={[styles.iconOverlay, { opacity: proximity! }]}
               pointerEvents="none"
             >
-              <Feather name={icon} size={20} color={ICON_ACTIVE} />
+              <Icon name={icon} size={20} color={ICON_ACTIVE} />
             </Animated.View>
           ) : null}
         </View>
@@ -316,7 +316,7 @@ export default function NavigationRail({
         accessibilityRole="button"
         accessibilityLabel={expanded ? "Réduire le menu" : "Agrandir le menu"}
       >
-        <Feather
+        <Icon
           name={expanded ? "chevron-left" : "chevron-right"}
           size={22}
           color={COLOR_INACTIVE}

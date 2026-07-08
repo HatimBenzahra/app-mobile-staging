@@ -1,5 +1,5 @@
 import { colors } from "@/constants/theme";
-import { Feather } from "@expo/vector-icons";
+import { Icon } from "@/components/ui";
 import { router } from "expo-router";
 import { ActivityIndicator, Pressable } from "react-native";
 import type { EdgeInsets } from "react-native-safe-area-context";
@@ -54,7 +54,7 @@ export function MapFabs({
         {loadingLocation ? (
           <ActivityIndicator size="small" color={colors.primary} />
         ) : (
-          <Feather name="crosshair" size={22} color={colors.primary} />
+          <Icon name="crosshair" size={22} color={colors.primary} />
         )}
       </Pressable>
     ),
@@ -67,7 +67,7 @@ export function MapFabs({
         accessibilityRole="button"
         accessibilityLabel="Vue satellite"
       >
-        <Feather name="layers" size={22} color={satellite ? colors.textOnPrimary : colors.primary} />
+        <Icon name="layers" size={22} color={satellite ? colors.textOnPrimary : colors.primary} />
       </Pressable>
     ),
     // Équipe (manager uniquement).
@@ -81,7 +81,7 @@ export function MapFabs({
               accessibilityRole="button"
               accessibilityLabel="Afficher l'équipe"
             >
-              <Feather name="users" size={22} color={showTeam ? colors.textOnPrimary : colors.primary} />
+              <Icon name="users" size={22} color={showTeam ? colors.textOnPrimary : colors.primary} />
             </Pressable>
           ),
         ]
@@ -97,7 +97,7 @@ export function MapFabs({
               accessibilityRole="button"
               accessibilityLabel="Recentrer sur ma zone"
             >
-              <Feather name="map" size={22} color={colors.primary} />
+              <Icon name="map" size={22} color={colors.primary} />
             </Pressable>
           ),
         ]
@@ -111,7 +111,7 @@ export function MapFabs({
         accessibilityRole="button"
         accessibilityLabel="Mes zones"
       >
-        <Feather name="clock" size={22} color={colors.primary} />
+        <Icon name="clock" size={22} color={colors.primary} />
       </Pressable>
     ),
   ];
@@ -123,7 +123,7 @@ export function MapFabs({
           style={[styles.backFab, { top: insets.top + 10 }]}
           onPress={() => router.back()}
         >
-          <Feather name="chevron-left" size={22} color={colors.text} />
+          <Icon name="chevron-left" size={22} color={colors.text} />
         </Pressable>
       )}
 

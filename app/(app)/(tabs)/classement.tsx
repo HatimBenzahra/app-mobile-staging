@@ -1,4 +1,3 @@
-import { Feather } from "@expo/vector-icons";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -9,7 +8,7 @@ import {
   NextBadgeRow,
   RankTierBadge,
 } from "@/components/gamification";
-import { Card, Chip, ErrorState } from "@/components/ui";
+import { Card, Chip, ErrorState, Icon, type IconName } from "@/components/ui";
 import { colors, fontSize, fontWeight, radius, spacing } from "@/constants/theme";
 import { useBadgeCatalog } from "@/hooks/api/use-badge-catalog";
 import { useTeamLeaderboard } from "@/hooks/api/use-team-leaderboard";
@@ -411,10 +410,10 @@ export default function ClassementScreen() {
   );
 }
 
-function EmptyHint({ icon, text }: { icon: keyof typeof Feather.glyphMap; text: string }) {
+function EmptyHint({ icon, text }: { icon: IconName; text: string }) {
   return (
     <Card variant="outlined" padding="lg" style={styles.empty}>
-      <Feather name={icon} size={26} color={colors.textSubtle} />
+      <Icon name={icon} size={26} color={colors.textSubtle} />
       <Text style={styles.emptyText}>{text}</Text>
     </Card>
   );

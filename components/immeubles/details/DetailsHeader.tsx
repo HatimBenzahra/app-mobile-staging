@@ -1,5 +1,5 @@
-import { Feather } from "@expo/vector-icons";
 import { memo } from "react";
+import { Icon } from "@/components/ui";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { colors } from "@/constants/theme";
 import { getLieuTerms } from "@/components/immeubles/lieu-terms";
@@ -43,7 +43,7 @@ function DetailsHeader({
         accessibilityRole="button"
         accessibilityLabel="Retour"
       >
-        <Feather name="chevron-left" size={20} color={colors.textOnPrimary} />
+        <Icon name="chevron-left" size={20} color={colors.textOnPrimary} />
       </Pressable>
 
       <View style={styles.text}>

@@ -1,6 +1,5 @@
-import { Card } from "@/components/ui";
+import { Card, Icon } from "@/components/ui";
 import { colors } from "@/constants/theme";
-import { Feather } from "@expo/vector-icons";
 import {
   BottomSheetBackdrop,
   BottomSheetModal,
@@ -152,7 +151,7 @@ export default function AddPorteSheet({
       <View style={[styles.sheet, isTablet && styles.sheetTablet]}>
         <View style={styles.header}>
           <View style={styles.headerIcon}>
-            <Feather name="plus-circle" size={18} color={colors.primary} />
+            <Icon name="plus-circle" size={18} color={colors.primary} />
           </View>
           <View style={styles.headerText}>
             <Text style={styles.title}>Ajouter une porte</Text>
@@ -169,7 +168,7 @@ export default function AddPorteSheet({
           <Card variant="outlined" padding="md" style={styles.card}>
             <Text style={styles.label}>{terms.unitLabel}</Text>
             <View style={[styles.inputRow, errors.etage && styles.inputError]}>
-              <Feather name="layers" size={16} color={colors.textMuted} />
+              <Icon name="layers" size={16} color={colors.textMuted} />
               <TextInput
                 placeholder="Ex: 2"
                 keyboardType="number-pad"
@@ -186,7 +185,7 @@ export default function AddPorteSheet({
           <Card variant="outlined" padding="md" style={styles.card}>
             <Text style={styles.label}>Numero de porte</Text>
             <View style={[styles.inputRow, errors.numero && styles.inputError]}>
-              <Feather name="hash" size={16} color={colors.textMuted} />
+              <Icon name="hash" size={16} color={colors.textMuted} />
               <TextInput
                 placeholder="Ex: 3"
                 value={form.numero}
@@ -202,7 +201,7 @@ export default function AddPorteSheet({
           <Card variant="outlined" padding="md" style={styles.card}>
             <Text style={styles.label}>Nom personnalise (optionnel)</Text>
             <View style={styles.inputRow}>
-              <Feather name="edit-3" size={16} color={colors.textMuted} />
+              <Icon name="edit-3" size={16} color={colors.textMuted} />
               <TextInput
                 placeholder="Ex: Mme Martin"
                 value={form.nomPersonnalise}

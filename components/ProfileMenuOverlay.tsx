@@ -1,12 +1,11 @@
 import { useProfileMenu } from "@/hooks/use-profile-menu";
 import { authService } from "@/services/auth";
-import { Feather } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
 import { useRouter } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Card, Chip } from "@/components/ui";
+import { Card, Chip, Icon } from "@/components/ui";
 import { colors } from "@/constants/theme";
 
 const ROLE_LABELS: Record<string, string> = {
@@ -105,7 +104,7 @@ export default function ProfileMenuOverlay() {
                 ]}
                 onPress={handleLogout}
               >
-                <Feather name="log-out" size={14} color={colors.textOnPrimary} />
+                <Icon name="log-out" size={14} color={colors.textOnPrimary} />
                 <Text style={styles.btnDangerText}>Se déconnecter</Text>
               </Pressable>
             </View>
@@ -121,10 +120,10 @@ export default function ProfileMenuOverlay() {
             accessibilityLabel="Se déconnecter"
           >
             <View style={styles.logoutIcon}>
-              <Feather name="log-out" size={15} color={colors.danger} />
+              <Icon name="log-out" size={15} color={colors.danger} />
             </View>
             <Text style={styles.logoutLabel}>Se déconnecter</Text>
-            <Feather name="chevron-right" size={16} color="#FCA5A5" />
+            <Icon name="chevron-right" size={16} color="#FCA5A5" />
           </Pressable>
         )}
       </Card>

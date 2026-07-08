@@ -1,5 +1,5 @@
-import { Feather } from "@expo/vector-icons";
 import { memo, useCallback } from "react";
+import { Icon, type IconName } from "@/components/ui";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import Animated, {
   useAnimatedStyle,
@@ -18,7 +18,7 @@ type StatusDescriptor = {
   key: StatusKey;
   label: string;
   hint: string;
-  icon: keyof typeof Feather.glyphMap;
+  icon: IconName;
   accent: string;
   accentSoft: string;
   accentInk: string;
@@ -118,7 +118,7 @@ const StatusCard = memo(function StatusCard({
             { backgroundColor: isSelected ? desc.accent : desc.accentSoft },
           ]}
         >
-          <Feather
+          <Icon
             name={desc.icon}
             size={18}
             color={isSelected ? "#FFFFFF" : desc.accent}
@@ -144,7 +144,7 @@ const StatusCard = memo(function StatusCard({
         </View>
         {isSelected ? (
           <View style={[styles.cardCheck, { backgroundColor: desc.accent }]}>
-            <Feather name="check" size={11} color="#FFFFFF" />
+            <Icon name="check" size={11} color="#FFFFFF" />
           </View>
         ) : null}
       </Pressable>
@@ -179,7 +179,7 @@ function StatusGridImpl({
               absentSelected && { backgroundColor: "#FFFFFF" },
             ]}
           >
-            <Feather
+            <Icon
               name="home"
               size={20}
               color={absentSelected ? "#92400E" : "#92400E"}
@@ -193,7 +193,7 @@ function StatusGridImpl({
           </View>
         </View>
         <View style={styles.absentChevron}>
-          <Feather name="arrow-right" size={18} color="#92400E" />
+          <Icon name="arrow-right" size={18} color="#92400E" />
         </View>
       </Pressable>
 

@@ -7,7 +7,6 @@ import { authService } from "@/services/auth";
 import { api } from "@/services/api";
 import type { Commercial, Manager, Statistic } from "@/types/api";
 import type { RankPeriod, RankSnapshotType } from "@/types/graphql-schema";
-import { Feather } from "@expo/vector-icons";
 import {
   memo,
   useCallback,
@@ -15,7 +14,6 @@ import {
   useMemo,
   useRef,
   useState,
-  type ComponentProps,
 } from "react";
 import {
   Animated,
@@ -30,7 +28,7 @@ import {
 } from "react-native";
 import { LineChart } from "react-native-gifted-charts";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Card, ErrorState, IconBadge, Chip } from "@/components/ui";
+import { Card, ErrorState, IconBadge, Chip, Icon, type IconName } from "@/components/ui";
 import { RankTierBadge } from "@/components/gamification";
 import { colors, podium, progressColors } from "@/constants/theme";
 
@@ -39,7 +37,7 @@ type PeriodKey = "7d" | "30d" | "all";
 const PERIOD_OPTIONS: {
   key: PeriodKey;
   label: string;
-  icon: keyof typeof Feather.glyphMap;
+  icon: IconName;
 }[] = [
   { key: "7d", label: "7j", icon: "calendar" },
   { key: "30d", label: "30j", icon: "clock" },
@@ -179,12 +177,10 @@ const computeTeamSnapshot = (
   };
 };
 
-type FeatherIconName = ComponentProps<typeof Feather>["name"];
-
 const getPositionAccent = (
   position: number,
 ): {
-  icon: FeatherIconName;
+  icon: IconName;
   bgColor: string;
   iconColor: string;
   textColor: string;
@@ -226,7 +222,7 @@ const PeriodFilterChip = memo(function PeriodFilterChip({
   selected,
   onPress,
 }: {
-  option: { key: PeriodKey; label: string; icon: keyof typeof Feather.glyphMap };
+  option: { key: PeriodKey; label: string; icon: IconName };
   selected: boolean;
   onPress: (key: PeriodKey) => void;
 }) {
@@ -238,7 +234,7 @@ const PeriodFilterChip = memo(function PeriodFilterChip({
       <View
         style={[styles.periodChipIconWrap, selected && styles.periodChipIconWrapActive]}
       >
-        <Feather
+        <Icon
           name={option.icon}
           size={12}
           color={selected ? colors.primaryDark : colors.primary}
@@ -270,7 +266,7 @@ const TeamListItem = memo(function TeamListItem({
             { backgroundColor: positionAccent.bgColor },
           ]}
         >
-          <Feather
+          <Icon
             name={positionAccent.icon}
             size={11}
             color={positionAccent.iconColor}
@@ -308,7 +304,7 @@ const TeamListItem = memo(function TeamListItem({
       <View style={styles.listStats}>
         <View style={styles.statItem}>
           <View style={styles.statIconWrap}>
-            <Feather name="award" size={10} color={progressColors.complete} />
+            <Icon name="award" size={10} color={progressColors.complete} />
           </View>
           <Text style={styles.statValue}>
             {commercial.stats.contratsSignes}
@@ -317,7 +313,7 @@ const TeamListItem = memo(function TeamListItem({
         </View>
         <View style={styles.statItem}>
           <View style={styles.statIconWrap}>
-            <Feather name="calendar" size={10} color={colors.primary} />
+            <Icon name="calendar" size={10} color={colors.primary} />
           </View>
           <Text style={styles.statValue}>
             {commercial.stats.rendezVousPris}
@@ -326,7 +322,7 @@ const TeamListItem = memo(function TeamListItem({
         </View>
         <View style={styles.statItem}>
           <View style={styles.statIconWrap}>
-            <Feather name="grid" size={10} color={colors.info} />
+            <Icon name="grid" size={10} color={colors.info} />
           </View>
           <Text style={styles.statValue}>
             {commercial.stats.nbPortesProspectes}
@@ -335,7 +331,7 @@ const TeamListItem = memo(function TeamListItem({
         </View>
         <View style={styles.statItem}>
           <View style={styles.statIconWrap}>
-            <Feather name="trending-up" size={10} color={colors.warning} />
+            <Icon name="trending-up" size={10} color={colors.warning} />
           </View>
           <Text style={styles.statValue}>{commercial.points}</Text>
           <Text style={styles.statLabel}>Points</Text>
@@ -725,7 +721,7 @@ export default function EquipeScreen() {
     return (
       <View style={[styles.container, { paddingTop: insets.top + 24 }]}>
         <Card variant="outlined" padding="lg" style={styles.emptyCard}>
-          <Feather name="loader" size={28} color={colors.textSubtle} />
+          <Icon name="loader" size={28} color={colors.textSubtle} />
           <Text style={styles.emptyTitle}>Chargement</Text>
           <Text style={styles.emptyText}>
             Récupération du profil manager...
@@ -739,7 +735,7 @@ export default function EquipeScreen() {
     return (
       <View style={[styles.container, { paddingTop: insets.top + 24 }]}>
         <Card variant="outlined" padding="lg" style={styles.emptyCard}>
-          <Feather name="lock" size={28} color={colors.textSubtle} />
+          <Icon name="lock" size={28} color={colors.textSubtle} />
           <Text style={styles.emptyTitle}>Accès manager</Text>
           <Text style={styles.emptyText}>
             Cette page est réservée aux managers.
@@ -952,7 +948,7 @@ export default function EquipeScreen() {
 
           {teamChartData.rdvData.length === 0 ? (
             <View style={styles.performanceEmptyState}>
-              <Feather name="activity" size={18} color={colors.textSubtle} />
+              <Icon name="activity" size={18} color={colors.textSubtle} />
               <Text style={styles.performanceEmptyText}>
                 Aucune donnée de timeline pour cette période.
               </Text>

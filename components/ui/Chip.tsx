@@ -1,4 +1,4 @@
-import { Feather } from "@expo/vector-icons";
+import { Icon, type IconName } from "./Icon";
 import {
   Pressable,
   type PressableProps,
@@ -61,7 +61,7 @@ const toneStyles: Record<ChipTone, ToneStyle> = {
 
 type Props = {
   label: string;
-  icon?: keyof typeof Feather.glyphMap;
+  icon?: IconName;
   /** When true: brand-primary filled chip (selected/active state). */
   selected?: boolean;
   /** Semantic tone when not selected (default "neutral"). */
@@ -98,7 +98,7 @@ export function Chip({
 
   const Content = (
     <>
-      {icon ? <Feather name={icon} size={12} color={iconColor} /> : null}
+      {icon ? <Icon name={icon} size={12} color={iconColor} /> : null}
       <Text style={[styles.label, labelStyle]}>{label}</Text>
     </>
   );

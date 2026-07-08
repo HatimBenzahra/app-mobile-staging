@@ -1,7 +1,7 @@
 import { Animated, Text, View } from "react-native";
+import { Icon, type IconName } from "@/components/ui";
 import type { StyleProp, TextStyle, ViewStyle } from "react-native";
 import { memo } from "react";
-import { Feather } from "@expo/vector-icons";
 import { colors } from "@/constants/theme";
 
 type ActionToastProps = {
@@ -29,7 +29,7 @@ function ActionToast({
   styles,
 }: ActionToastProps) {
   const isError = title.toLowerCase().includes("erreur");
-  const iconName: keyof typeof Feather.glyphMap = isError
+  const iconName: IconName = isError
     ? "alert-circle"
     : "check";
   const iconBg = isError ? colors.danger : colors.success;
@@ -43,7 +43,7 @@ function ActionToast({
         ]}
       >
         <View style={[styles.toastIcon, { backgroundColor: iconBg }]}>
-          <Feather name={iconName} size={14} color={colors.textOnPrimary} />
+          <Icon name={iconName} size={14} color={colors.textOnPrimary} />
         </View>
         <View style={styles.toastText}>
           <Text style={styles.toastTitle}>{title}</Text>

@@ -9,12 +9,7 @@ import {
   findBestDay,
   getNextRdvCountdown,
 } from "@/utils/stats";
-import {
-  Card,
-  Chip,
-  ErrorState,
-  IconBadge,
-} from "@/components/ui";
+import { Card, Chip, ErrorState, IconBadge, Icon } from "@/components/ui";
 import {
   colors,
   fontSize,
@@ -22,7 +17,6 @@ import {
   radius,
   spacing,
 } from "@/constants/theme";
-import { Feather } from "@expo/vector-icons";
 import { BottomSheetModal, BottomSheetView } from "@gorhom/bottom-sheet";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -369,7 +363,7 @@ export default function DashboardScreen() {
                   <IconBadge icon="info" tone="neutral" size="sm" />
                 </Pressable>
                 {rankInfo.isMaxRank && (
-                  <Feather name="check-circle" size={20} color={colors.success} />
+                  <Icon name="check-circle" size={20} color={colors.success} />
                 )}
               </View>
 
@@ -406,7 +400,7 @@ export default function DashboardScreen() {
                 >
                   <View style={[styles.chartSlide, { width: chartSlideWidth }]}>
                     <View style={styles.chartHeader}>
-                      <Feather name="bar-chart-2" size={20} color={colors.primary} />
+                      <Icon name="bar-chart-2" size={20} color={colors.primary} />
                       <Text style={styles.chartTitle}>
                         Portes prospectées cette semaine
                       </Text>
@@ -416,7 +410,7 @@ export default function DashboardScreen() {
 
                   <View style={[styles.chartSlide, { width: chartSlideWidth }]}>
                     <View style={styles.chartHeader}>
-                      <Feather name="file-text" size={20} color={colors.success} />
+                      <Icon name="file-text" size={20} color={colors.success} />
                       <View style={styles.chartTitleContainer}>
                         <Text style={styles.chartTitle}>
                           Contrats signés cette semaine
@@ -434,7 +428,7 @@ export default function DashboardScreen() {
                             style={styles.conversionInfoButton}
                             onPress={handleOpenConversionInfo}
                           >
-                            <Feather name="help-circle" size={16} color={colors.successText} />
+                            <Icon name="help-circle" size={16} color={colors.successText} />
                           </Pressable>
                         </View>
                       </View>
@@ -452,7 +446,7 @@ export default function DashboardScreen() {
                     activeChartIndex === 0 && styles.paginationPillActive,
                   ]}
                 >
-                  <Feather
+                  <Icon
                     name="bar-chart-2"
                     size={14}
                     color={activeChartIndex === 0 ? colors.primary : colors.textSubtle}
@@ -473,7 +467,7 @@ export default function DashboardScreen() {
                     activeChartIndex === 1 && styles.paginationPillActive,
                   ]}
                 >
-                  <Feather
+                  <Icon
                     name="file-text"
                     size={14}
                     color={activeChartIndex === 1 ? colors.success : colors.textSubtle}
@@ -517,27 +511,27 @@ export default function DashboardScreen() {
       >
         <BottomSheetView style={styles.sheetContainer}>
           <View style={styles.sheetHeader}>
-            <Feather name="info" size={20} color={colors.primary} />
+            <Icon name="info" size={20} color={colors.primary} />
             <Text style={styles.sheetTitle}>Calcul des points</Text>
           </View>
           <View style={styles.formulaGrid}>
             <Card variant="filled" padding="md" style={styles.formulaItemRow}>
               <View style={[styles.formulaIcon, { backgroundColor: colors.successSoft }]}>
-                <Feather name="check-circle" size={16} color={colors.success} />
+                <Icon name="check-circle" size={16} color={colors.success} />
               </View>
               <Text style={styles.formulaItemLabel}>Contrat signé</Text>
               <Text style={styles.formulaItemValue}>100 pts</Text>
             </Card>
             <Card variant="filled" padding="md" style={styles.formulaItemRow}>
               <View style={[styles.formulaIcon, { backgroundColor: colors.primarySoft }]}>
-                <Feather name="calendar" size={16} color={colors.primary} />
+                <Icon name="calendar" size={16} color={colors.primary} />
               </View>
               <Text style={styles.formulaItemLabel}>RDV pris</Text>
               <Text style={styles.formulaItemValue}>20 pts</Text>
             </Card>
             <Card variant="filled" padding="md" style={styles.formulaItemRow}>
               <View style={[styles.formulaIcon, { backgroundColor: colors.primaryMuted }]}>
-                <Feather name="home" size={16} color={colors.primary} />
+                <Icon name="home" size={16} color={colors.primary} />
               </View>
               <Text style={styles.formulaItemLabel}>Immeuble visité</Text>
               <Text style={styles.formulaItemValue}>5 pts</Text>
@@ -558,7 +552,7 @@ export default function DashboardScreen() {
       >
         <BottomSheetView style={styles.sheetContainer}>
           <View style={styles.sheetHeader}>
-            <Feather name="help-circle" size={20} color={colors.success} />
+            <Icon name="help-circle" size={20} color={colors.success} />
             <Text style={styles.sheetTitle}>Taux de conversion</Text>
           </View>
           <View style={styles.explanationCard}>

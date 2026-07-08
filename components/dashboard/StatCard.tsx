@@ -1,12 +1,11 @@
-import { Feather } from "@expo/vector-icons";
 import { StyleSheet, Text, View, type ViewStyle } from "react-native";
 import { colors, fontSize, fontWeight, spacing } from "@/constants/theme";
-import { Card, IconBadge } from "@/components/ui";
+import { Card, IconBadge, type IconName } from "@/components/ui";
 
 type StatCardProps = {
   title: string;
   value: string | number;
-  icon: keyof typeof Feather.glyphMap;
+  icon: IconName;
   style?: ViewStyle;
 };
 

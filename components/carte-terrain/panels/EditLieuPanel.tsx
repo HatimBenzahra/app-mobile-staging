@@ -1,9 +1,8 @@
-import { Card } from "@/components/ui";
+import { Card, Icon } from "@/components/ui";
 import { HabitatIcon } from "@/components/immeubles/habitat-icon";
 import { colors } from "@/constants/theme";
 import { habitatOptions } from "@/hooks/carte-terrain/constants";
 import type { Immeuble, TypeHabitat } from "@/types/api";
-import { Feather } from "@expo/vector-icons";
 import { ActivityIndicator, Pressable, Text, View } from "react-native";
 import type { EdgeInsets } from "react-native-safe-area-context";
 import { styles } from "../styles";
@@ -47,7 +46,7 @@ export function EditLieuPanel({
           </Text>
         </View>
         <Pressable style={styles.iconButton} onPress={onClose}>
-          <Feather name="x" size={18} color={colors.textStrong} />
+          <Icon name="x" size={18} color={colors.textStrong} />
         </Pressable>
       </View>
 
@@ -81,14 +80,14 @@ export function EditLieuPanel({
               style={styles.stepperButton}
               onPress={() => onChangeNbMaisons((value) => Math.max(1, value - 1))}
             >
-              <Feather name="minus" size={16} color={colors.primary} />
+              <Icon name="minus" size={16} color={colors.primary} />
             </Pressable>
             <Text style={styles.stepperValue}>{editingNbMaisons}</Text>
             <Pressable
               style={styles.stepperButton}
               onPress={() => onChangeNbMaisons((value) => value + 1)}
             >
-              <Feather name="plus" size={16} color={colors.primary} />
+              <Icon name="plus" size={16} color={colors.primary} />
             </Pressable>
           </View>
         </View>
@@ -104,7 +103,7 @@ export function EditLieuPanel({
         ) : (
           <>
             <Text style={styles.createText}>Enregistrer</Text>
-            <Feather name="check" size={16} color={colors.textOnPrimary} />
+            <Icon name="check" size={16} color={colors.textOnPrimary} />
           </>
         )}
       </Pressable>

@@ -1,4 +1,5 @@
 import { colors, palette } from "@/constants/theme";
+import { Icon, type IconName } from "@/components/ui";
 import ConfirmActionOverlay from "@/components/immeubles/ConfirmActionOverlay";
 import PorteDetailSheet from "@/components/immeubles/PorteDetailSheet";
 import PortePickerOverlay from "@/components/immeubles/PortePickerOverlay";
@@ -27,7 +28,6 @@ import { useRecording } from "@/hooks/audio/use-recording";
 import { useConnectivity } from "@/hooks/network/use-connectivity";
 import { queuePorteUpdate } from "@/services/offline/offline-queue.service";
 import type { Immeuble, Porte, UpdatePorteInput } from "@/types/api";
-import { Feather } from "@expo/vector-icons";
 import { BottomSheetBackdrop, BottomSheetModal } from "@gorhom/bottom-sheet";
 import type { ComponentType } from "react";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -55,7 +55,7 @@ type EditMode =
 type FabAction = {
   label: string;
   subLabel: string;
-  icon: keyof typeof Feather.glyphMap;
+  icon: IconName;
   tone: "hero" | "primary" | "danger";
   onPress: () => void;
 };
@@ -146,7 +146,7 @@ const ProgressCard = memo(function ProgressCard({
       <View style={styles.progressRowNew}>
         <View style={styles.progressLeftNew}>
           <View style={styles.progressIconNew}>
-            <Feather name="activity" size={14} color={colors.primary} />
+            <Icon name="activity" size={14} color={colors.primary} />
           </View>
           <View style={styles.progressTextsNew}>
             <Text style={styles.progressTitleNew}>Progression</Text>
@@ -1267,7 +1267,7 @@ function ImmeubleDetailsView({
                   style={styles.statusFilterButton}
                   onPress={openStatusFilterSheet}
                 >
-                  <Feather name="filter" size={15} color={colors.textOnPrimary} />
+                  <Icon name="filter" size={15} color={colors.textOnPrimary} />
                   <Text style={styles.statusFilterText}>Filtrer</Text>
                 </Pressable>
               </View>
@@ -1562,8 +1562,8 @@ function ImmeubleDetailsView({
                     ]}
                     onPress={() => handleFabAction(action.onPress)}
                   >
-                    <Feather
-                      name={action.icon as keyof typeof Feather.glyphMap}
+                    <Icon
+                      name={action.icon as IconName}
                       size={isHero ? (isTablet ? 24 : 22) : isTablet ? 22 : 20}
                       color={iconColor}
                     />
@@ -1608,7 +1608,7 @@ function ImmeubleDetailsView({
         </View>
         <Animated.View style={{ transform: [{ rotate: fabRotation }] }}>
           <Pressable style={styles.fabButton} onPress={toggleFab}>
-            <Feather name="plus" size={28} color={colors.textOnPrimary} />
+            <Icon name="plus" size={28} color={colors.textOnPrimary} />
           </Pressable>
         </Animated.View>
       </View>
@@ -1622,7 +1622,7 @@ function ImmeubleDetailsView({
         <View style={styles.exitOverlay}>
           <View style={styles.exitCard}>
             <View style={styles.exitIconWrap}>
-              <Feather name="alert-triangle" size={20} color={colors.danger} />
+              <Icon name="alert-triangle" size={20} color={colors.danger} />
             </View>
             <Text style={styles.exitTitle}>Quitter la fiche ?</Text>
             <Text style={styles.exitText}>

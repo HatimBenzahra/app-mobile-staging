@@ -1,11 +1,11 @@
-import { Feather } from "@expo/vector-icons";
 import { StyleSheet, type StyleProp, Text, View, type ViewStyle } from "react-native";
+import type { IconName } from "./Icon";
 import { colors, fontSize, fontWeight, spacing } from "@/constants/theme";
 import { Card, type CardVariant } from "./Card";
 import { IconBadge, type IconBadgeTone } from "./IconBadge";
 
 type Props = {
-  icon: keyof typeof Feather.glyphMap;
+  icon: IconName;
   label: string;
   value: string | number;
   /** Display the brand-colored fill version when emphasis is needed. */

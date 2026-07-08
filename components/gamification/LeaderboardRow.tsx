@@ -1,5 +1,5 @@
-import { Feather } from "@expo/vector-icons";
 import { StyleSheet, Text, View } from "react-native";
+import { Icon } from "@/components/ui";
 import { colors, fontSize, fontWeight, radius, spacing } from "@/constants/theme";
 import type { RankSnapshotType } from "@/types/graphql-schema";
 import { podiumColor } from "@/utils/business/rankTiers";
@@ -24,7 +24,7 @@ export function LeaderboardRow({ entry, highlight }: Props) {
     <View style={[styles.row, highlight && styles.rowHighlight]}>
       <View style={[styles.rankBox, medal ? { backgroundColor: medal } : styles.rankBoxNeutral]}>
         {medal ? (
-          <Feather name="award" size={14} color={colors.textOnPrimary} />
+          <Icon name="award" size={14} color={colors.textOnPrimary} />
         ) : (
           <Text style={styles.rankNum}>{entry.rank}</Text>
         )}

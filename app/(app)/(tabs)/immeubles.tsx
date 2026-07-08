@@ -1,5 +1,5 @@
 import AddImmeubleSheet from "@/components/immeubles/AddImmeubleSheet";
-import { Card, Chip, ErrorState, PressableCard } from "@/components/ui";
+import { Card, Chip, ErrorState, PressableCard, Icon, type IconName } from "@/components/ui";
 import { useCreateImmeuble } from "@/hooks/api/use-create-immeuble";
 import { useMapFocus } from "@/hooks/use-map-focus";
 import { useWorkspaceProfile } from "@/hooks/api/use-workspace-profile";
@@ -11,7 +11,6 @@ import { getImmeubleProgress } from "@/components/immeubles/lieu-progress";
 import { HabitatIcon } from "@/components/immeubles/habitat-icon";
 import type { HabitatIconName } from "@/components/immeubles/habitat-icon";
 import type { Immeuble, Quartier, TypeHabitat } from "@/types/api";
-import { Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { memo, useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -58,8 +57,8 @@ function recencyMs(item: {
 const TYPE_CHIPS: {
   key: TypeFilterKey;
   label: string;
-  /** Feather icon for the "Tous" chip; undefined for habitat-type chips (uses MCI via mciIcon). */
-  icon?: keyof typeof Feather.glyphMap;
+  /** Icône pour le chip "Tous"; undefined pour les chips de type habitat (rendus via mciIcon). */
+  icon?: IconName;
   mciIcon?: HabitatIconName;
   color: string;
 }[] = [
@@ -73,7 +72,7 @@ const TYPE_CHIPS: {
 const FILTER_CHIPS: {
   key: string;
   label: string;
-  icon: keyof typeof Feather.glyphMap;
+  icon: IconName;
   color: string;
 }[] = [
   { key: "all", label: "Tous", icon: "layers", color: colors.primary },
@@ -258,7 +257,7 @@ const LieuCard = memo(function LieuCard({
               onFocusMap(immeuble);
             }}
           >
-            <Feather name="map-pin" size={13} color={colors.primary} />
+            <Icon name="map-pin" size={13} color={colors.primary} />
             <Text style={styles.rowMapText}>carte</Text>
           </Pressable>
         ) : null}
@@ -731,7 +730,7 @@ export default function ImmeublesScreen(_props: ImmeublesScreenProps) {
               ]}
             >
               <View style={styles.searchIconWrap}>
-                <Feather name="search" size={18} color={colors.primary} />
+                <Icon name="search" size={18} color={colors.primary} />
               </View>
               <TextInput
                 ref={searchInputRef}
@@ -751,7 +750,7 @@ export default function ImmeublesScreen(_props: ImmeublesScreenProps) {
                     searchInputRef.current?.focus();
                   }}
                 >
-                  <Feather name="x" size={14} color={colors.textStrong} />
+                  <Icon name="x" size={14} color={colors.textStrong} />
                 </Pressable>
               )}
               <Pressable
@@ -761,7 +760,7 @@ export default function ImmeublesScreen(_props: ImmeublesScreenProps) {
                 ]}
                 onPress={handleFilterToggle}
               >
-                <Feather
+                <Icon
                   name="sliders"
                   size={16}
                   color={showFilters ? colors.textOnPrimary : colors.primary}
@@ -915,7 +914,7 @@ export default function ImmeublesScreen(_props: ImmeublesScreenProps) {
           ListEmptyComponent={
             !loading && !error ? (
               <Card variant="elevated" padding="md" style={{ alignItems: "center", gap: 8 }}>
-                <Feather name="map-pin" size={32} color={colors.textSubtle} />
+                <Icon name="map-pin" size={32} color={colors.textSubtle} />
                 <Text style={styles.emptyText}>Aucun lieu trouve</Text>
               </Card>
             ) : null
@@ -928,7 +927,7 @@ export default function ImmeublesScreen(_props: ImmeublesScreenProps) {
             style={styles.fab}
             onPress={() => setIsAddOpen(true)}
           >
-            <Feather name="plus" size={20} color={colors.textOnPrimary} />
+            <Icon name="plus" size={20} color={colors.textOnPrimary} />
           </Pressable>
         </View>
 

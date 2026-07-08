@@ -1,4 +1,3 @@
-import { Feather } from "@expo/vector-icons";
 import { memo, useMemo } from "react";
 import {
   Pressable,
@@ -14,7 +13,7 @@ import {
   STATUS_DISPLAY,
   getDisplayStatusKey,
 } from "@/components/immeubles/prospection/status-display";
-import { useToast } from "@/components/ui";
+import { useToast, Icon } from "@/components/ui";
 import { getLieuTerms } from "@/components/immeubles/lieu-terms";
 import type { Porte, TypeHabitat } from "@/types/api";
 
@@ -129,10 +128,10 @@ function FloorCard({
           {summary.etage}
         </Text>
         {isLocked ? (
-          <Feather name="lock" size={14} color={colors.textSubtle} />
+          <Icon name="lock" size={14} color={colors.textSubtle} />
         ) : isComplete ? (
           <View style={styles.completeBadge}>
-            <Feather name="check" size={9} color={colors.textOnPrimary} />
+            <Icon name="check" size={9} color={colors.textOnPrimary} />
           </View>
         ) : null}
       </View>
@@ -206,7 +205,7 @@ function BuildingFloorStripImpl({
       <View style={styles.headerRow}>
         <View style={styles.headerLeft}>
           <View style={styles.iconBadge}>
-            <Feather name="layers" size={13} color={colors.text} />
+            <Icon name="layers" size={13} color={colors.text} />
           </View>
           <Text style={styles.headerTitle}>
             {terms.isPavillon ? "Maisons" : "Cartographie"}

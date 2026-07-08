@@ -1,4 +1,4 @@
-import { Feather } from "@expo/vector-icons";
+import { Icon, type IconName } from "./Icon";
 import {
   createContext,
   type ReactNode,
@@ -48,7 +48,7 @@ const DEFAULT_DURATION_MS = 3200;
 
 const variantStyle: Record<
   ToastVariant,
-  { bg: string; iconBg: string; icon: keyof typeof Feather.glyphMap; iconColor: string }
+  { bg: string; iconBg: string; icon: IconName; iconColor: string }
 > = {
   success: {
     bg: colors.text,
@@ -161,7 +161,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
             <View
               style={[styles.iconWrap, { backgroundColor: styling.iconBg }]}
             >
-              <Feather
+              <Icon
                 name={styling.icon}
                 size={16}
                 color={styling.iconColor}

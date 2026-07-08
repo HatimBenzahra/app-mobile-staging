@@ -1,5 +1,5 @@
-import { Feather } from "@expo/vector-icons";
 import { memo, useMemo, useState } from "react";
+import { Icon } from "@/components/ui";
 import {
   Modal,
   Pressable,
@@ -173,7 +173,7 @@ function CalendarSheet({
               style={styles.calendarNav}
               hitSlop={10}
             >
-              <Feather name="chevron-left" size={18} color="#0F172A" />
+              <Icon name="chevron-left" size={18} color="#0F172A" />
             </Pressable>
             <Text style={styles.calendarTitle}>
               {MONTH_LABELS[month]} {year}
@@ -183,7 +183,7 @@ function CalendarSheet({
               style={styles.calendarNav}
               hitSlop={10}
             >
-              <Feather name="chevron-right" size={18} color="#0F172A" />
+              <Icon name="chevron-right" size={18} color="#0F172A" />
             </Pressable>
           </View>
           <View style={styles.calendarWeekHeader}>
@@ -299,7 +299,7 @@ function TimeSheet({
               style={styles.calendarNav}
               hitSlop={10}
             >
-              <Feather name="x" size={18} color="#0F172A" />
+              <Icon name="x" size={18} color="#0F172A" />
             </Pressable>
           </View>
 
@@ -364,7 +364,7 @@ function TimeSheet({
               onClose();
             }}
           >
-            <Feather name="check" size={15} color="#FFFFFF" />
+            <Icon name="check" size={15} color="#FFFFFF" />
             <Text style={styles.timeConfirmText}>
               Confirmer {value}
             </Text>
@@ -392,7 +392,7 @@ function RdvQuickPickerImpl({
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
           <View style={styles.sectionIcon}>
-            <Feather name="calendar" size={13} color="#0284C7" />
+            <Icon name="calendar" size={13} color="#0284C7" />
           </View>
           <View style={{ flex: 1 }}>
             <Text style={styles.sectionTitle}>Date du rendez-vous</Text>
@@ -443,7 +443,7 @@ function RdvQuickPickerImpl({
               !isInChips && styles.dateChipMoreActive,
             ]}
           >
-            <Feather
+            <Icon
               name="calendar"
               size={14}
               color={!isInChips ? "#FFFFFF" : "#0F172A"}
@@ -463,7 +463,7 @@ function RdvQuickPickerImpl({
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
           <View style={[styles.sectionIcon, { backgroundColor: "#FFF7ED" }]}>
-            <Feather name="clock" size={13} color="#C2410C" />
+            <Icon name="clock" size={13} color="#C2410C" />
           </View>
           <View style={{ flex: 1 }}>
             <Text style={styles.sectionTitle}>Heure</Text>
@@ -512,7 +512,7 @@ function RdvQuickPickerImpl({
               isCustomTime && styles.customTimeChipActive,
             ]}
           >
-            <Feather
+            <Icon
               name="edit-3"
               size={13}
               color={isCustomTime ? "#FFFFFF" : "#0F172A"}

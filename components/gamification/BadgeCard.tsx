@@ -1,7 +1,6 @@
-import { Feather } from "@expo/vector-icons";
 import { useState } from "react";
 import { Image, StyleSheet, Text, View } from "react-native";
-import { Card } from "@/components/ui";
+import { Card, Icon } from "@/components/ui";
 import { colors, fontSize, fontWeight, radius, spacing } from "@/constants/theme";
 import type { BadgeDefinitionType } from "@/types/graphql-schema";
 import { categoryStyle, resolveBadgeIconUrl } from "@/utils/business/badgeVisuals";
@@ -32,11 +31,11 @@ export function BadgeCard({ badge, earned = false }: Props) {
             onError={() => setImgFailed(true)}
           />
         ) : (
-          <Feather name={style.fallbackIcon} size={20} color={colors.textMuted} />
+          <Icon name={style.fallbackIcon} size={20} color={colors.textMuted} />
         )}
         {!earned ? (
           <View style={styles.lockPill}>
-            <Feather name="lock" size={9} color={colors.textInverse} />
+            <Icon name="lock" size={9} color={colors.textInverse} />
           </View>
         ) : null}
       </View>

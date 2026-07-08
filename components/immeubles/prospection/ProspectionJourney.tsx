@@ -1,5 +1,5 @@
-import { Feather } from "@expo/vector-icons";
 import { memo, useEffect, useMemo } from "react";
+import { Icon } from "@/components/ui";
 import {
   Pressable,
   ScrollView,
@@ -101,7 +101,7 @@ function StepDot({
             isLatest && styles.stepIconLatest,
           ]}
         >
-          <Feather name={status.icon} size={isLatest ? 13 : 12} color="#FFFFFF" />
+          <Icon name={status.icon} size={isLatest ? 13 : 12} color="#FFFFFF" />
         </View>
       </View>
       <Text
@@ -137,7 +137,7 @@ function ProspectionJourneyImpl({
       <View style={styles.headerRow}>
         <View style={styles.headerLeft}>
           <View style={styles.headerIcon}>
-            <Feather name="map" size={13} color="#FFFFFF" />
+            <Icon name="map" size={13} color="#FFFFFF" />
           </View>
           <View>
             <Text style={styles.headerTitle}>Mon parcours</Text>

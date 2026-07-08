@@ -1,12 +1,12 @@
-﻿import { Feather } from "@expo/vector-icons";
 import { Animated, Pressable, StyleSheet, Text, View } from "react-native";
+import { Icon, type IconName } from "@/components/ui";
 import { useEffect, useMemo, useRef } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 type TabRoute = {
   key: string;
   title: string;
-  icon: keyof typeof Feather.glyphMap;
+  icon: IconName;
 };
 
 type BottomTabsProps = {
@@ -92,7 +92,7 @@ export default function BottomTabs({ routes, index, onTabPress }: BottomTabsProp
                   ]}
                 />
               </View>
-              <Feather name={route.icon} size={20} color={color} />
+              <Icon name={route.icon} size={20} color={color} />
               <Text style={[styles.label, { color }]}>{route.title}</Text>
             </Animated.View>
           </Pressable>

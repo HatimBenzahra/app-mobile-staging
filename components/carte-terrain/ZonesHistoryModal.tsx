@@ -1,9 +1,8 @@
-import { Card, Chip } from "@/components/ui";
+import { Card, Chip, Icon } from "@/components/ui";
 import { colors, fontSize, fontWeight, radius, spacing } from "@/constants/theme";
 import { useUserZoneHistory } from "@/hooks/api/use-user-zone-history";
 import { useZonesForUser } from "@/hooks/api/use-zones-for-user";
 import type { UserType } from "@/types/api";
-import { Feather } from "@expo/vector-icons";
 import { useCallback, useMemo } from "react";
 import {
   ActivityIndicator,
@@ -72,14 +71,14 @@ function ZoneEntryRow({
           {badge ? <Chip label={badge} tone="success" /> : null}
         </View>
         <View style={styles.rowMetaLine}>
-          <Feather name="user" size={12} color={colors.textMuted} />
+          <Icon name="user" size={12} color={colors.textMuted} />
           <Text style={styles.rowMeta} numberOfLines={1}>
             Créée par {creatorName?.trim() || "—"}
           </Text>
         </View>
         {period ? (
           <View style={styles.rowMetaLine}>
-            <Feather name="calendar" size={12} color={colors.textMuted} />
+            <Icon name="calendar" size={12} color={colors.textMuted} />
             <Text style={styles.rowMeta} numberOfLines={1}>
               {period}
             </Text>
@@ -100,7 +99,7 @@ function ZoneEntryRow({
         accessibilityRole="button"
         accessibilityLabel="Voir le détail"
       >
-        <Feather name="chevron-right" size={20} color={colors.info} />
+        <Icon name="chevron-right" size={20} color={colors.info} />
       </Pressable>
     </Pressable>
   );
@@ -175,7 +174,7 @@ export default function ZonesHistoryModal({
     >
       <View style={sheetStyles.header}>
         <View style={[sheetStyles.headerIcon, styles.headerIconAccent]}>
-          <Feather name="clock" size={22} color={colors.primary} />
+          <Icon name="clock" size={22} color={colors.primary} />
         </View>
         <View style={sheetStyles.headerText}>
           <Text style={sheetStyles.title} numberOfLines={1}>
@@ -192,7 +191,7 @@ export default function ZonesHistoryModal({
           accessibilityRole="button"
           accessibilityLabel="Fermer"
         >
-          <Feather name="x" size={18} color={colors.textStrong} />
+          <Icon name="x" size={18} color={colors.textStrong} />
         </Pressable>
       </View>
 
@@ -208,7 +207,7 @@ export default function ZonesHistoryModal({
             </View>
           ) : (
             <View style={styles.emptyBox}>
-              <Feather name="inbox" size={26} color={colors.textSubtle} />
+              <Icon name="inbox" size={26} color={colors.textSubtle} />
               <Text style={styles.emptyText}>Aucune zone</Text>
             </View>
           )

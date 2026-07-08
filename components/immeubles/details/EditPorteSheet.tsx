@@ -1,4 +1,4 @@
-import { Feather } from "@expo/vector-icons";
+import { Icon, type IconName } from "@/components/ui";
 import {
   BottomSheetModal,
   BottomSheetScrollView,
@@ -100,7 +100,7 @@ function EditPorteSheet({
       ? styles.sheetHeroIconAmber
       : styles.sheetHeroIconGreen;
 
-  const heroIconName: keyof typeof Feather.glyphMap = isRdv
+  const heroIconName: IconName = isRdv
     ? "calendar"
     : isArgumente
       ? "message-square"
@@ -159,7 +159,7 @@ function EditPorteSheet({
               ]}
             >
               <View style={[styles.sheetHeroIcon, heroIconStyle]}>
-                <Feather name={heroIconName} size={18} color={heroIconColor} />
+                <Icon name={heroIconName} size={18} color={heroIconColor} />
               </View>
               <View style={styles.sheetHeroText}>
                 <Text
@@ -184,7 +184,7 @@ function EditPorteSheet({
           <View style={[styles.sheetCard, isTablet && styles.sheetCardTablet]}>
             <Text style={styles.sheetLabel}>Nom personnalise</Text>
             <View style={styles.inputRow}>
-              <Feather name="edit-3" size={16} color={colors.textMuted} />
+              <Icon name="edit-3" size={16} color={colors.textMuted} />
               <TextInput
                 placeholder={terms.isMaison ? terms.unitLabel : `Porte ${editPorte?.numero || ""}`}
                 value={editForm.nomPersonnalise}
@@ -211,7 +211,7 @@ function EditPorteSheet({
                 <View
                   style={[styles.sheetSectionIcon, styles.sheetSectionIconBlue]}
                 >
-                  <Feather name="calendar" size={14} color={palette.primary[700]} />
+                  <Icon name="calendar" size={14} color={palette.primary[700]} />
                 </View>
                 <View style={styles.sheetSectionText}>
                   <Text style={styles.sheetSectionTitle}>Quand</Text>
@@ -227,7 +227,7 @@ function EditPorteSheet({
                     onPress={openDatePicker}
                   >
                     <View style={styles.pickerIcon}>
-                      <Feather name="calendar" size={16} color={palette.primary[700]} />
+                      <Icon name="calendar" size={16} color={palette.primary[700]} />
                     </View>
                     <View style={styles.pickerText}>
                       <Text style={styles.pickerTitle}>Date</Text>
@@ -235,14 +235,14 @@ function EditPorteSheet({
                         {formatDateLabel(editForm.rdvDate)}
                       </Text>
                     </View>
-                    <Feather name="chevron-right" size={16} color={colors.textSubtle} />
+                    <Icon name="chevron-right" size={16} color={colors.textSubtle} />
                   </Pressable>
                   <Pressable
                     style={[styles.pickerRow, styles.pickerRowPrimary]}
                     onPress={openTimePicker}
                   >
                     <View style={styles.pickerIcon}>
-                      <Feather name="clock" size={16} color={palette.primary[700]} />
+                      <Icon name="clock" size={16} color={palette.primary[700]} />
                     </View>
                     <View style={styles.pickerText}>
                       <Text style={styles.pickerTitle}>Heure</Text>
@@ -250,7 +250,7 @@ function EditPorteSheet({
                         {formatTimeLabel(editForm.rdvTime)}
                       </Text>
                     </View>
-                    <Feather name="chevron-right" size={16} color={colors.textSubtle} />
+                    <Icon name="chevron-right" size={16} color={colors.textSubtle} />
                   </Pressable>
                 </>
               ) : (
@@ -259,7 +259,7 @@ function EditPorteSheet({
                     Activez le DatePicker natif pour une meilleure experience.
                   </Text>
                   <View style={styles.inputRow}>
-                    <Feather name="calendar" size={16} color={colors.textMuted} />
+                    <Icon name="calendar" size={16} color={colors.textMuted} />
                     <TextInput
                       placeholder="YYYY-MM-DD"
                       value={editForm.rdvDate}
@@ -271,7 +271,7 @@ function EditPorteSheet({
                     />
                   </View>
                   <View style={[styles.inputRow, styles.inputRowSpacing]}>
-                    <Feather name="clock" size={16} color={colors.textMuted} />
+                    <Icon name="clock" size={16} color={colors.textMuted} />
                     <TextInput
                       placeholder="HH:mm"
                       value={editForm.rdvTime}
@@ -302,7 +302,7 @@ function EditPorteSheet({
                     styles.sheetSectionIconGreen,
                   ]}
                 >
-                  <Feather name="award" size={14} color={colors.successText} />
+                  <Icon name="award" size={14} color={colors.successText} />
                 </View>
                 <View style={styles.sheetSectionText}>
                   <Text style={styles.sheetSectionTitle}>Contrats signes</Text>
@@ -321,7 +321,7 @@ function EditPorteSheet({
                     }))
                   }
                 >
-                  <Feather name="minus" size={16} color={colors.text} />
+                  <Icon name="minus" size={16} color={colors.text} />
                 </Pressable>
                 <View style={styles.counterValueWrap}>
                   <Text style={styles.counterValue}>{editForm.nbContrats}</Text>
@@ -336,7 +336,7 @@ function EditPorteSheet({
                     }))
                   }
                 >
-                  <Feather name="plus" size={16} color={colors.text} />
+                  <Icon name="plus" size={16} color={colors.text} />
                 </Pressable>
               </View>
             </View>
@@ -345,7 +345,7 @@ function EditPorteSheet({
           <View style={commentSectionStyle}>
             <View style={styles.sheetSectionHeader}>
               <View style={commentIconStyle}>
-                <Feather
+                <Icon
                   name="message-square"
                   size={14}
                   color={isArgumente ? colors.warningText : colors.primary}

@@ -1,5 +1,5 @@
-import { Feather } from "@expo/vector-icons";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Icon } from "@/components/ui";
 import {
   ActivityIndicator,
   Alert,
@@ -248,10 +248,10 @@ function FloorCard({
           {etage}
         </Text>
         {locked ? (
-          <Feather name="lock" size={14} color={colors.textSubtle} />
+          <Icon name="lock" size={14} color={colors.textSubtle} />
         ) : isComplete ? (
           <View style={styles.floorCardCheck}>
-            <Feather name="check" size={9} color="#FFFFFF" />
+            <Icon name="check" size={9} color="#FFFFFF" />
           </View>
         ) : null}
       </View>
@@ -310,7 +310,7 @@ function PorteChip({
             { backgroundColor: `${status.accent}1A` },
           ]}
         >
-          <Feather name={status.icon} size={12} color={status.accent} />
+          <Icon name={status.icon} size={12} color={status.accent} />
         </View>
       </View>
       <Text
@@ -535,7 +535,7 @@ function NamingView({
               accessibilityLabel={`Retour aux ${terms.unitLabelPlural}`}
               hitSlop={10}
             >
-              <Feather name="chevron-left" size={22} color={colors.text} />
+              <Icon name="chevron-left" size={22} color={colors.text} />
             </Pressable>
           ) : (
             <Pressable
@@ -545,7 +545,7 @@ function NamingView({
               accessibilityLabel="Fermer"
               hitSlop={10}
             >
-              <Feather name="x" size={20} color={colors.text} />
+              <Icon name="x" size={20} color={colors.text} />
             </Pressable>
           )}
           {terms.isMaison ? (
@@ -666,7 +666,7 @@ function NamingView({
                     accessibilityLabel="Diminuer le numéro"
                     hitSlop={6}
                   >
-                    <Feather name="minus" size={18} color={colors.text} />
+                    <Icon name="minus" size={18} color={colors.text} />
                   </Pressable>
                   <View style={styles.newPorteNumWrap}>
                     <Text style={styles.newPorteEyebrow}>Numéro de porte</Text>
@@ -698,7 +698,7 @@ function NamingView({
                     accessibilityLabel="Augmenter le numéro"
                     hitSlop={6}
                   >
-                    <Feather name="plus" size={18} color={colors.textOnPrimary} />
+                    <Icon name="plus" size={18} color={colors.textOnPrimary} />
                   </Pressable>
                 </View>
                 {customNum !== null && customNum !== suggestedNum ? (
@@ -707,7 +707,7 @@ function NamingView({
                     style={styles.newPorteReset}
                     hitSlop={6}
                   >
-                    <Feather name="rotate-ccw" size={11} color={colors.textSubtle} />
+                    <Icon name="rotate-ccw" size={11} color={colors.textSubtle} />
                     <Text style={styles.newPorteResetText}>
                       Revenir à {suggestedNum}
                     </Text>
@@ -715,7 +715,7 @@ function NamingView({
                 ) : null}
                 {duplicatePorte ? (
                   <View style={styles.dupBox}>
-                    <Feather name="info" size={13} color={colors.warningText} />
+                    <Icon name="info" size={13} color={colors.warningText} />
                     <Text style={styles.dupText}>
                       Porte {duplicatePorte.numero} existe déjà
                       {duplicatePorte.etage !== selectedEtage
@@ -729,7 +729,7 @@ function NamingView({
 
               {error ? (
                 <View style={styles.errorBox}>
-                  <Feather name="alert-circle" size={13} color={colors.dangerText} />
+                  <Icon name="alert-circle" size={13} color={colors.dangerText} />
                   <Text style={styles.errorText}>{error}</Text>
                 </View>
               ) : null}
@@ -751,7 +751,7 @@ function NamingView({
                       : `Démarrer la porte ${effectiveNum}`}
                 </Text>
                 {!isCreating ? (
-                  <Feather name="arrow-right" size={18} color={colors.textOnPrimary} />
+                  <Icon name="arrow-right" size={18} color={colors.textOnPrimary} />
                 ) : null}
               </Pressable>
               {isFloorAtCapacity ? (
@@ -822,7 +822,7 @@ function ReadyView({
               accessibilityRole="button"
               hitSlop={10}
             >
-              <Feather name="chevron-left" size={22} color={colors.text} />
+              <Icon name="chevron-left" size={22} color={colors.text} />
             </Pressable>
             <View style={styles.stepBadge}>
               <View style={styles.dotDone} />
@@ -844,7 +844,7 @@ function ReadyView({
           <View style={[styles.porteCard, isTablet && styles.porteCardTablet]}>
             <View style={styles.porteCardTopRow}>
               <View style={styles.porteIconWrap}>
-                <Feather name="bell" size={20} color={colors.text} />
+                <Icon name="bell" size={20} color={colors.text} />
               </View>
               {terms.showFloors ? (
                 <View style={styles.porteEtageBadge}>
@@ -890,7 +890,7 @@ function ReadyView({
             accessibilityLabel="Démarrer la prospection de cette porte"
           >
             <View style={styles.startBtnIcon}>
-              <Feather name="arrow-right" size={18} color="#FFFFFF" />
+              <Icon name="arrow-right" size={18} color="#FFFFFF" />
             </View>
             <Text style={styles.startBtnText}>Prospection</Text>
           </Pressable>
@@ -1104,7 +1104,7 @@ function ActiveView({
                     { backgroundColor: colors.successSoft },
                   ]}
                 >
-                  <Feather name="award" size={14} color={colors.success} />
+                  <Icon name="award" size={14} color={colors.success} />
                 </View>
                 <Text style={styles.conditionalTitle}>Contrats signés</Text>
               </View>
@@ -1116,7 +1116,7 @@ function ActiveView({
                   }
                   hitSlop={6}
                 >
-                  <Feather name="minus" size={16} color={colors.text} />
+                  <Icon name="minus" size={16} color={colors.text} />
                 </Pressable>
                 <View style={styles.counterValueWrap}>
                   <Text style={styles.counterValue}>{nbContrats}</Text>
@@ -1127,7 +1127,7 @@ function ActiveView({
                   onPress={() => setNbContrats((v) => v + 1)}
                   hitSlop={6}
                 >
-                  <Feather name="plus" size={16} color={colors.textOnPrimary} />
+                  <Icon name="plus" size={16} color={colors.textOnPrimary} />
                 </Pressable>
               </View>
             </Animated.View>
@@ -1141,7 +1141,7 @@ function ActiveView({
                   { backgroundColor: "#F1F5F9" },
                 ]}
               >
-                <Feather name="edit-3" size={14} color="#475569" />
+                <Icon name="edit-3" size={14} color="#475569" />
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={styles.conditionalTitle}>Notes</Text>
@@ -1151,7 +1151,7 @@ function ActiveView({
               </View>
             </View>
             <View style={styles.inputWrap}>
-              <Feather name="user" size={14} color={colors.textMuted} />
+              <Icon name="user" size={14} color={colors.textMuted} />
               <TextInput
                 value={nomPersonnalise}
                 onChangeText={setNomPersonnalise}
@@ -1183,7 +1183,7 @@ function ActiveView({
           >
             <Text style={styles.ctaText}>{ctaLabel}</Text>
             {!isSaving && selectedStatus ? (
-              <Feather name="check" size={18} color={colors.textOnPrimary} />
+              <Icon name="check" size={18} color={colors.textOnPrimary} />
             ) : null}
           </Pressable>
 
@@ -1193,7 +1193,7 @@ function ActiveView({
             disabled={isSaving}
             hitSlop={6}
           >
-            <Feather name="x-circle" size={13} color={colors.textSubtle} />
+            <Icon name="x-circle" size={13} color={colors.textSubtle} />
             <Text style={styles.abortBtnText}>Annuler ce passage</Text>
           </Pressable>
         </ScrollView>

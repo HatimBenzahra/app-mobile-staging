@@ -4,9 +4,8 @@ import { useWorkspaceProfile } from "@/hooks/api/use-workspace-profile";
 import { authService } from "@/services/auth";
 import { dataSyncService } from "@/services/sync/data-sync.service";
 import type { Immeuble } from "@/types/api";
-import { Card, Chip, ErrorState, PressableCard, StatTile } from "@/components/ui";
+import { Card, Chip, ErrorState, PressableCard, StatTile, Icon } from "@/components/ui";
 import { colors } from "@/constants/theme";
-import { Feather } from "@expo/vector-icons";
 import { useIsFocused } from "@react-navigation/native";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -86,7 +85,7 @@ const RdvCard = memo(function RdvCard({ item, onPress }: RdvCardProps) {
     >
       <View style={styles.rowTop}>
         <View style={[styles.rowIcon, { backgroundColor: colors.primarySoft }]}>
-          <Feather name="clock" size={18} color={colors.primary} />
+          <Icon name="clock" size={18} color={colors.primary} />
         </View>
         <Text style={styles.rowTitle} numberOfLines={1}>
           Porte {item.numero}
@@ -95,7 +94,7 @@ const RdvCard = memo(function RdvCard({ item, onPress }: RdvCardProps) {
         <Text style={styles.rowTime}>{formatTime(item.rdvTime)}</Text>
       </View>
       <View style={styles.rowMeta}>
-        <Feather name="map-pin" size={11} color={colors.textSubtle} />
+        <Icon name="map-pin" size={11} color={colors.textSubtle} />
         <Text style={styles.rowMetaText} numberOfLines={1}>
           {formatEtage(item.etage)} · {item.adresse}
         </Text>
@@ -138,7 +137,7 @@ const RepassageCard = memo(function RepassageCard({ item, onPress }: RepassageCa
     >
       <View style={styles.rowTop}>
         <View style={[styles.rowIcon, { backgroundColor: accentSoft }]}>
-          <Feather
+          <Icon
             name={isAbsent ? "user-x" : "refresh-cw"}
             size={16}
             color={accentColor}
@@ -154,7 +153,7 @@ const RepassageCard = memo(function RepassageCard({ item, onPress }: RepassageCa
         />
       </View>
       <View style={styles.rowMeta}>
-        <Feather name="map-pin" size={11} color={colors.textSubtle} />
+        <Icon name="map-pin" size={11} color={colors.textSubtle} />
         <Text style={styles.rowMetaText} numberOfLines={1}>
           {formatEtage(item.etage)} · {item.adresse}
           {lastVisit ? ` · ${lastVisit}` : ""}
@@ -437,7 +436,7 @@ export default function AgendaScreen({
         <Card variant="elevated" padding="md">
           <View style={styles.heroRow}>
             <View style={styles.heroIconWrap}>
-              <Feather name="calendar" size={22} color={colors.primary} />
+              <Icon name="calendar" size={22} color={colors.primary} />
             </View>
             <View style={styles.heroTextWrap}>
               <Text style={styles.heroTitle}>Aujourd&apos;hui</Text>
@@ -479,7 +478,7 @@ export default function AgendaScreen({
               style={[styles.toggleBtn, activeSection === "rdv" && styles.toggleBtnActive]}
               onPress={() => setActiveSection("rdv")}
             >
-              <Feather
+              <Icon
                 name="clock"
                 size={14}
                 color={activeSection === "rdv" ? colors.surface : colors.textMuted}
@@ -497,7 +496,7 @@ export default function AgendaScreen({
               style={[styles.toggleBtn, activeSection === "repassage" && styles.toggleBtnActive]}
               onPress={() => setActiveSection("repassage")}
             >
-              <Feather
+              <Icon
                 name="user-x"
                 size={14}
                 color={activeSection === "repassage" ? colors.surface : colors.textMuted}
@@ -516,7 +515,7 @@ export default function AgendaScreen({
           {activeItems.length === 0 ? (
             <View style={styles.emptyState}>
               <View style={styles.emptyIcon}>
-                <Feather
+                <Icon
                   name={activeSection === "rdv" ? "calendar" : "user-x"}
                   size={32}
                   color={colors.borderStrong}

@@ -1,7 +1,6 @@
-import { Card } from "@/components/ui";
+import { Card, Icon } from "@/components/ui";
 import { colors, fontSize, fontWeight, radius, spacing } from "@/constants/theme";
 import type { Zone } from "@/types/api";
-import { Feather } from "@expo/vector-icons";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { polygonAreaKm2 } from "./geo-hull";
@@ -44,7 +43,7 @@ export default function ZoneSheet({ zone, open, onClose, onViewDetail }: ZoneShe
     >
       <View style={sheetStyles.header}>
         <View style={[sheetStyles.headerIcon, styles.headerIconInfo]}>
-          <Feather name="grid" size={22} color={colors.info} />
+          <Icon name="grid" size={22} color={colors.info} />
         </View>
         <View style={sheetStyles.headerText}>
           <Text style={sheetStyles.title} numberOfLines={1}>
@@ -66,7 +65,7 @@ export default function ZoneSheet({ zone, open, onClose, onViewDetail }: ZoneShe
           accessibilityRole="button"
           accessibilityLabel="Fermer"
         >
-          <Feather name="x" size={18} color={colors.textStrong} />
+          <Icon name="x" size={18} color={colors.textStrong} />
         </Pressable>
       </View>
 
@@ -75,7 +74,7 @@ export default function ZoneSheet({ zone, open, onClose, onViewDetail }: ZoneShe
         onPress={() => onViewDetail(zone.id)}
         accessibilityRole="button"
       >
-        <Feather name="eye" size={18} color={colors.info} />
+        <Icon name="eye" size={18} color={colors.info} />
         <Text style={styles.actionText}>Voir le détail</Text>
       </Pressable>
     </Card>

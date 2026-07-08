@@ -3,17 +3,7 @@ import { useWorkspaceProfile } from "@/hooks/api/use-workspace-profile";
 import { authService } from "@/services/auth";
 import { dataSyncService } from "@/services/sync/data-sync.service";
 import type { TimelinePoint } from "@/types/api";
-import {
-  Card,
-  Chip,
-  ErrorState,
-  Funnel,
-  IconBadge,
-  PeriodSelector,
-  PressableCard,
-  StatTile,
-  useToast,
-} from "@/components/ui";
+import { Card, Chip, ErrorState, Funnel, IconBadge, PeriodSelector, PressableCard, StatTile, useToast, Icon } from "@/components/ui";
 import { colors, fontSize, fontWeight, radius, spacing } from "@/constants/theme";
 import {
   buildConversionFunnel,
@@ -30,7 +20,6 @@ import {
   type StatsPeriod,
   type PeriodRange,
 } from "@/utils/stats";
-import { Feather } from "@expo/vector-icons";
 import { useIsFocused } from "@react-navigation/native";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -842,15 +831,15 @@ export default function StatistiquesScreen({
               </View>
               <View style={styles.weekNav}>
                 <Pressable onPress={() => setWeekOffset((w) => w - 1)} style={styles.weekNavBtn}>
-                  <Feather name="chevron-left" size={18} color={colors.primary} />
+                  <Icon name="chevron-left" size={18} color={colors.primary} />
                 </Pressable>
                 {weekOffset !== 0 && (
                   <Pressable onPress={() => { setWeekOffset(0); setSelectedDay(todayKey); }} style={styles.weekNavBtn}>
-                    <Feather name="rotate-ccw" size={14} color={colors.primary} />
+                    <Icon name="rotate-ccw" size={14} color={colors.primary} />
                   </Pressable>
                 )}
                 <Pressable onPress={() => setWeekOffset((w) => w + 1)} style={styles.weekNavBtn}>
-                  <Feather name="chevron-right" size={18} color={colors.primary} />
+                  <Icon name="chevron-right" size={18} color={colors.primary} />
                 </Pressable>
               </View>
             </View>
@@ -889,7 +878,7 @@ export default function StatistiquesScreen({
 
             {selectedDayRdvs.length === 0 ? (
               <View style={styles.rdvEmpty}>
-                <Feather name="calendar" size={28} color={colors.borderStrong} />
+                <Icon name="calendar" size={28} color={colors.borderStrong} />
                 <Text style={styles.rdvEmptyText}>Aucun rendez-vous</Text>
               </View>
             ) : (
@@ -917,7 +906,7 @@ export default function StatistiquesScreen({
                         {item.etage === 0 ? "RDC" : `${item.etage}${item.etage === 1 ? "er" : "ème"} étage`}
                       </Text>
                       <View style={styles.rdvAddressRow}>
-                        <Feather name="map-pin" size={11} color={colors.textSubtle} />
+                        <Icon name="map-pin" size={11} color={colors.textSubtle} />
                         <Text style={styles.rdvAddressText} numberOfLines={1}>{item.adresse}</Text>
                       </View>
                       {item.commentaire ? (
@@ -925,7 +914,7 @@ export default function StatistiquesScreen({
                       ) : null}
                     </View>
                     <View style={styles.rdvChevron}>
-                      <Feather name="chevron-right" size={16} color={colors.borderStrong} />
+                      <Icon name="chevron-right" size={16} color={colors.borderStrong} />
                     </View>
                   </PressableCard>
                 ))}

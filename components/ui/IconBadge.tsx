@@ -1,5 +1,5 @@
-import { Feather } from "@expo/vector-icons";
 import { StyleSheet, type StyleProp, View, type ViewStyle } from "react-native";
+import { Icon, type IconName } from "./Icon";
 import { colors, radius } from "@/constants/theme";
 
 export type IconBadgeTone =
@@ -15,7 +15,7 @@ export type IconBadgeTone =
 export type IconBadgeSize = "sm" | "md" | "lg";
 
 type Props = {
-  icon: keyof typeof Feather.glyphMap;
+  icon: IconName;
   tone?: IconBadgeTone;
   size?: IconBadgeSize;
   style?: StyleProp<ViewStyle>;
@@ -68,7 +68,7 @@ export function IconBadge({ icon, tone = "primary", size = "md", style }: Props)
         style,
       ]}
     >
-      <Feather name={icon} size={iconSize} color={fg} />
+      <Icon name={icon} size={iconSize} color={fg} />
     </View>
   );
 }

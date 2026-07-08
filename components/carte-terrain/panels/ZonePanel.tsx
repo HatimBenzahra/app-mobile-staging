@@ -1,8 +1,7 @@
-import { Card, Chip } from "@/components/ui";
+import { Card, Chip, Icon } from "@/components/ui";
 import { colors } from "@/constants/theme";
 import type { DraftPin } from "@/hooks/carte-terrain/types";
 import type { ZoneAssignable } from "@/hooks/zone/use-zone-draft";
-import { Feather } from "@expo/vector-icons";
 import { useState } from "react";
 import {
   ActivityIndicator,
@@ -79,11 +78,11 @@ export function ZonePanel({
         </View>
         {activeZonePinId ? (
           <Pressable style={styles.pinBadge} onPress={onRemoveActiveZonePin}>
-            <Feather name="trash-2" size={16} color={colors.danger} />
+            <Icon name="trash-2" size={16} color={colors.danger} />
           </Pressable>
         ) : (
           <View style={styles.pinBadge}>
-            <Feather name="grid" size={16} color={colors.danger} />
+            <Icon name="grid" size={16} color={colors.danger} />
           </View>
         )}
       </View>
@@ -147,7 +146,7 @@ export function ZonePanel({
         ) : (
           <>
             <Text style={styles.createText}>Créer la zone</Text>
-            <Feather name="arrow-right" size={16} color={colors.textOnPrimary} />
+            <Icon name="arrow-right" size={16} color={colors.textOnPrimary} />
           </>
         )}
       </Pressable>

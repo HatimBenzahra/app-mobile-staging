@@ -1,5 +1,5 @@
-import { Feather } from "@expo/vector-icons";
 import { memo, useEffect, useState } from "react";
+import { Icon } from "@/components/ui";
 import { StyleSheet, Text, View } from "react-native";
 import { colors } from "@/constants/theme";
 
@@ -65,7 +65,7 @@ function LiveSegmentHeaderImpl({
       </View>
       <View style={styles.chrono}>
         <View style={styles.chronoLabelRow}>
-          <Feather name="clock" size={11} color={colors.textMuted} />
+          <Icon name="clock" size={11} color={colors.textMuted} />
           <Text style={styles.chronoLabel}>Chrono</Text>
         </View>
         <Text style={styles.chronoText}>{formatChrono(elapsedMs)}</Text>

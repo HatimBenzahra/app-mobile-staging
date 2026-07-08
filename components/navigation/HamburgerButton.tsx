@@ -1,5 +1,5 @@
 import { useHamburgerMenu } from "@/hooks/use-hamburger-menu";
-import { Feather } from "@expo/vector-icons";
+import { Icon } from "@/components/ui";
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import { Animated, Pressable, StyleSheet } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -66,7 +66,7 @@ export default function HamburgerButton({ position = "bottom-left" }: HamburgerB
         onPressOut={handlePressOut}
       >
         <Animated.View style={{ transform: [{ rotate: rotation }] }}>
-          <Feather name="menu" size={22} color="#FFFFFF" />
+          <Icon name="menu" size={22} color="#FFFFFF" />
         </Animated.View>
       </Pressable>
     </Animated.View>

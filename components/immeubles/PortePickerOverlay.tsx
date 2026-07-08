@@ -1,4 +1,3 @@
-import { Feather } from "@expo/vector-icons";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Animated,
@@ -12,7 +11,7 @@ import {
   useWindowDimensions,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Card, Chip, PressableCard } from "@/components/ui";
+import { Card, Chip, PressableCard, Icon } from "@/components/ui";
 import { colors } from "@/constants/theme";
 
 import {
@@ -122,7 +121,7 @@ export default function PortePickerOverlay({
 
             <View style={styles.header}>
               <View style={styles.headerIcon}>
-                <Feather name="trash-2" size={18} color={colors.danger} />
+                <Icon name="trash-2" size={18} color={colors.danger} />
               </View>
               <View style={styles.headerText}>
                 <Text style={styles.title}>{title}</Text>
@@ -134,7 +133,7 @@ export default function PortePickerOverlay({
                 hitSlop={10}
                 accessibilityLabel="Fermer"
               >
-                <Feather name="x" size={18} color={colors.textMuted} />
+                <Icon name="x" size={18} color={colors.textMuted} />
               </Pressable>
             </View>
 
@@ -149,7 +148,7 @@ export default function PortePickerOverlay({
             >
               {sections.length === 0 ? (
                 <Card variant="filled" padding="md" style={styles.emptyCardContainer}>
-                  <Feather name="inbox" size={20} color={colors.textSubtle} />
+                  <Icon name="inbox" size={20} color={colors.textSubtle} />
                   <Text style={styles.emptyText}>Aucune porte à supprimer</Text>
                 </Card>
               ) : (
@@ -204,7 +203,7 @@ export default function PortePickerOverlay({
                               </Text>
                               {isSelected ? (
                                 <View style={styles.tileCheck}>
-                                  <Feather
+                                  <Icon
                                     name="trash-2"
                                     size={12}
                                     color={colors.textOnPrimary}
@@ -259,7 +258,7 @@ export default function PortePickerOverlay({
                   if (selected) onSelect(selected);
                 }}
               >
-                <Feather name="trash-2" size={15} color={colors.textOnPrimary} />
+                <Icon name="trash-2" size={15} color={colors.textOnPrimary} />
                 <Text style={styles.confirmBtnText}>
                   {selected
                     ? `${confirmLabel} ${selected.numero}`

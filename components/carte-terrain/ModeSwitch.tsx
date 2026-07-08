@@ -1,11 +1,11 @@
 import { colors } from "@/constants/theme";
+import { Icon, type IconName } from "@/components/ui";
 import type { TerrainMode } from "@/hooks/carte-terrain/types";
-import { Feather } from "@expo/vector-icons";
 import { Pressable, Text, View } from "react-native";
 import type { EdgeInsets } from "react-native-safe-area-context";
 import { styles } from "./styles";
 
-type ModeMeta = { icon: keyof typeof Feather.glyphMap; label: string };
+type ModeMeta = { icon: IconName; label: string };
 
 const MODE_META: Record<TerrainMode, ModeMeta> = {
   VISUALISATION: { icon: "eye", label: "Voir" },
@@ -33,7 +33,7 @@ export function ModeSwitch({ insets, mode, onSelectMode }: ModeSwitchProps) {
             style={[styles.modeButton, selected && styles.modeButtonSelected]}
             onPress={() => onSelectMode(nextMode)}
           >
-            <Feather
+            <Icon
               name={meta.icon}
               size={15}
               color={selected ? colors.textOnPrimary : colors.primary}

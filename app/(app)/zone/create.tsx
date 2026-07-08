@@ -1,4 +1,5 @@
 import { CarteTerrainMap } from "@/components/carte-terrain/CarteTerrainMap";
+import { Icon } from "@/components/ui";
 import { TerrainMarkers } from "@/components/carte-terrain/TerrainMarkers";
 import { ZoneContour } from "@/components/carte-terrain/ZoneContour";
 import { ZoneDraft } from "@/components/carte-terrain/ZoneDraft";
@@ -6,7 +7,6 @@ import { ZoneVertexPins } from "@/components/carte-terrain/ZoneVertexPins";
 import { ZonePanel } from "@/components/carte-terrain/panels/ZonePanel";
 import { colors, fontSize, fontWeight, radius, spacing } from "@/constants/theme";
 import { useZoneDraft } from "@/hooks/zone/use-zone-draft";
-import { Feather } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useCallback, useState } from "react";
 import { ActivityIndicator, Alert, Pressable, StyleSheet, Text, View } from "react-native";
@@ -85,7 +85,7 @@ export default function ZoneCreateScreen() {
       {/* Header flottant : retour + titre. */}
       <View style={[styles.header, { top: insets.top + 8 }]}>
         <Pressable style={styles.iconFab} onPress={handleBack}>
-          <Feather name="chevron-left" size={22} color={colors.text} />
+          <Icon name="chevron-left" size={22} color={colors.text} />
         </Pressable>
         <Text style={styles.headerTitle} numberOfLines={1}>
           Nouvelle zone
@@ -94,7 +94,7 @@ export default function ZoneCreateScreen() {
 
       {/* Bandeau d'instruction + compteur de sommets. */}
       <View style={[styles.banner, { top: insets.top + 62 }]}>
-        <Feather
+        <Icon
           name={totalSommets < 3 ? "map-pin" : "check-circle"}
           size={16}
           color={totalSommets < 3 ? colors.info : colors.success}
@@ -115,14 +115,14 @@ export default function ZoneCreateScreen() {
           {loadingLocation ? (
             <ActivityIndicator size="small" color={colors.primary} />
           ) : (
-            <Feather name="crosshair" size={22} color={colors.primary} />
+            <Icon name="crosshair" size={22} color={colors.primary} />
           )}
         </Pressable>
         <Pressable
           style={[styles.fab, satellite && styles.fabActive]}
           onPress={handleToggleSatellite}
         >
-          <Feather
+          <Icon
             name="layers"
             size={22}
             color={satellite ? colors.textOnPrimary : colors.primary}
@@ -131,10 +131,10 @@ export default function ZoneCreateScreen() {
         {hasPins && (
           <>
             <Pressable style={styles.fab} onPress={removeLastZonePin}>
-              <Feather name="corner-up-left" size={20} color={colors.primary} />
+              <Icon name="corner-up-left" size={20} color={colors.primary} />
             </Pressable>
             <Pressable style={[styles.fab, styles.fabDanger]} onPress={clearZonePins}>
-              <Feather name="trash-2" size={20} color={colors.danger} />
+              <Icon name="trash-2" size={20} color={colors.danger} />
             </Pressable>
           </>
         )}

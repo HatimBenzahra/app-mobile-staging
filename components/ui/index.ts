@@ -1,5 +1,7 @@
 export { Card, PressableCard } from "./Card";
 export type { CardVariant, CardPadding } from "./Card";
+export { Icon } from "./Icon";
+export type { IconName } from "./Icon";
 export { IconBadge } from "./IconBadge";
 export type { IconBadgeTone, IconBadgeSize } from "./IconBadge";
 export { Chip } from "./Chip";

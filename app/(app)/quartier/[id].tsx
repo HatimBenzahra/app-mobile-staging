@@ -1,8 +1,8 @@
 import { getImmeubleProgress } from "@/components/immeubles/lieu-progress";
+import { Icon } from "@/components/ui";
 import { colors } from "@/constants/theme";
 import { useQuartiers } from "@/hooks/api/use-quartiers";
 import type { Immeuble } from "@/types/api";
-import { Feather } from "@expo/vector-icons";
 import {
   Camera,
   Map as MapLibreMap,
@@ -98,7 +98,7 @@ export default function QuartierDetailScreen() {
           onPress={() => router.push(`/lieu/${imm.id}`)}
         >
           <View style={[styles.lieuIcon, { backgroundColor: `${getTypeColor(imm)}1A` }]}>
-            <Feather
+            <Icon
               name={imm.typeHabitat === "MAISON" ? "home" : imm.typeHabitat === "PAVILLON" ? "grid" : "layers"}
               size={16}
               color={getTypeColor(imm)}
@@ -112,7 +112,7 @@ export default function QuartierDetailScreen() {
           </View>
           <View style={styles.lieuProgress}>
             <Text style={[styles.lieuPercent, { color }]}>{percent}%</Text>
-            <Feather name="chevron-right" size={16} color={colors.textSubtle} />
+            <Icon name="chevron-right" size={16} color={colors.textSubtle} />
           </View>
         </Pressable>
       );
@@ -155,7 +155,7 @@ export default function QuartierDetailScreen() {
       {/* Header */}
       <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
         <Pressable style={styles.backFab} onPress={() => router.back()}>
-          <Feather name="chevron-left" size={22} color={colors.text} />
+          <Icon name="chevron-left" size={22} color={colors.text} />
         </Pressable>
         <View style={styles.headerTitle}>
           <Text style={styles.headerNom} numberOfLines={1}>
@@ -241,7 +241,7 @@ export default function QuartierDetailScreen() {
         renderItem={renderLieuItem}
         ListEmptyComponent={
           <View style={styles.emptyBox}>
-            <Feather name="map-pin" size={28} color={colors.textSubtle} />
+            <Icon name="map-pin" size={28} color={colors.textSubtle} />
             <Text style={styles.emptyText}>Aucun lieu dans ce quartier</Text>
           </View>
         }

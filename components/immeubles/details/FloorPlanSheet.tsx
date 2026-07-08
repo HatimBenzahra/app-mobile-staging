@@ -1,5 +1,5 @@
-import { Feather } from "@expo/vector-icons";
 import { BottomSheetFlatList, BottomSheetModal } from "@gorhom/bottom-sheet";
+import { Icon, type IconName } from "@/components/ui";
 import type { ReactElement, RefObject } from "react";
 import { memo } from "react";
 import { Text, View } from "react-native";
@@ -13,7 +13,7 @@ type StatusOption = {
   bg: string;
   fg: string;
   accent: string;
-  icon: keyof typeof Feather.glyphMap;
+  icon: IconName;
 };
 
 type FloorPlanSheetProps = {
@@ -93,7 +93,7 @@ function FloorPlanSheet({
           <>
             <View style={styles.floorPlanHero}>
               <View style={styles.floorPlanHeroIcon}>
-                <Feather name="grid" size={22} color="#F97316" />
+                <Icon name="grid" size={22} color="#F97316" />
               </View>
               <View style={styles.floorPlanHeroText}>
                 <Text style={styles.floorPlanTitle}>{planTitle}</Text>

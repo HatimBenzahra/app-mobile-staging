@@ -1,13 +1,12 @@
 import { useWorkspaceProfile } from "@/hooks/api/use-workspace-profile";
 import { authService } from "@/services/auth";
 import type { Commercial, Manager } from "@/types/api";
-import { Feather } from "@expo/vector-icons";
 import { BottomSheetModal, BottomSheetView } from "@gorhom/bottom-sheet";
 import { useRouter } from "expo-router";
 import { forwardRef, useEffect, useMemo, useState } from "react";
 import { StyleSheet, Text, View, Pressable, useWindowDimensions } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Card, Chip } from "@/components/ui";
+import { Card, Chip, Icon } from "@/components/ui";
 import { colors, palette } from "@/constants/theme";
 import { APP_VERSION, APP_VERSION_LABEL } from "@/constants/version";
 
@@ -94,7 +93,7 @@ const ProfileSheet = forwardRef<BottomSheetModal, ProfileSheetProps>(
             <Text style={styles.sectionTitle}>Informations personnelles</Text>
             <Card variant="outlined" padding="md">
               <View style={styles.infoRow}>
-                <Feather name="mail" size={18} color={colors.textMuted} />
+                <Icon name="mail" size={18} color={colors.textMuted} />
                 <View style={styles.infoContent}>
                   <Text style={styles.infoLabel}>Email</Text>
                   <Text style={styles.infoValue}>{email}</Text>
@@ -102,7 +101,7 @@ const ProfileSheet = forwardRef<BottomSheetModal, ProfileSheetProps>(
               </View>
               <View style={styles.divider} />
               <View style={styles.infoRow}>
-                <Feather name="phone" size={18} color={colors.textMuted} />
+                <Icon name="phone" size={18} color={colors.textMuted} />
                 <View style={styles.infoContent}>
                   <Text style={styles.infoLabel}>Téléphone</Text>
                   <Text style={styles.infoValue}>{phone}</Text>
@@ -116,7 +115,7 @@ const ProfileSheet = forwardRef<BottomSheetModal, ProfileSheetProps>(
             <Card variant="filled" padding="md" style={styles.confirmCard}>
               <View style={styles.confirmHeader}>
                 <View style={styles.confirmIcon}>
-                  <Feather name="log-out" size={14} color={colors.danger} />
+                  <Icon name="log-out" size={14} color={colors.danger} />
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.confirmTitle}>Se déconnecter ?</Text>
@@ -144,7 +143,7 @@ const ProfileSheet = forwardRef<BottomSheetModal, ProfileSheetProps>(
                   ]}
                   onPress={handleLogout}
                 >
-                  <Feather name="log-out" size={15} color={colors.textOnPrimary} />
+                  <Icon name="log-out" size={15} color={colors.textOnPrimary} />
                   <Text style={styles.confirmBtnPrimaryText}>Confirmer</Text>
                 </Pressable>
               </View>
@@ -160,7 +159,7 @@ const ProfileSheet = forwardRef<BottomSheetModal, ProfileSheetProps>(
               accessibilityLabel="Se déconnecter"
             >
               <View style={styles.logoutRowIcon}>
-                <Feather name="log-out" size={16} color={colors.danger} />
+                <Icon name="log-out" size={16} color={colors.danger} />
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={styles.logoutRowLabel}>Se déconnecter</Text>
@@ -168,7 +167,7 @@ const ProfileSheet = forwardRef<BottomSheetModal, ProfileSheetProps>(
                   Quitter la session sur cet appareil
                 </Text>
               </View>
-              <Feather name="chevron-right" size={18} color="#FCA5A5" />
+              <Icon name="chevron-right" size={18} color="#FCA5A5" />
             </Pressable>
           )}
 

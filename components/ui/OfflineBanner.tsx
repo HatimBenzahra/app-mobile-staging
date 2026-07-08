@@ -1,5 +1,5 @@
 import NetInfo, { type NetInfoState } from "@react-native-community/netinfo";
-import { Feather } from "@expo/vector-icons";
+import { Icon } from "./Icon";
 import { useEffect, useRef, useState } from "react";
 import { Animated, Easing, StyleSheet, Text } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -76,7 +76,7 @@ export function OfflineBanner() {
         },
       ]}
     >
-      <Feather name="wifi-off" size={14} color={colors.textOnPrimary} />
+      <Icon name="wifi-off" size={14} color={colors.textOnPrimary} />
       <Text style={styles.label}>Connexion perdue — mode hors ligne</Text>
     </Animated.View>
   );

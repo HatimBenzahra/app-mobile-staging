@@ -1,13 +1,7 @@
 import { CarteTerrainMap } from "@/components/carte-terrain/CarteTerrainMap";
 import { zoneBounds } from "@/components/carte-terrain/geo-hull";
 import { ZoneContour } from "@/components/carte-terrain/ZoneContour";
-import {
-  Card,
-  Chip,
-  type ChipTone,
-  ErrorState,
-  StatTile,
-} from "@/components/ui";
+import { Card, Chip, type ChipTone, ErrorState, StatTile, Icon, type IconName } from "@/components/ui";
 import {
   DEFAULT_STATUS_OPTION,
   STATUS_DISPLAY,
@@ -23,7 +17,6 @@ import { useWorkspaceProfile } from "@/hooks/api/use-workspace-profile";
 import { authService } from "@/services/auth";
 import type { Commercial, Manager, Zone } from "@/types/api";
 import type { ZoneProspection } from "@/types/graphql-schema";
-import { Feather } from "@expo/vector-icons";
 import { type CameraRef } from "@maplibre/maplibre-react-native";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -38,7 +31,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 type StatTileData = {
   key: string;
-  icon: keyof typeof Feather.glyphMap;
+  icon: IconName;
   label: string;
   value: string | number;
 };
@@ -424,11 +417,11 @@ export function ZoneDetailView({ zoneId, onBack }: ZoneDetailViewProps) {
           </Text>
           <View style={styles.prospectionMeta}>
             <View style={styles.metaItem}>
-              <Feather name="clock" size={12} color={colors.textMuted} />
+              <Icon name="clock" size={12} color={colors.textMuted} />
               <Text style={styles.metaText}>{formatDate(item.date)}</Text>
             </View>
             <View style={styles.metaItem}>
-              <Feather name="watch" size={12} color={colors.textMuted} />
+              <Icon name="watch" size={12} color={colors.textMuted} />
               <Text style={styles.metaText}>
                 {formatDuration(item.dureeSec)}
               </Text>
@@ -577,7 +570,7 @@ export function ZoneDetailView({ zoneId, onBack }: ZoneDetailViewProps) {
                     </Text>
                   </View>
                   {canExpand ? (
-                    <Feather
+                    <Icon
                       name={isExpanded ? "chevron-up" : "chevron-down"}
                       size={18}
                       color={colors.textMuted}
@@ -645,7 +638,7 @@ export function ZoneDetailView({ zoneId, onBack }: ZoneDetailViewProps) {
       {/* Header */}
       <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
         <Pressable style={styles.backFab} onPress={onBack}>
-          <Feather name="chevron-left" size={22} color={colors.text} />
+          <Icon name="chevron-left" size={22} color={colors.text} />
         </Pressable>
         <View style={styles.headerTitle}>
           <Text style={styles.headerNom} numberOfLines={1}>
@@ -675,7 +668,7 @@ export function ZoneDetailView({ zoneId, onBack }: ZoneDetailViewProps) {
         ListEmptyComponent={
           !hasError ? (
             <View style={styles.emptyBox}>
-              <Feather name="inbox" size={28} color={colors.textSubtle} />
+              <Icon name="inbox" size={28} color={colors.textSubtle} />
               <Text style={styles.emptyText}>Aucune prospection</Text>
             </View>
           ) : null

@@ -1,5 +1,5 @@
-import { Feather } from "@expo/vector-icons";
 import { memo, useCallback, useEffect } from "react";
+import { Icon } from "@/components/ui";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { colors } from "@/constants/theme";
 import Animated, {
@@ -98,7 +98,7 @@ function PorteTileImpl({ porte, onPress, isTablet = false, highlighted = false }
               },
             ]}
           >
-            <Feather name={status.icon} size={14} color={status.accent} />
+            <Icon name={status.icon} size={14} color={status.accent} />
           </View>
         </View>
 
@@ -111,7 +111,7 @@ function PorteTileImpl({ porte, onPress, isTablet = false, highlighted = false }
           </Text>
           {porte.commentaire ? (
             <View style={styles.commentChip}>
-              <Feather name="message-circle" size={9} color={colors.textMuted} />
+              <Icon name="message-circle" size={9} color={colors.textMuted} />
             </View>
           ) : null}
         </View>

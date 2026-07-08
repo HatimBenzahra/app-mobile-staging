@@ -1,7 +1,7 @@
 import ProwinLogo from "@/components/navigation/ProwinLogo";
+import { Icon } from "@/components/ui";
 import { colors, gradients } from "@/constants/theme";
 import { authService } from "@/services/auth";
-import { Feather } from "@expo/vector-icons";
 import Constants from "expo-constants";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
@@ -130,7 +130,7 @@ export default function LoginScreen() {
 
               {error ? (
                 <View style={styles.errorBox}>
-                  <Feather name="alert-circle" size={15} color="#B91C1C" />
+                  <Icon name="alert-circle" size={15} color="#B91C1C" />
                   <Text style={styles.errorText}>{error}</Text>
                 </View>
               ) : null}
@@ -144,7 +144,7 @@ export default function LoginScreen() {
                       { height: inputHeight },
                     ]}
                   >
-                    <Feather
+                    <Icon
                       name="user"
                       size={18}
                       color="#94A3B8"
@@ -173,7 +173,7 @@ export default function LoginScreen() {
                       { height: inputHeight },
                     ]}
                   >
-                    <Feather
+                    <Icon
                       name="lock"
                       size={18}
                       color="#94A3B8"
@@ -204,7 +204,7 @@ export default function LoginScreen() {
                           : "Afficher le mot de passe"
                       }
                     >
-                      <Feather
+                      <Icon
                         name={showPassword ? "eye-off" : "eye"}
                         size={18}
                         color="#64748B"
@@ -235,7 +235,7 @@ export default function LoginScreen() {
                     ) : (
                       <>
                         <Text style={styles.ctaText}>Se connecter</Text>
-                        <Feather name="arrow-right" size={18} color="#FFFFFF" />
+                        <Icon name="arrow-right" size={18} color="#FFFFFF" />
                       </>
                     )}
                   </LinearGradient>

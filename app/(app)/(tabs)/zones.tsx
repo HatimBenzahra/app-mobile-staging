@@ -1,4 +1,4 @@
-import { Card, Chip } from "@/components/ui";
+import { Card, Chip, Icon } from "@/components/ui";
 import {
   ZoneListCard,
   type ZoneCommercial,
@@ -11,7 +11,6 @@ import { useZoneDetailPanel } from "@/hooks/use-zone-detail-panel";
 import { authService } from "@/services/auth";
 import { dataSyncService } from "@/services/sync/data-sync.service";
 import type { Manager } from "@/types/api";
-import { Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useIsFocused } from "@react-navigation/native";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -233,7 +232,7 @@ export default function ZonesScreen() {
     return (
       <View style={[styles.container, { paddingTop: insets.top + 24 }]}>
         <Card variant="outlined" padding="lg" style={styles.stateCard}>
-          <Feather name="loader" size={28} color={colors.textSubtle} />
+          <Icon name="loader" size={28} color={colors.textSubtle} />
           <Text style={styles.stateTitle}>Chargement</Text>
           <Text style={styles.stateText}>Récupération de vos zones...</Text>
         </Card>
@@ -254,7 +253,7 @@ export default function ZonesScreen() {
       }
     >
       <View style={styles.searchBar}>
-        <Feather name="search" size={18} color={colors.textSubtle} />
+        <Icon name="search" size={18} color={colors.textSubtle} />
         <TextInput
           style={styles.searchInput}
           placeholder="Rechercher une zone"
@@ -266,7 +265,7 @@ export default function ZonesScreen() {
         />
         {search.length > 0 ? (
           <Pressable onPress={() => setSearch("")} hitSlop={8}>
-            <Feather name="x" size={18} color={colors.textSubtle} />
+            <Icon name="x" size={18} color={colors.textSubtle} />
           </Pressable>
         ) : null}
       </View>
@@ -348,14 +347,14 @@ export default function ZonesScreen() {
             router.push("/zone/create" as Parameters<typeof router.push>[0])
           }
         >
-          <Feather name="plus" size={18} color={colors.textOnPrimary} />
+          <Icon name="plus" size={18} color={colors.textOnPrimary} />
           <Text style={styles.createText}>Créer une zone</Text>
         </Pressable>
       ) : null}
 
       {visibleZones.length === 0 ? (
         <Card variant="outlined" padding="lg" style={styles.stateCard}>
-          <Feather name="layers" size={28} color={colors.textSubtle} />
+          <Icon name="layers" size={28} color={colors.textSubtle} />
           <Text style={styles.stateTitle}>
             {zones.length === 0
               ? "Aucune zone"

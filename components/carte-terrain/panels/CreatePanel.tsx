@@ -1,11 +1,10 @@
-import { Card } from "@/components/ui";
+import { Card, Icon } from "@/components/ui";
 import { HabitatIcon } from "@/components/immeubles/habitat-icon";
 import { colors } from "@/constants/theme";
 import { habitatOptions } from "@/hooks/carte-terrain/constants";
 import { formatSuggestion } from "@/hooks/carte-terrain/helpers";
 import type { AdresseFeature, CreateStep, DraftPin, TerrainMode } from "@/hooks/carte-terrain/types";
 import type { TypeHabitat } from "@/types/api";
-import { Feather } from "@expo/vector-icons";
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -57,11 +56,11 @@ function Stepper({ label, value, min = 1, onChange }: StepperProps) {
       <Text style={styles.stepperLabel}>{label}</Text>
       <View style={styles.stepperControls}>
         <Pressable style={styles.stepperButton} onPress={() => onChange(Math.max(min, value - 1))}>
-          <Feather name="minus" size={16} color={colors.primary} />
+          <Icon name="minus" size={16} color={colors.primary} />
         </Pressable>
         <Text style={styles.stepperValue}>{value}</Text>
         <Pressable style={styles.stepperButton} onPress={() => onChange(value + 1)}>
-          <Feather name="plus" size={16} color={colors.primary} />
+          <Icon name="plus" size={16} color={colors.primary} />
         </Pressable>
       </View>
     </View>
@@ -153,11 +152,11 @@ export function CreatePanel({
           </View>
           {activeQuartierPinId ? (
             <Pressable style={styles.pinBadge} onPress={onRemoveActiveQuartierPin}>
-              <Feather name="trash-2" size={16} color={colors.danger} />
+              <Icon name="trash-2" size={16} color={colors.danger} />
             </Pressable>
           ) : (
             <View style={styles.pinBadge}>
-              <Feather name="map-pin" size={16} color={colors.danger} />
+              <Icon name="map-pin" size={16} color={colors.danger} />
             </View>
           )}
         </View>
@@ -179,7 +178,7 @@ export function CreatePanel({
                   <Text style={[styles.pinChipText, selected && styles.pinChipTextSelected]}>
                     {index + 1}
                   </Text>
-                  <Feather
+                  <Icon
                     name={pin.selectedAddress ? "check" : "alert-circle"}
                     size={13}
                     color={selected ? colors.textOnPrimary : colors.textStrong}
@@ -237,7 +236,7 @@ export function CreatePanel({
             )}
 
             <View style={styles.searchField}>
-              <Feather name="search" size={16} color={colors.textMuted} />
+              <Icon name="search" size={16} color={colors.textMuted} />
               <TextInput
                 style={styles.searchInput}
                 value={query}
@@ -249,7 +248,7 @@ export function CreatePanel({
               />
               {query.length > 0 && (
                 <Pressable onPress={() => setQuery("")}>
-                  <Feather name="x" size={16} color={colors.textMuted} />
+                  <Icon name="x" size={16} color={colors.textMuted} />
                 </Pressable>
               )}
             </View>
@@ -311,7 +310,7 @@ export function CreatePanel({
           ) : (
             <>
               <Text style={styles.createText}>Créer le quartier</Text>
-              <Feather name="arrow-right" size={16} color={colors.textOnPrimary} />
+              <Icon name="arrow-right" size={16} color={colors.textOnPrimary} />
             </>
           )}
         </Pressable>
@@ -329,7 +328,7 @@ export function CreatePanel({
             <Text style={styles.panelHint}>Touche la carte pour poser le repère.</Text>
           </View>
           <View style={styles.pinBadge}>
-            <Feather name="map-pin" size={16} color={colors.danger} />
+            <Icon name="map-pin" size={16} color={colors.danger} />
           </View>
         </View>
       </Card>
@@ -417,7 +416,7 @@ export function CreatePanel({
 
           <Pressable style={styles.createButton} onPress={() => setStep("adresse")}>
             <Text style={styles.createText}>Continuer</Text>
-            <Feather name="arrow-right" size={16} color={colors.textOnPrimary} />
+            <Icon name="arrow-right" size={16} color={colors.textOnPrimary} />
           </Pressable>
         </>
       )}
@@ -428,7 +427,7 @@ export function CreatePanel({
           <Text style={styles.panelHint}>{"Déplace le repère ou cherche l'adresse."}</Text>
 
           <View style={styles.searchField}>
-            <Feather name="search" size={16} color={colors.textMuted} />
+            <Icon name="search" size={16} color={colors.textMuted} />
             <TextInput
               style={styles.searchInput}
               value={query}
@@ -440,7 +439,7 @@ export function CreatePanel({
             />
             {query.length > 0 && (
               <Pressable onPress={() => setQuery("")}>
-                <Feather name="x" size={16} color={colors.textMuted} />
+                <Icon name="x" size={16} color={colors.textMuted} />
               </Pressable>
             )}
           </View>
@@ -464,7 +463,7 @@ export function CreatePanel({
                   >
                     {selected && (
                       <View style={styles.addressCheck}>
-                        <Feather name="check" size={12} color={colors.textOnPrimary} />
+                        <Icon name="check" size={12} color={colors.textOnPrimary} />
                       </View>
                     )}
                     <View style={{ flex: 1 }}>
@@ -487,7 +486,7 @@ export function CreatePanel({
 
           <View style={styles.wizardActions}>
             <Pressable style={styles.wizardBackButton} onPress={() => setStep("type")}>
-              <Feather name="arrow-left" size={16} color={colors.primary} />
+              <Icon name="arrow-left" size={16} color={colors.primary} />
               <Text style={styles.wizardBackText}>Retour</Text>
             </Pressable>
             <Pressable
@@ -496,7 +495,7 @@ export function CreatePanel({
               disabled={!activePin.selectedAddress}
             >
               <Text style={styles.createText}>Continuer</Text>
-              <Feather name="arrow-right" size={16} color={colors.textOnPrimary} />
+              <Icon name="arrow-right" size={16} color={colors.textOnPrimary} />
             </Pressable>
           </View>
         </>
@@ -532,7 +531,7 @@ export function CreatePanel({
 
           <View style={styles.wizardActions}>
             <Pressable style={styles.wizardBackButton} onPress={() => setStep("adresse")}>
-              <Feather name="arrow-left" size={16} color={colors.primary} />
+              <Icon name="arrow-left" size={16} color={colors.primary} />
               <Text style={styles.wizardBackText}>Modifier</Text>
             </Pressable>
             <Pressable
@@ -545,7 +544,7 @@ export function CreatePanel({
               ) : (
                 <>
                   <Text style={styles.createText}>Créer &amp; commencer</Text>
-                  <Feather name="arrow-right" size={16} color={colors.textOnPrimary} />
+                  <Icon name="arrow-right" size={16} color={colors.textOnPrimary} />
                 </>
               )}
             </Pressable>

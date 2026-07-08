@@ -1,5 +1,4 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Feather } from "@expo/vector-icons";
 import { useIsFocused } from "@react-navigation/native";
 import {
   Animated,
@@ -18,7 +17,7 @@ import { useMapFocus } from "@/hooks/use-map-focus";
 import type { Immeuble, StatusHistorique } from "@/types/api";
 import { api } from "@/services/api";
 import { dataSyncService } from "@/services/sync/data-sync.service";
-import { Card, Chip, ErrorState, IconBadge } from "@/components/ui";
+import { Card, Chip, ErrorState, IconBadge, Icon, type IconName } from "@/components/ui";
 import { colors, fontSize, fontWeight, radius, spacing } from "@/constants/theme";
 
 type Props = {
@@ -50,7 +49,7 @@ type StatusVisual = {
   bg: string;
   fg: string;
   accent: string;
-  icon: keyof typeof Feather.glyphMap;
+  icon: IconName;
 };
 
 const STATUS_VISUAL: Record<string, StatusVisual> = {
@@ -204,7 +203,7 @@ const EventRow = memo(function EventRow({
     >
       <View style={styles.rowRail}>
         <View style={[styles.rowDot, { backgroundColor: visual.accent }]}>
-          <Feather name={visual.icon} size={12} color={colors.surface} />
+          <Icon name={visual.icon} size={12} color={colors.surface} />
         </View>
       </View>
 
@@ -233,7 +232,7 @@ const EventRow = memo(function EventRow({
 
         {isRdv && rdvLabel ? (
           <View style={styles.rdvBlock}>
-            <Feather name="calendar" size={12} color={STATUS_VISUAL.RENDEZ_VOUS_PRIS.accent} />
+            <Icon name="calendar" size={12} color={STATUS_VISUAL.RENDEZ_VOUS_PRIS.accent} />
             <Text style={styles.rdvText}>{rdvLabel}</Text>
           </View>
         ) : null}
@@ -241,14 +240,14 @@ const EventRow = memo(function EventRow({
         <View style={styles.rowFooter}>
           {showAuthor && event.authorName ? (
             <View style={styles.authorTag}>
-              <Feather name="user" size={11} color={colors.textSubtle} />
+              <Icon name="user" size={11} color={colors.textSubtle} />
               <Text style={styles.authorText}>{event.authorName}</Text>
             </View>
           ) : (
             <View />
           )}
           <View style={styles.rowAction}>
-            <Feather
+            <Icon
               name={canLocate ? "map-pin" : "chevron-right"}
               size={13}
               color={colors.primary}
@@ -267,14 +266,14 @@ const EventRow = memo(function EventRow({
 // Bande de compteurs (légère, pas un dashboard)
 // ---------------------------------------------------------------------------
 
-type SummaryItem = { label: string; value: number; accent: string; icon: keyof typeof Feather.glyphMap };
+type SummaryItem = { label: string; value: number; accent: string; icon: IconName };
 
 const SummaryStrip = memo(function SummaryStrip({ items }: { items: SummaryItem[] }) {
   return (
     <View style={styles.summaryRow}>
       {items.map((item) => (
         <Card key={item.label} variant="elevated" padding="sm" style={styles.summaryCard}>
-          <Feather name={item.icon} size={14} color={item.accent} />
+          <Icon name={item.icon} size={14} color={item.accent} />
           <Text style={[styles.summaryValue, { color: item.accent }]}>{item.value}</Text>
           <Text style={styles.summaryLabel} numberOfLines={1}>
             {item.label}
@@ -572,7 +571,7 @@ export default function HistoriqueScreen({ onNavigateToImmeuble }: Props) {
     () => (
       <View style={styles.headerBlock}>
         <View style={styles.searchBar}>
-          <Feather name="search" size={16} color={colors.textMuted} />
+          <Icon name="search" size={16} color={colors.textMuted} />
           <TextInput
             style={styles.searchInput}
             value={query}
@@ -582,7 +581,7 @@ export default function HistoriqueScreen({ onNavigateToImmeuble }: Props) {
           />
           {query.length > 0 ? (
             <Pressable onPress={() => setQuery("")} hitSlop={8}>
-              <Feather name="x" size={16} color={colors.textMuted} />
+              <Icon name="x" size={16} color={colors.textMuted} />
             </Pressable>
           ) : null}
         </View>

@@ -1,5 +1,5 @@
-import { Feather } from "@expo/vector-icons";
 import { memo, useMemo } from "react";
+import { Icon } from "@/components/ui";
 import { StyleSheet, Text, View } from "react-native";
 import { colors } from "@/constants/theme";
 
@@ -103,7 +103,7 @@ function FloorSectionImpl({
             </Text>
             {isComplete ? (
               <View style={styles.completeChip}>
-                <Feather name="check" size={9} color={colors.successText} />
+                <Icon name="check" size={9} color={colors.successText} />
 
                 <Text style={styles.completeChipText}>Complet</Text>
               </View>

@@ -1,7 +1,6 @@
-import { Feather } from "@expo/vector-icons";
 import { useState } from "react";
 import { Image, StyleSheet, Text, View } from "react-native";
-import { ProgressBar } from "@/components/ui";
+import { ProgressBar, Icon } from "@/components/ui";
 import { colors, fontSize, fontWeight, radius, spacing } from "@/constants/theme";
 import type { BadgeDefinitionType } from "@/types/graphql-schema";
 import { categoryStyle, resolveBadgeIconUrl } from "@/utils/business/badgeVisuals";
@@ -30,7 +29,7 @@ export function NextBadgeRow({ badge, current, threshold, percent }: Props) {
             onError={() => setImgFailed(true)}
           />
         ) : (
-          <Feather name={style.fallbackIcon} size={18} color={style.text} />
+          <Icon name={style.fallbackIcon} size={18} color={style.text} />
         )}
       </View>
       <View style={styles.body}>

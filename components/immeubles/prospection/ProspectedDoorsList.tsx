@@ -1,5 +1,5 @@
-import { Feather } from "@expo/vector-icons";
 import { memo, useMemo, useState } from "react";
+import { Icon } from "@/components/ui";
 import { StyleSheet, Text, View } from "react-native";
 import { colors } from "@/constants/theme";
 
@@ -90,7 +90,7 @@ function ProspectedDoorsListImpl({
       {isEmpty ? (
         <View style={[styles.emptyCard, isTablet && styles.emptyCardTablet]}>
           <View style={styles.emptyIconBox}>
-            <Feather
+            <Icon
               name={hasFilters ? "filter" : "home"}
               size={22}
               color={colors.text}
@@ -108,7 +108,7 @@ function ProspectedDoorsListImpl({
           </Text>
           {!hasFilters ? (
             <View style={styles.emptyHintPill}>
-              <Feather name="arrow-down-right" size={13} color={colors.textSubtle} />
+              <Icon name="arrow-down-right" size={13} color={colors.textSubtle} />
               <Text style={styles.emptyHintText}>Nouvelle prospection</Text>
             </View>
           ) : null}

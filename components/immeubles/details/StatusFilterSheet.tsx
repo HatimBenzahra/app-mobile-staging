@@ -1,5 +1,5 @@
-import { Feather } from "@expo/vector-icons";
 import { BottomSheetModal, BottomSheetScrollView } from "@gorhom/bottom-sheet";
+import { Icon, type IconName } from "@/components/ui";
 import type { ReactElement, RefObject } from "react";
 import { memo } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
@@ -12,7 +12,7 @@ type StatusOption = {
   bg: string;
   fg: string;
   accent: string;
-  icon: keyof typeof Feather.glyphMap;
+  icon: IconName;
 };
 
 type StatusFilterSheetProps = {
@@ -86,7 +86,7 @@ function StatusFilterSheet({
             accessibilityRole="button"
             accessibilityLabel="Fermer"
           >
-            <Feather name="x" size={18} color={colors.text} />
+            <Icon name="x" size={18} color={colors.text} />
           </Pressable>
         </View>
 
@@ -101,7 +101,7 @@ function StatusFilterSheet({
           >
             <View style={s.rowLeft}>
               <View style={s.rowIconNeutral}>
-                <Feather name="layers" size={15} color={colors.text} />
+                <Icon name="layers" size={15} color={colors.text} />
               </View>
               <Text
                 style={[
@@ -115,7 +115,7 @@ function StatusFilterSheet({
             <View style={s.rowRight}>
               <Text style={s.countText}>{totalCount}</Text>
               {activeStatusFilter === null ? (
-                <Feather name="check" size={16} color={colors.text} />
+                <Icon name="check" size={16} color={colors.text} />
               ) : null}
             </View>
           </Pressable>
@@ -143,7 +143,7 @@ function StatusFilterSheet({
                       { backgroundColor: `${option.accent}1A` },
                     ]}
                   >
-                    <Feather
+                    <Icon
                       name={option.icon}
                       size={14}
                       color={option.accent}
@@ -169,7 +169,7 @@ function StatusFilterSheet({
                     {count}
                   </Text>
                   {isSelected ? (
-                    <Feather name="check" size={16} color={option.accent} />
+                    <Icon name="check" size={16} color={option.accent} />
                   ) : null}
                 </View>
               </Pressable>

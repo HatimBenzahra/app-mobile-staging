@@ -1,6 +1,6 @@
 import { colors } from "@/constants/theme";
+import { Icon } from "@/components/ui";
 import type { DraftPin, TerrainMode } from "@/hooks/carte-terrain/types";
-import { Feather } from "@expo/vector-icons";
 import { Marker } from "@maplibre/maplibre-react-native";
 import { memo, useMemo } from "react";
 import { Text, View } from "react-native";
@@ -56,7 +56,7 @@ export const DraftPins = memo(function DraftPins({
           anchor="bottom"
         >
           <View style={[styles.mapMarker, styles.newMapMarker]}>
-            <Feather name="map-pin" size={20} color={colors.textOnPrimary} />
+            <Icon name="map-pin" size={20} color={colors.textOnPrimary} />
           </View>
         </Marker>
       )}

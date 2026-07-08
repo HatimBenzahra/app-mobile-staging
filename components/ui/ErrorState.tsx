@@ -1,5 +1,5 @@
-import { Feather } from "@expo/vector-icons";
 import { Pressable, StyleSheet, Text } from "react-native";
+import { Icon } from "./Icon";
 import {
   colors,
   fontSize,
@@ -41,7 +41,7 @@ export function ErrorState({
           ]}
           accessibilityRole="button"
         >
-          <Feather name="refresh-cw" size={14} color={colors.textOnPrimary} />
+          <Icon name="refresh-cw" size={14} color={colors.textOnPrimary} />
           <Text style={styles.retryLabel}>{retryLabel}</Text>
         </Pressable>
       ) : null}

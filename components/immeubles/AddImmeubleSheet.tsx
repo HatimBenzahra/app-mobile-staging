@@ -1,7 +1,6 @@
-﻿import { Card } from "@/components/ui";
+﻿import { Card, Icon } from "@/components/ui";
 import { colors } from "@/constants/theme";
 import type { CreateImmeubleInput } from "@/types/api";
-import { Feather } from "@expo/vector-icons";
 import {
   BottomSheetBackdrop,
   BottomSheetModal,
@@ -335,7 +334,7 @@ export default function AddImmeubleSheet({
                 ]}
                 onPress={() => adresseInputRef.current?.focus()}
               >
-                <Feather
+                <Icon
                   name={isAddressSelected ? "check-circle" : "map-pin"}
                   size={16}
                   color={isAddressSelected ? colors.success : colors.textSubtle}
@@ -358,7 +357,7 @@ export default function AddImmeubleSheet({
                     }}
                     hitSlop={8}
                   >
-                    <Feather name="x" size={16} color={colors.textSubtle} />
+                    <Icon name="x" size={16} color={colors.textSubtle} />
                   </Pressable>
                 ) : null}
               </Pressable>
@@ -392,7 +391,7 @@ export default function AddImmeubleSheet({
                         onPress={() => selectAddress(suggestion)}
                       >
                         <View style={styles.suggestionIcon}>
-                          <Feather name="map-pin" size={14} color={colors.primary} />
+                          <Icon name="map-pin" size={14} color={colors.primary} />
                         </View>
                         <View style={styles.suggestionText}>
                           <Text
@@ -410,7 +409,7 @@ export default function AddImmeubleSheet({
                             </Text>
                           ) : null}
                         </View>
-                        <Feather
+                        <Icon
                           name="corner-down-left"
                           size={14}
                           color={colors.borderStrong}
@@ -475,7 +474,7 @@ export default function AddImmeubleSheet({
 
               <Card variant="filled" padding="md" style={styles.summaryCard}>
                 <View style={styles.summaryIcon}>
-                  <Feather name="layers" size={16} color={colors.primary} />
+                  <Icon name="layers" size={16} color={colors.primary} />
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.summaryLabel}>Capacité estimée</Text>
@@ -492,7 +491,7 @@ export default function AddImmeubleSheet({
             <>
               <Card variant="outlined" padding="md" style={styles.switchRow}>
                 <View style={styles.switchIcon}>
-                  <Feather name="chevrons-up" size={16} color={colors.primary} />
+                  <Icon name="chevrons-up" size={16} color={colors.primary} />
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.label}>Ascenseur</Text>
@@ -513,7 +512,7 @@ export default function AddImmeubleSheet({
               <View style={styles.field}>
                 <Text style={styles.label}>Code d'accès</Text>
                 <View style={styles.inputRow}>
-                  <Feather name="key" size={16} color={colors.textSubtle} />
+                  <Icon name="key" size={16} color={colors.textSubtle} />
                   <TextInput
                     placeholder="Ex: 1234A"
                     placeholderTextColor={colors.textSubtle}
@@ -538,7 +537,7 @@ export default function AddImmeubleSheet({
             ]}
             onPress={currentStep === 0 ? close : prevStep}
           >
-            <Feather
+            <Icon
               name={currentStep === 0 ? "x" : "chevron-left"}
               size={16}
               color={colors.textStrong}
@@ -563,7 +562,7 @@ export default function AddImmeubleSheet({
                 <Text style={styles.primaryText}>
                   {currentStep === STEPS.length - 1 ? "Créer l'immeuble" : "Suivant"}
                 </Text>
-                <Feather
+                <Icon
                   name={
                     currentStep === STEPS.length - 1
                       ? "check"

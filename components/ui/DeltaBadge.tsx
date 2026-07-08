@@ -1,5 +1,5 @@
-import { Feather } from "@expo/vector-icons";
 import { StyleSheet, Text, View } from "react-native";
+import { Icon, type IconName } from "./Icon";
 import { colors, fontSize, fontWeight, radius, spacing } from "@/constants/theme";
 import type { Delta, Trend } from "@/utils/stats";
 
@@ -10,7 +10,7 @@ type Props = {
   size?: "sm" | "md";
 };
 
-const trendColor: Record<Trend, { bg: string; fg: string; icon: keyof typeof Feather.glyphMap }> = {
+const trendColor: Record<Trend, { bg: string; fg: string; icon: IconName }> = {
   up: { bg: colors.successSoft, fg: colors.successText, icon: "arrow-up-right" },
   down: { bg: colors.dangerSoft, fg: colors.dangerText, icon: "arrow-down-right" },
   flat: { bg: colors.surfaceMuted, fg: colors.textMuted, icon: "minus" },
@@ -41,7 +41,7 @@ export function DeltaBadge({ delta, flatBehavior = "show", size = "sm" }: Props)
         },
       ]}
     >
-      <Feather name={t.icon} size={iconSize} color={t.fg} />
+      <Icon name={t.icon} size={iconSize} color={t.fg} />
       <Text style={[styles.text, { color: t.fg, fontSize: fontSizeValue }]}>
         {delta.formatted}
       </Text>

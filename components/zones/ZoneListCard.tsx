@@ -1,9 +1,8 @@
-import { PressableCard } from "@/components/ui";
+import { PressableCard, Icon } from "@/components/ui";
 import { polygonAreaKm2 } from "@/components/carte-terrain/geo-hull";
 import { colors, fontSize, fontWeight, radius, spacing } from "@/constants/theme";
 import type { ZoneForUser } from "@/services/api/zones/zone.service";
 import type { Commercial } from "@/types/api";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { memo, useMemo } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
@@ -85,7 +84,7 @@ function ZoneListCardBase({
     <PressableCard variant="outlined" padding="md" style={styles.card} onPress={onPress}>
       <View style={styles.top}>
         <View style={styles.icon}>
-          <MaterialCommunityIcons name="vector-polygon" size={18} color={colors.primary} />
+          <Icon name="vector-polygon" size={18} color={colors.primary} />
         </View>
 
         <View style={styles.titleBlock}>
@@ -104,14 +103,14 @@ function ZoneListCardBase({
             <Text style={[styles.pillText, { color: progressColor }]}>{percent}%</Text>
           </View>
         ) : (
-          <MaterialCommunityIcons name="chevron-right" size={22} color={colors.textSubtle} />
+          <Icon name="chevron-right" size={22} color={colors.textSubtle} />
         )}
       </View>
 
       {showCommercials && commercials.length > 0 ? (
         <View style={styles.bottomRow}>
           <View style={styles.assigned}>
-            <MaterialCommunityIcons name="account-multiple-outline" size={16} color={colors.textMuted} />
+            <Icon name="account-multiple-outline" size={16} color={colors.textMuted} />
             <Text style={styles.assignedLabel} numberOfLines={1}>
               Assignés
             </Text>

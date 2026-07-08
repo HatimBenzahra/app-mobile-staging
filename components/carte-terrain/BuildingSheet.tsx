@@ -1,4 +1,4 @@
-import { Card, Chip, ProgressBar } from "@/components/ui";
+import { Card, Chip, ProgressBar, Icon, type IconName } from "@/components/ui";
 import { HabitatIcon } from "@/components/immeubles/habitat-icon";
 import { getImmeubleProgress } from "@/components/immeubles/lieu-progress";
 import FloorSection from "@/components/immeubles/prospection/FloorSection";
@@ -15,7 +15,6 @@ import {
   getLieuTerms,
 } from "@/components/immeubles/lieu-terms";
 import type { Immeuble, Porte } from "@/types/api";
-import { Feather } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -53,7 +52,7 @@ type KpiTile = {
   key: string;
   label: string;
   value: number;
-  icon: keyof typeof Feather.glyphMap;
+  icon: IconName;
   accent: string;
   bg: string;
 };
@@ -86,7 +85,7 @@ function FilterChip({
   count: number;
   active: boolean;
   onPress: () => void;
-  icon?: keyof typeof Feather.glyphMap;
+  icon?: IconName;
   accent?: string;
 }) {
   const tint = accent ?? colors.primary;
@@ -104,7 +103,7 @@ function FilterChip({
       ]}
     >
       {icon ? (
-        <Feather name={icon} size={12} color={active ? colors.surface : tint} />
+        <Icon name={icon} size={12} color={active ? colors.surface : tint} />
       ) : null}
       <Text style={[styles.filterChipLabel, { color: active ? colors.surface : tint }]}>
         {label}
@@ -366,7 +365,7 @@ export default function BuildingSheet({
           accessibilityRole="button"
           accessibilityLabel="Fermer"
         >
-          <Feather name="x" size={18} color={colors.textStrong} />
+          <Icon name="x" size={18} color={colors.textStrong} />
         </Pressable>
       </View>
 
@@ -404,7 +403,7 @@ export default function BuildingSheet({
                 <View key={tile.key} style={[styles.kpiTile, { backgroundColor: tile.bg }]}>
                   <View style={styles.kpiTileHead}>
                     <View style={[styles.kpiTileIcon, { backgroundColor: tile.accent }]}>
-                      <Feather name={tile.icon} size={13} color={colors.surface} />
+                      <Icon name={tile.icon} size={13} color={colors.surface} />
                     </View>
                     <Text style={[styles.kpiTileValue, { color: tile.accent }]}>
                       {tile.value}
@@ -420,7 +419,7 @@ export default function BuildingSheet({
         ) : (
           <Card variant="outlined" padding="lg" style={styles.emptyCard}>
             <View style={styles.emptyIcon}>
-              <Feather name="inbox" size={22} color={colors.textSubtle} />
+              <Icon name="inbox" size={22} color={colors.textSubtle} />
             </View>
             <Text style={styles.emptyText}>Aucune donnée de portes</Text>
             <Text style={styles.emptySubtext}>
@@ -485,7 +484,7 @@ export default function BuildingSheet({
             </View>
           ) : (
             <View style={styles.filterEmpty}>
-              <Feather name="filter" size={18} color={colors.textSubtle} />
+              <Icon name="filter" size={18} color={colors.textSubtle} />
               <Text style={styles.filterEmptyText}>Aucune porte pour ce filtre</Text>
             </View>
           )
@@ -497,7 +496,7 @@ export default function BuildingSheet({
         {isMine ? (
           <>
             <Pressable style={styles.action} onPress={() => onProspect(immeuble)}>
-              <Feather name="arrow-right-circle" size={18} color={colors.primary} />
+              <Icon name="arrow-right-circle" size={18} color={colors.primary} />
               <Text style={styles.actionText}>Prospecter</Text>
             </Pressable>
             <Pressable
@@ -505,7 +504,7 @@ export default function BuildingSheet({
               onPress={() => onEdit?.(immeuble)}
               disabled={updatingLieu}
             >
-              <Feather name="edit-3" size={18} color={colors.primary} />
+              <Icon name="edit-3" size={18} color={colors.primary} />
               <Text style={styles.actionText}>Modifier</Text>
             </Pressable>
             <Pressable
@@ -513,7 +512,7 @@ export default function BuildingSheet({
               onPress={() => onMove?.(immeuble)}
               disabled={updatingLieu}
             >
-              <Feather name="move" size={18} color={colors.primary} />
+              <Icon name="move" size={18} color={colors.primary} />
               <Text style={styles.actionText}>Déplacer</Text>
             </Pressable>
             <Pressable
@@ -524,7 +523,7 @@ export default function BuildingSheet({
               {updatingLieu ? (
                 <ActivityIndicator size="small" color={colors.danger} />
               ) : (
-                <Feather name="trash-2" size={18} color={colors.danger} />
+                <Icon name="trash-2" size={18} color={colors.danger} />
               )}
               <Text style={[styles.actionText, styles.actionDangerText]}>Supprimer</Text>
             </Pressable>
@@ -534,7 +533,7 @@ export default function BuildingSheet({
             style={[styles.action, styles.actionFull]}
             onPress={() => onProspect(immeuble)}
           >
-            <Feather name="eye" size={18} color={colors.primary} />
+            <Icon name="eye" size={18} color={colors.primary} />
             <Text style={styles.actionText}>Voir le détail</Text>
           </Pressable>
         )}

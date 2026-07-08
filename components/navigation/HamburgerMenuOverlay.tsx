@@ -1,6 +1,6 @@
 import { useHamburgerMenu } from "@/hooks/use-hamburger-menu";
+import { Icon, type IconName } from "@/components/ui";
 import { authService } from "@/services/auth";
-import { Feather } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Animated, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
@@ -8,7 +8,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { sidebar } from "@/constants/theme";
 
 type MenuItemProps = {
-  icon: keyof typeof Feather.glyphMap;
+  icon: IconName;
   label: string;
   onPress: () => void;
   isActive: boolean;
@@ -66,7 +66,7 @@ const MenuItem = memo(function MenuItem({
             isActive && styles.menuIconContainerActive,
           ]}
         >
-          <Feather
+          <Icon
             name={icon}
             size={20}
             color={isActive ? sidebar.active : sidebar.textMuted}
@@ -116,42 +116,42 @@ export default function HamburgerMenuOverlay({
     () => [
       {
         key: "dashboard",
-        icon: "bar-chart-2" as keyof typeof Feather.glyphMap,
+        icon: "bar-chart-2" as IconName,
         label: "Tableau",
         targetIndex: 0,
         isActive: currentIndex === 0,
       },
       {
         key: "carte",
-        icon: "map" as keyof typeof Feather.glyphMap,
+        icon: "map" as IconName,
         label: "Carte",
         targetIndex: 1,
         isActive: currentIndex === 1,
       },
       {
         key: "immeubles",
-        icon: "map-pin" as keyof typeof Feather.glyphMap,
+        icon: "map-pin" as IconName,
         label: "Lieux",
         targetIndex: 2,
         isActive: currentIndex === 2,
       },
       {
         key: "agenda",
-        icon: "book-open" as keyof typeof Feather.glyphMap,
+        icon: "book-open" as IconName,
         label: "Agenda",
         targetIndex: 3,
         isActive: currentIndex === 3,
       },
       {
         key: "statistiques",
-        icon: "trending-up" as keyof typeof Feather.glyphMap,
+        icon: "trending-up" as IconName,
         label: "Stats",
         targetIndex: 4,
         isActive: currentIndex === 4,
       },
       {
         key: "classement",
-        icon: "award" as keyof typeof Feather.glyphMap,
+        icon: "award" as IconName,
         label: "Classement",
         targetIndex: 5,
         isActive: currentIndex === 5,
@@ -160,7 +160,7 @@ export default function HamburgerMenuOverlay({
         ? [
             {
               key: "equipe",
-              icon: "users" as keyof typeof Feather.glyphMap,
+              icon: "users" as IconName,
               label: "Équipe",
               targetIndex: 6,
               isActive: currentIndex === 6,
@@ -169,14 +169,14 @@ export default function HamburgerMenuOverlay({
         : []),
       {
         key: "zones",
-        icon: "grid" as keyof typeof Feather.glyphMap,
+        icon: "grid" as IconName,
         label: "Zones",
         targetIndex: isManager ? 7 : 6,
         isActive: currentIndex === (isManager ? 7 : 6),
       },
       {
         key: "historique",
-        icon: "clock" as keyof typeof Feather.glyphMap,
+        icon: "clock" as IconName,
         label: "Historique",
         targetIndex: isManager ? 8 : 7,
         isActive: currentIndex === (isManager ? 8 : 7),
@@ -275,7 +275,7 @@ export default function HamburgerMenuOverlay({
         <View style={styles.profileSection}>
           <View style={styles.avatarContainer}>
             <View style={styles.avatar}>
-              <Feather name="user" size={24} color={sidebar.active} />
+              <Icon name="user" size={24} color={sidebar.active} />
             </View>
             <View style={styles.onlineIndicator} />
           </View>
@@ -287,7 +287,7 @@ export default function HamburgerMenuOverlay({
             </View>
           </View>
           <Pressable style={styles.closeButton} onPress={close}>
-            <Feather name="x" size={18} color={sidebar.textMuted} />
+            <Icon name="x" size={18} color={sidebar.textMuted} />
           </Pressable>
         </View>
 

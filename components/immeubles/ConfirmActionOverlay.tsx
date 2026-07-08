@@ -1,4 +1,3 @@
-import { Feather } from "@expo/vector-icons";
 import { useEffect, useRef } from "react";
 import {
   Animated,
@@ -11,7 +10,7 @@ import {
   useWindowDimensions,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Chip, IconBadge } from "@/components/ui";
+import { Chip, IconBadge, Icon, type IconName } from "@/components/ui";
 import { colors } from "@/constants/theme";
 
 type ConfirmActionOverlayProps = {
@@ -21,7 +20,7 @@ type ConfirmActionOverlayProps = {
   confirmLabel?: string;
   cancelLabel?: string;
   tone?: "danger" | "default";
-  icon?: keyof typeof Feather.glyphMap;
+  icon?: IconName;
   highlight?: string;
   onConfirm: () => void;
   onClose: () => void;
@@ -148,7 +147,7 @@ export default function ConfirmActionOverlay({
                 onPress={onConfirm}
                 accessibilityRole="button"
               >
-                <Feather
+                <Icon
                   name={isDanger ? "trash-2" : "check"}
                   size={15}
                   color={colors.textOnPrimary}

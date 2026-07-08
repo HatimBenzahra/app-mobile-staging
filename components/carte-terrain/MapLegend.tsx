@@ -1,6 +1,5 @@
-import { Card } from "@/components/ui";
+import { Card, Icon } from "@/components/ui";
 import { colors, fontWeight, ownership } from "@/constants/theme";
-import { Feather } from "@expo/vector-icons";
 import { useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import type { EdgeInsets } from "react-native-safe-area-context";
@@ -27,7 +26,7 @@ export function MapLegend({ insets, role }: MapLegendProps) {
         accessibilityRole="button"
         accessibilityLabel="Afficher la légende de la carte"
       >
-        <Feather name="info" size={15} color={colors.primary} />
+        <Icon name="info" size={15} color={colors.primary} />
         <Text style={styles.pillText}>Légende</Text>
       </Pressable>
     );
@@ -43,7 +42,7 @@ export function MapLegend({ insets, role }: MapLegendProps) {
           accessibilityRole="button"
           accessibilityLabel="Masquer la légende"
         >
-          <Feather name="chevron-down" size={16} color={colors.textStrong} />
+          <Icon name="chevron-down" size={16} color={colors.textStrong} />
         </Pressable>
       </View>
 

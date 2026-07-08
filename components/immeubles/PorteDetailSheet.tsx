@@ -1,6 +1,5 @@
-import { Card } from "@/components/ui";
+import { Card, Icon } from "@/components/ui";
 import { colors } from "@/constants/theme";
-import { Feather } from "@expo/vector-icons";
 import { useEffect, useRef } from "react";
 import {
   Animated,
@@ -189,7 +188,7 @@ export default function PorteDetailSheet({
                   hitSlop={10}
                   accessibilityLabel="Fermer"
                 >
-                  <Feather name="x" size={18} color={colors.textMuted} />
+                  <Icon name="x" size={18} color={colors.textMuted} />
                 </Pressable>
               </View>
 
@@ -215,7 +214,7 @@ export default function PorteDetailSheet({
                       { backgroundColor: colors.text },
                     ]}
                   >
-                    <Feather name="clock" size={13} color="#FFFFFF" />
+                    <Icon name="clock" size={13} color="#FFFFFF" />
                   </View>
                   <Text style={styles.factLabel}>Durée du passage</Text>
                   <Text style={styles.factValue}>
@@ -229,7 +228,7 @@ export default function PorteDetailSheet({
                       { backgroundColor: status.accent },
                     ]}
                   >
-                    <Feather
+                    <Icon
                       name={status.icon}
                       size={13}
                       color="#FFFFFF"
@@ -257,7 +256,7 @@ export default function PorteDetailSheet({
                       { backgroundColor: status.accent },
                     ]}
                   >
-                    <Feather name="award" size={13} color="#FFFFFF" />
+                    <Icon name="award" size={13} color="#FFFFFF" />
                   </View>
                   <Text style={styles.factLabel}>Contrats signés</Text>
                   <Text style={styles.factValue}>
@@ -272,7 +271,7 @@ export default function PorteDetailSheet({
                   padding="md"
                   style={[styles.detailRow, { backgroundColor: colors.infoSoft, borderColor: "#BAE6FD", borderWidth: 1 }]}
                 >
-                  <Feather name="calendar" size={15} color="#0C4A6E" />
+                  <Icon name="calendar" size={15} color="#0C4A6E" />
                   <View style={{ flex: 1 }}>
                     <Text style={styles.detailRowLabel}>Rendez-vous</Text>
                     <Text
@@ -287,7 +286,7 @@ export default function PorteDetailSheet({
 
               {porte.nbRepassages && porte.nbRepassages > 0 ? (
                 <View style={styles.detailRow}>
-                  <Feather name="repeat" size={15} color={colors.textStrong} />
+                  <Icon name="repeat" size={15} color={colors.textStrong} />
                   <View style={{ flex: 1 }}>
                     <Text style={styles.detailRowLabel}>Repassages</Text>
                     <Text style={styles.detailRowValue}>
@@ -300,7 +299,7 @@ export default function PorteDetailSheet({
               {porte.commentaire?.trim() ? (
                 <Card variant="outlined" padding="md" style={styles.commentBlock}>
                   <View style={styles.commentHeader}>
-                    <Feather name="edit-3" size={13} color={colors.textMuted} />
+                    <Icon name="edit-3" size={13} color={colors.textMuted} />
                     <Text style={styles.commentHeaderText}>Commentaire</Text>
                   </View>
                   <Text style={styles.commentBody}>{porte.commentaire}</Text>
@@ -317,7 +316,7 @@ export default function PorteDetailSheet({
                   ]}
                   onPress={() => onResume(porte)}
                 >
-                  <Feather name="arrow-right" size={15} color={colors.textInverse} />
+                  <Icon name="arrow-right" size={15} color={colors.textInverse} />
                   <Text style={styles.primaryBtnText}>
                     Reprendre la prospection
                   </Text>
@@ -333,7 +332,7 @@ export default function PorteDetailSheet({
                 ]}
                 onPress={() => onEdit(porte)}
               >
-                <Feather
+                <Icon
                   name="edit-3"
                   size={15}
                   color={canResume ? colors.text : colors.textInverse}

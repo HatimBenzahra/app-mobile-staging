@@ -1,5 +1,5 @@
-import { Feather } from "@expo/vector-icons";
 import { useState } from "react";
+import { Icon } from "@/components/ui";
 import { Image, StyleSheet, Text, View } from "react-native";
 import { colors, fontSize, fontWeight, radius, spacing } from "@/constants/theme";
 import type { ContratValideType } from "@/types/graphql-schema";
@@ -51,7 +51,7 @@ export function ContractRow({ contrat }: Props) {
             onError={() => setImgFailed(true)}
           />
         ) : (
-          <Feather name="package" size={16} color={colors.textMuted} />
+          <Icon name="package" size={16} color={colors.textMuted} />
         )}
       </View>
       <View style={styles.info}>
