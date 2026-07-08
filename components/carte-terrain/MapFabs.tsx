@@ -12,6 +12,7 @@ type MapFabsProps = {
   loadingLocation: boolean;
   showTeamToggle: boolean;
   showTeam: boolean;
+  loadingTeam?: boolean;
   hasZone: boolean;
   onToggleSatellite: () => void;
   onToggleTeam: () => void;
@@ -27,6 +28,7 @@ export function MapFabs({
   loadingLocation,
   showTeamToggle,
   showTeam,
+  loadingTeam = false,
   hasZone,
   onToggleSatellite,
   onToggleTeam,
@@ -81,7 +83,14 @@ export function MapFabs({
               accessibilityRole="button"
               accessibilityLabel="Afficher l'équipe"
             >
-              <Icon name="users" size={22} color={showTeam ? colors.textOnPrimary : colors.primary} />
+              {loadingTeam ? (
+                <ActivityIndicator
+                  size="small"
+                  color={showTeam ? colors.textOnPrimary : colors.primary}
+                />
+              ) : (
+                <Icon name="users" size={22} color={showTeam ? colors.textOnPrimary : colors.primary} />
+              )}
             </Pressable>
           ),
         ]

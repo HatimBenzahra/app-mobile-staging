@@ -21,8 +21,8 @@ import { useZonesHistoryModal } from "@/hooks/use-zones-history-modal";
 import type { Immeuble } from "@/types/api";
 import { useIsFocused } from "@react-navigation/native";
 import { router } from "expo-router";
-import { useCallback, useEffect } from "react";
-import { View } from "react-native";
+import { useCallback, useEffect, useRef } from "react";
+import { Alert, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 type CarteTerrainScreenProps = {
@@ -58,6 +58,9 @@ export default function CarteTerrainScreen({
     loadingSuggestions,
     selectedExistingLieu,
     setSelectedExistingLieu,
+    selectedLieuLoading,
+    selectedLieuError,
+    retrySelectedLieuDetail,
     selectedZone,
     handleSelectZone,
     closeZoneSheet,
@@ -73,6 +76,8 @@ export default function CarteTerrainScreen({
     setSatellite,
     showTeam,
     toggleShowTeam,
+    loadingManagerMapPlaces,
+    managerMapPlacesError,
     currentUserName,
     setSuggestions,
     activePin,
@@ -83,6 +88,7 @@ export default function CarteTerrainScreen({
     zones,
     myZone,
     focusMyZone,
+    openExistingLieu,
     updateActivePin,
     searchAddresses,
     applyAddressToActivePin,
@@ -106,17 +112,29 @@ export default function CarteTerrainScreen({
   // sélection conservée. Cet effet ne sert donc plus qu'à réarmer le garde
   // anti-double-navigation (`navigatingRef`) quand l'écran redevient focalisé.
   const isFocused = useIsFocused();
+  const lastTeamErrorRef = useRef<string | null>(null);
   useEffect(() => {
     if (isFocused) navigatingRef.current = false;
   }, [isFocused, navigatingRef]);
 
+  useEffect(() => {
+    if (!showTeam || !managerMapPlacesError) {
+      lastTeamErrorRef.current = null;
+      return;
+    }
+    if (lastTeamErrorRef.current === managerMapPlacesError) return;
+    lastTeamErrorRef.current = managerMapPlacesError;
+    Alert.alert(
+      "Équipe indisponible",
+      "Impossible de charger les lieux de l'équipe pour le moment.",
+    );
+  }, [managerMapPlacesError, showTeam]);
+
   const handleSelectLieu = useCallback(
     (immeuble: Immeuble) => {
-      setSelectedExistingLieu(immeuble);
-      setMovingLieu(null);
-      setEditingLieu(null);
+      openExistingLieu(immeuble);
     },
-    [setSelectedExistingLieu, setMovingLieu, setEditingLieu],
+    [openExistingLieu],
   );
 
   const handleToggleSatellite = useCallback(() => {
@@ -207,6 +225,7 @@ export default function CarteTerrainScreen({
           loadingLocation={loadingLocation}
           showTeamToggle={role === "manager"}
           showTeam={showTeam}
+          loadingTeam={loadingManagerMapPlaces}
           hasZone={!!myZone}
           onToggleSatellite={handleToggleSatellite}
           onToggleTeam={toggleShowTeam}
@@ -230,6 +249,9 @@ export default function CarteTerrainScreen({
         highlightedPorteId={highlightedPorteId}
         updatingLieu={updatingLieu}
         currentUserName={currentUserName}
+        loadingDetail={selectedLieuLoading}
+        detailError={selectedLieuError}
+        onRetryDetail={retrySelectedLieuDetail}
         onClose={handleCloseBuildingSheet}
         onProspect={handleProspect}
         onEdit={openEditLieu}

@@ -57,3 +57,89 @@ export const GET_QUARTIERS = `
     }
   }
 `;
+
+export const GET_MOBILE_MANAGER_MAP_PLACES = `
+  query GetMobileManagerMapPlaces($includeTeam: Boolean!) {
+    mobileManagerMapPlaces(includeTeam: $includeTeam) {
+      id
+      adresse
+      latitude
+      longitude
+      typeHabitat
+      nbEtages
+      nbPortesParEtage
+      nbMaisonsPrevu
+      quartierId
+      zoneId
+      commercialId
+      managerId
+      ownership
+      creatorName
+      updatedAt
+    }
+  }
+`;
+
+export const GET_MOBILE_MAP_QUARTIERS = `
+  query GetMobileMapQuartiers {
+    mobileMapQuartiers {
+      id
+      nom
+      latitude
+      longitude
+      createdAt
+      immeubles {
+        id
+        adresse
+        latitude
+        longitude
+        typeHabitat
+        nbEtages
+        nbPortesParEtage
+        nbMaisonsPrevu
+        quartierId
+        zoneId
+        commercialId
+        managerId
+        updatedAt
+      }
+    }
+  }
+`;
+
+export const GET_MOBILE_IMMEUBLE_DETAIL = `
+  query GetMobileImmeubleDetail($id: Int!) {
+    mobileImmeubleDetail(id: $id) {
+      id
+      adresse
+      latitude
+      longitude
+      typeHabitat
+      nbEtages
+      nbPortesParEtage
+      nbMaisonsPrevu
+      quartierId
+      zoneId
+      commercialId
+      managerId
+      ascenseurPresent
+      digitalCode
+      updatedAt
+      portes {
+        id
+        numero
+        nomPersonnalise
+        etage
+        immeubleId
+        statut
+        nbRepassages
+        nbContrats
+        rdvDate
+        rdvTime
+        commentaire
+        derniereVisite
+        duree
+      }
+    }
+  }
+`;

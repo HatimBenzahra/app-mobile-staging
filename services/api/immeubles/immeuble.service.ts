@@ -5,6 +5,7 @@ import type {
   Immeuble,
   ImmeublesPage,
   ImmeublesPageInput,
+  MobileMapPlace,
   Quartier,
   UpdateImmeubleInput,
 } from "@/types/api";
@@ -19,7 +20,13 @@ import {
   REMOVE_PORTE_FROM_ETAGE,
   UPDATE_IMMEUBLE,
 } from "./immeuble.mutations";
-import { GET_IMMEUBLES_PAGE, GET_QUARTIERS } from "./immeuble.queries";
+import {
+  GET_IMMEUBLES_PAGE,
+  GET_MOBILE_IMMEUBLE_DETAIL,
+  GET_MOBILE_MAP_QUARTIERS,
+  GET_MOBILE_MANAGER_MAP_PLACES,
+  GET_QUARTIERS,
+} from "./immeuble.queries";
 
 export const immeubleApi = {
   async create(input: CreateImmeubleInput): Promise<Immeuble> {
@@ -103,6 +110,30 @@ export const immeubleApi = {
       { input: ImmeublesPageInput }
     >(GET_IMMEUBLES_PAGE, { input });
     return response.immeublesPage;
+  },
+
+  async getMobileManagerMapPlaces(includeTeam: boolean): Promise<MobileMapPlace[]> {
+    const response = await gql<
+      { mobileManagerMapPlaces: MobileMapPlace[] },
+      { includeTeam: boolean }
+    >(GET_MOBILE_MANAGER_MAP_PLACES, { includeTeam });
+    return response.mobileManagerMapPlaces;
+  },
+
+  async getMobileDetail(id: number): Promise<Immeuble> {
+    const response = await gql<
+      { mobileImmeubleDetail: Immeuble },
+      { id: number }
+    >(GET_MOBILE_IMMEUBLE_DETAIL, { id });
+    return response.mobileImmeubleDetail;
+  },
+
+  async getMobileMapQuartiers(): Promise<Quartier[]> {
+    const response = await gql<
+      { mobileMapQuartiers: Quartier[] },
+      Record<string, never>
+    >(GET_MOBILE_MAP_QUARTIERS, {});
+    return response.mobileMapQuartiers;
   },
 
   async getQuartiers(): Promise<Quartier[]> {

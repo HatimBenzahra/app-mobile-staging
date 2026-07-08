@@ -41,6 +41,9 @@ type BuildingSheetProps = {
   onDelete?: (immeuble: Immeuble) => void;
   updatingLieu?: boolean;
   currentUserName?: string;
+  loadingDetail?: boolean;
+  detailError?: string | null;
+  onRetryDetail?: () => void;
 };
 
 type FilterOption = {
@@ -134,6 +137,9 @@ export default function BuildingSheet({
   onDelete,
   updatingLieu = false,
   currentUserName,
+  loadingDetail = false,
+  detailError = null,
+  onRetryDetail,
 }: BuildingSheetProps) {
   const insets = useSafeAreaInsets();
   const { height } = useWindowDimensions();
@@ -388,7 +394,26 @@ export default function BuildingSheet({
         showsVerticalScrollIndicator={false}
       >
         {/* KPI SUMMARY */}
-        {progress && portes.length > 0 ? (
+        {loadingDetail ? (
+          <Card variant="outlined" padding="lg" style={styles.emptyCard}>
+            <ActivityIndicator size="small" color={colors.primary} />
+            <Text style={styles.emptyText}>Chargement des portes</Text>
+            <Text style={styles.emptySubtext}>Récupération du suivi terrain...</Text>
+          </Card>
+        ) : detailError ? (
+          <Card variant="outlined" padding="lg" style={styles.emptyCard}>
+            <View style={styles.emptyIcon}>
+              <Icon name="alert-circle" size={22} color={colors.danger} />
+            </View>
+            <Text style={styles.emptyText}>{detailError}</Text>
+            {onRetryDetail ? (
+              <Pressable style={styles.retryButton} onPress={onRetryDetail}>
+                <Icon name="refresh-cw" size={15} color={colors.primary} />
+                <Text style={styles.retryButtonText}>Réessayer</Text>
+              </Pressable>
+            ) : null}
+          </Card>
+        ) : progress && portes.length > 0 ? (
           <Card variant="outlined" padding="md" style={styles.kpiCard}>
             <View style={styles.progressRow}>
               <View style={styles.progressHead}>
@@ -439,7 +464,7 @@ export default function BuildingSheet({
         )}
 
         {/* PORTES — libellé + filtres par statut */}
-        {portes.length > 0 ? (
+        {!loadingDetail && !detailError && portes.length > 0 ? (
           <View style={styles.listMeta}>
             <Text style={styles.sectionLabel}>Portes · {portes.length}</Text>
             <ScrollView
@@ -469,7 +494,7 @@ export default function BuildingSheet({
         ) : null}
 
         {/* PORTES — grille par étage (FloorSection partagé) */}
-        {portes.length > 0 ? (
+        {!loadingDetail && !detailError && portes.length > 0 ? (
           floorGroups.length > 0 ? (
             <View style={styles.floorList}>
               {floorGroups.map((group) => {
@@ -742,6 +767,20 @@ const styles = StyleSheet.create({
     fontSize: fontSize.sm,
     color: colors.textMuted,
     textAlign: "center",
+  },
+  retryButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.xs,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.pill,
+    backgroundColor: colors.primarySoft,
+  },
+  retryButtonText: {
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.bold,
+    color: colors.primary,
   },
 
   // Porte list — section label + filters

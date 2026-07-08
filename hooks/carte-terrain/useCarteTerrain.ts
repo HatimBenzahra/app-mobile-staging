@@ -2,7 +2,8 @@ import { useCreateMaison } from "@/hooks/api/use-create-maison";
 import { useCreateQuartier } from "@/hooks/api/use-create-quartier";
 import { useCurrentAssignment } from "@/hooks/api/use-current-assignment";
 import { useMapFocus } from "@/hooks/use-map-focus";
-import { useQuartiers } from "@/hooks/api/use-quartiers";
+import { useMobileMapQuartiers } from "@/hooks/api/use-mobile-map-quartiers";
+import { useMobileManagerMapPlaces } from "@/hooks/api/use-mobile-manager-map-places";
 import { useWorkspaceProfile } from "@/hooks/api/use-workspace-profile";
 import { useZonesForUser } from "@/hooks/api/use-zones-for-user";
 import { api } from "@/services/api";
@@ -39,13 +40,6 @@ type UseCarteTerrainParams = {
   embedded?: boolean;
 };
 
-type TeamCommercial = {
-  id: number;
-  prenom: string;
-  nom: string;
-  immeubles?: Immeuble[];
-};
-
 export function useCarteTerrain({ embedded = false }: UseCarteTerrainParams = {}) {
   const cameraRef = useRef<CameraRef | null>(null);
   const { height: screenHeight } = useWindowDimensions();
@@ -65,6 +59,8 @@ export function useCarteTerrain({ embedded = false }: UseCarteTerrainParams = {}
   const [loadingSuggestions, setLoadingSuggestions] = useState(false);
   const [creatingLieu, setCreatingLieu] = useState(false);
   const [selectedExistingLieu, setSelectedExistingLieu] = useState<Immeuble | null>(null);
+  const [selectedLieuLoading, setSelectedLieuLoading] = useState(false);
+  const [selectedLieuError, setSelectedLieuError] = useState<string | null>(null);
   // Zone sélectionnée (tap sur son contour en VISUALISATION) → ouvre le ZoneSheet.
   const [selectedZone, setSelectedZone] = useState<Zone | null>(null);
   const [movingLieu, setMovingLieu] = useState<Immeuble | null>(null);
@@ -92,6 +88,7 @@ export function useCarteTerrain({ embedded = false }: UseCarteTerrainParams = {}
     porteId: number;
   } | null>(null);
   const navigatingRef = useRef(false);
+  const detailRequestRef = useRef(0);
   // Garde anti-doublon du téléchargement offline auto (1 pack max par zone).
   const offlineRequestedAreasRef = useRef<Set<string>>(new Set());
   // Jeton de séquence : `suggestions` est partagé entre tous les pins, une réponse
@@ -101,6 +98,9 @@ export function useCarteTerrain({ embedded = false }: UseCarteTerrainParams = {}
   // highlight de porte (le sheet fermé n'a plus rien à mettre en avant).
   useEffect(() => {
     if (selectedExistingLieu === null) {
+      detailRequestRef.current += 1;
+      setSelectedLieuLoading(false);
+      setSelectedLieuError(null);
       navigatingRef.current = false;
       setHighlightedPorteId(null);
     } else {
@@ -110,7 +110,11 @@ export function useCarteTerrain({ embedded = false }: UseCarteTerrainParams = {}
     }
   }, [selectedExistingLieu]);
 
-  const { data: profile, refetch } = useWorkspaceProfile(userId, role);
+  const shouldLoadWorkspaceProfile = role !== "manager";
+  const { data: profile, refetch: refetchProfile } = useWorkspaceProfile(
+    shouldLoadWorkspaceProfile ? userId : null,
+    shouldLoadWorkspaceProfile ? role : null,
+  );
   // Zones à afficher : source de vérité `zonesForUser` (commercial = ZoneEnCours ;
   // manager = possédées OU assignées). Le rôle stocké est en minuscules → on le
   // convertit vers l'enum `UserType` attendu par le hook.
@@ -120,7 +124,13 @@ export function useCarteTerrain({ embedded = false }: UseCarteTerrainParams = {}
   );
   const { data: userZones } = useZonesForUser(userId, userType);
   const { data: currentAssignment } = useCurrentAssignment(userId, userType);
-  const { data: quartiers } = useQuartiers();
+  const { data: quartiers, refetch: refetchMapQuartiers } = useMobileMapQuartiers();
+  const {
+    data: managerMapPlaces,
+    loading: loadingManagerMapPlaces,
+    error: managerMapPlacesError,
+    refetch: refetchManagerMapPlaces,
+  } = useMobileManagerMapPlaces(role === "manager", showTeam);
   const { createMaison, loading: creatingMaison } = useCreateMaison();
   const { createQuartier } = useCreateQuartier();
   const { focusTarget, focusOnZone, clearFocus } = useMapFocus();
@@ -239,39 +249,82 @@ export function useCarteTerrain({ embedded = false }: UseCarteTerrainParams = {}
     };
   }, []);
 
+  const refetchTerrainData = useCallback(async () => {
+    if (role === "manager") {
+      await refetchManagerMapPlaces();
+    } else {
+      await refetchProfile();
+    }
+    await refetchMapQuartiers();
+  }, [refetchManagerMapPlaces, refetchMapQuartiers, refetchProfile, role]);
+
   const immeubles = useMemo(() => {
+    if (role === "manager") {
+      return ((managerMapPlaces ?? []) as Immeuble[]).filter(
+        (immeuble) => immeuble.latitude != null && immeuble.longitude != null,
+      );
+    }
+
     // Mes propres bâtiments → ownership MINE.
     const ownImmeubles = ((profile?.immeubles || []) as Immeuble[]).map(
       (immeuble): Immeuble => ({ ...immeuble, ownership: "MINE" }),
     );
 
-    // Bâtiments de l'équipe (managers uniquement, et seulement si showTeam).
-    // Les immeubles d'équipe n'embarquent ni commercialId ni portes dans la
-    // requête : on les stampe depuis le commercial parent (obligatoire pour la
-    // couleur + le futur modal).
-    const teamCommercials =
-      role === "manager" && showTeam
-        ? ((profile as { commercials?: TeamCommercial[] } | null)?.commercials ?? [])
-        : [];
-    const teamImmeubles: Immeuble[] = teamCommercials.flatMap((commercial) =>
-      (commercial.immeubles ?? []).map(
-        (immeuble): Immeuble => ({
-          ...immeuble,
-          ownership: "TEAM",
-          commercialId: commercial.id,
-          creatorName: `${commercial.prenom} ${commercial.nom}`,
-        }),
-      ),
-    );
-
     const byId = new Map<number, Immeuble>();
-    [...ownImmeubles, ...teamImmeubles].forEach((immeuble) => {
+    ownImmeubles.forEach((immeuble) => {
       if (immeuble.latitude != null && immeuble.longitude != null) {
         byId.set(immeuble.id, immeuble);
       }
     });
     return Array.from(byId.values());
-  }, [profile, role, showTeam]);
+  }, [managerMapPlaces, profile, role]);
+
+  const openExistingLieu = useCallback(
+    (immeuble: Immeuble) => {
+      setSelectedExistingLieu(immeuble);
+      setMovingLieu(null);
+      setEditingLieu(null);
+      setSelectedLieuError(null);
+
+      const needsDetail = role === "manager" || !immeuble.portes;
+      if (!needsDetail) {
+        setSelectedLieuLoading(false);
+        return;
+      }
+
+      const requestId = detailRequestRef.current + 1;
+      detailRequestRef.current = requestId;
+      setSelectedLieuLoading(true);
+
+      void api.immeubles
+        .getMobileDetail(immeuble.id)
+        .then((detail) => {
+          if (detailRequestRef.current !== requestId) return;
+          setSelectedExistingLieu({
+            ...detail,
+            ownership: immeuble.ownership,
+            creatorName: immeuble.creatorName,
+            commercialId: detail.commercialId ?? immeuble.commercialId,
+            managerId: detail.managerId ?? immeuble.managerId,
+          });
+        })
+        .catch(() => {
+          if (detailRequestRef.current !== requestId) return;
+          setSelectedLieuError("Impossible de charger les portes de ce lieu.");
+        })
+        .finally(() => {
+          if (detailRequestRef.current === requestId) {
+            setSelectedLieuLoading(false);
+          }
+        });
+    },
+    [role],
+  );
+
+  const retrySelectedLieuDetail = useCallback(() => {
+    if (!selectedExistingLieu) return;
+    openExistingLieu(selectedExistingLieu);
+  }, [openExistingLieu, selectedExistingLieu]);
 
   // Ouverture différée du BuildingSheet sur la cible d'un focus porte : on attend
   // que le bâtiment soit présent dans `immeubles` (profil chargé), puis on ouvre
@@ -280,12 +333,10 @@ export function useCarteTerrain({ embedded = false }: UseCarteTerrainParams = {}
     if (!pendingPorteFocus) return;
     const building = immeubles.find((imm) => imm.id === pendingPorteFocus.immeubleId);
     if (!building) return; // bâtiment pas encore chargé : on retentera au prochain rendu
-    setSelectedExistingLieu(building);
-    setMovingLieu(null);
-    setEditingLieu(null);
+    openExistingLieu(building);
     setHighlightedPorteId(pendingPorteFocus.porteId);
     setPendingPorteFocus(null);
-  }, [pendingPorteFocus, immeubles]);
+  }, [pendingPorteFocus, immeubles, openExistingLieu]);
 
   const currentUserName = useMemo(() => {
     const prenom = profile?.prenom?.trim();
@@ -534,14 +585,14 @@ export function useCarteTerrain({ embedded = false }: UseCarteTerrainParams = {}
           longitude: point.longitude,
         });
         setMovingLieu(null);
-        await refetch();
+        await refetchTerrainData();
       } catch {
         Alert.alert("Deplacement impossible", "La nouvelle position n'a pas pu etre enregistree.");
       } finally {
         setUpdatingLieu(false);
       }
     },
-    [movingLieu, refetch],
+    [movingLieu, refetchTerrainData],
   );
 
   const handleMapPress = useCallback(
@@ -623,14 +674,14 @@ export function useCarteTerrain({ embedded = false }: UseCarteTerrainParams = {}
         return;
       }
 
-      await refetch();
+      await refetchTerrainData();
       setBuildingPin(null);
       setSuggestions([]);
       router.push(`/lieu/${result.id}`);
     } finally {
       setCreatingLieu(false);
     }
-  }, [buildingPin, role, userId, createMaison, refetch]);
+  }, [buildingPin, role, userId, createMaison, refetchTerrainData]);
 
   const handleCreateBatiment = useCallback(async () => {
     if (!buildingPin || !buildingPin.selectedAddress) {
@@ -708,7 +759,7 @@ export function useCarteTerrain({ embedded = false }: UseCarteTerrainParams = {}
         return;
       }
 
-      await refetch();
+      await refetchTerrainData();
       setQuartierPins([]);
       setActiveQuartierPinId(null);
       setSuggestions([]);
@@ -720,7 +771,7 @@ export function useCarteTerrain({ embedded = false }: UseCarteTerrainParams = {}
     } finally {
       setCreatingLieu(false);
     }
-  }, [quartierPins, role, userId, createQuartier, refetch, embedded]);
+  }, [quartierPins, role, userId, createQuartier, refetchTerrainData, embedded]);
 
   const openEditLieu = useCallback((immeuble: Immeuble) => {
     setSelectedExistingLieu(null);
@@ -741,13 +792,13 @@ export function useCarteTerrain({ embedded = false }: UseCarteTerrainParams = {}
         nbMaisonsPrevu: editingType === "PAVILLON" ? editingNbMaisons : editingType === "MAISON" ? 1 : null,
       });
       setEditingLieu(null);
-      await refetch();
+      await refetchTerrainData();
     } catch {
       Alert.alert("Modification impossible", "Le lieu n'a pas pu etre modifie.");
     } finally {
       setUpdatingLieu(false);
     }
-  }, [editingLieu, editingType, editingNbMaisons, refetch]);
+  }, [editingLieu, editingType, editingNbMaisons, refetchTerrainData]);
 
   const handleDeleteLieu = useCallback(
     (immeuble: Immeuble) => {
@@ -764,7 +815,7 @@ export function useCarteTerrain({ embedded = false }: UseCarteTerrainParams = {}
               try {
                 await api.immeubles.removeTerrainLieu(immeuble.id);
                 setSelectedExistingLieu(null);
-                await refetch();
+                await refetchTerrainData();
               } catch {
                 Alert.alert(
                   "Suppression impossible",
@@ -778,7 +829,7 @@ export function useCarteTerrain({ embedded = false }: UseCarteTerrainParams = {}
         ],
       );
     },
-    [refetch],
+    [refetchTerrainData],
   );
 
   const creating = creatingMaison || creatingLieu;
@@ -804,6 +855,9 @@ export function useCarteTerrain({ embedded = false }: UseCarteTerrainParams = {}
     loadingSuggestions,
     selectedExistingLieu,
     setSelectedExistingLieu,
+    selectedLieuLoading,
+    selectedLieuError,
+    retrySelectedLieuDetail,
     selectedZone,
     handleSelectZone,
     closeZoneSheet,
@@ -820,6 +874,8 @@ export function useCarteTerrain({ embedded = false }: UseCarteTerrainParams = {}
     setSatellite,
     showTeam,
     toggleShowTeam,
+    loadingManagerMapPlaces,
+    managerMapPlacesError,
     currentUserName,
     setSuggestions,
     activePin,
@@ -830,6 +886,7 @@ export function useCarteTerrain({ embedded = false }: UseCarteTerrainParams = {}
     zones,
     myZone,
     focusMyZone,
+    openExistingLieu,
     updateActivePin,
     searchAddresses,
     applyAddressToActivePin,

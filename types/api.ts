@@ -165,6 +165,25 @@ export type Immeuble = {
   creatorName?: string;
 };
 
+export type MobileMapPlace = Pick<
+  Immeuble,
+  | "id"
+  | "adresse"
+  | "latitude"
+  | "longitude"
+  | "typeHabitat"
+  | "nbEtages"
+  | "nbPortesParEtage"
+  | "quartierId"
+  | "nbMaisonsPrevu"
+  | "updatedAt"
+  | "commercialId"
+  | "managerId"
+  | "zoneId"
+  | "ownership"
+  | "creatorName"
+>;
+
 export type ImmeubleProgressFilter =
   | "ALL"
   | "INCOMPLETE"
