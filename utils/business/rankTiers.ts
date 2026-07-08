@@ -1,4 +1,4 @@
-import { Feather } from "@expo/vector-icons";
+import type { IconName } from "@/components/ui";
 
 /**
  * Habillage visuel des 8 tiers de points renvoyés par le backend gamification
@@ -10,7 +10,7 @@ export type RankTierStyle = {
   label: string;
   color: string; // couleur d'accent du tier
   bg: string; // fond doux pour pastilles
-  icon: keyof typeof Feather.glyphMap;
+  icon: IconName;
 };
 
 const TIERS: Record<string, RankTierStyle> = {

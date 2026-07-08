@@ -9,7 +9,6 @@ import { authService } from "@/services/auth";
 import { effectiveTypeHabitat, getLieuTerms } from "@/components/immeubles/lieu-terms";
 import { getImmeubleProgress } from "@/components/immeubles/lieu-progress";
 import { HabitatIcon } from "@/components/immeubles/habitat-icon";
-import type { HabitatIconName } from "@/components/immeubles/habitat-icon";
 import type { Immeuble, Quartier, TypeHabitat } from "@/types/api";
 import { useRouter } from "expo-router";
 import { memo, useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
@@ -57,16 +56,14 @@ function recencyMs(item: {
 const TYPE_CHIPS: {
   key: TypeFilterKey;
   label: string;
-  /** Icône pour le chip "Tous"; undefined pour les chips de type habitat (rendus via mciIcon). */
-  icon?: IconName;
-  mciIcon?: HabitatIconName;
+  icon: IconName;
   color: string;
 }[] = [
   { key: "all", label: "Tous", icon: "map-pin", color: colors.primary },
-  { key: "MAISON", label: "Maisons", mciIcon: "home", color: habitat.maison },
-  { key: "PAVILLON", label: "Pavillons", mciIcon: "home-group", color: habitat.pavillon },
-  { key: "IMMEUBLE", label: "Immeubles", mciIcon: "office-building", color: habitat.immeuble },
-  { key: "quartiers", label: "Quartiers", mciIcon: "map-marker-radius", color: habitat.quartier },
+  { key: "MAISON", label: "Maisons", icon: "home", color: habitat.maison },
+  { key: "PAVILLON", label: "Pavillons", icon: "home-group", color: habitat.pavillon },
+  { key: "IMMEUBLE", label: "Immeubles", icon: "office-building", color: habitat.immeuble },
+  { key: "quartiers", label: "Quartiers", icon: "map-marker-radius", color: habitat.quartier },
 ];
 
 const FILTER_CHIPS: {
@@ -85,7 +82,6 @@ const FILTER_CHIPS: {
 
 function getLieuMeta(immeuble: Immeuble): {
   label: string;
-  mciIcon: HabitatIconName;
   color: string;
   detail: string;
 } {
@@ -96,7 +92,6 @@ function getLieuMeta(immeuble: Immeuble): {
     const foyers = immeuble.nbMaisonsPrevu ?? 1;
     return {
       label: "Maison",
-      mciIcon: "home",
       color: habitat.maison,
       detail: `${foyers} ${foyers > 1 ? terms.unitLabelPlural : terms.unitLabel.toLowerCase()}`,
     };
@@ -106,7 +101,6 @@ function getLieuMeta(immeuble: Immeuble): {
     const maisons = immeuble.nbMaisonsPrevu ?? immeuble.nbEtages ?? 1;
     return {
       label: "Pavillon",
-      mciIcon: "home-group",
       color: habitat.pavillon,
       detail: `${maisons} ${terms.unitLabelPlural}`,
     };
@@ -115,7 +109,6 @@ function getLieuMeta(immeuble: Immeuble): {
   const portes = (immeuble.nbEtages ?? 1) * (immeuble.nbPortesParEtage ?? 1);
   return {
     label: "Immeuble",
-    mciIcon: "office-building",
     color: habitat.immeuble,
     detail: `${portes} portes`,
   };

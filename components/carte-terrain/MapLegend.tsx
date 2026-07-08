@@ -1,4 +1,5 @@
 import { Card, Icon } from "@/components/ui";
+import { HabitatIcon } from "@/components/immeubles/habitat-icon";
 import { colors, fontWeight, ownership } from "@/constants/theme";
 import { useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
@@ -12,7 +13,7 @@ type MapLegendProps = {
 /**
  * Légende on-map repliable (bas-gauche). Documente les deux axes des marqueurs :
  *  - COULEUR = propriétaire (teal = moi, amber = équipe).
- *  - GLYPH   = type d'habitat (🏢 / 🏠 / 🏡).
+ *  - ICÔNE   = type d'habitat.
  */
 export function MapLegend({ insets, role }: MapLegendProps) {
   const [expanded, setExpanded] = useState(false);
@@ -56,9 +57,9 @@ export function MapLegend({ insets, role }: MapLegendProps) {
       <LegendRow swatch={<View style={[styles.zoneSwatch, { borderColor: colors.info }]} />} label="Ma zone" />
 
       <Text style={styles.sectionLabel}>Type d&apos;habitat</Text>
-      <LegendRow swatch={<Text style={styles.glyph}>🏢</Text>} label="Immeuble" />
-      <LegendRow swatch={<Text style={styles.glyph}>🏠</Text>} label="Maison" />
-      <LegendRow swatch={<Text style={styles.glyph}>🏡</Text>} label="Pavillon" />
+      <LegendRow swatch={<HabitatIcon type="IMMEUBLE" size={16} color={colors.primary} />} label="Immeuble" />
+      <LegendRow swatch={<HabitatIcon type="MAISON" size={16} color={colors.success} />} label="Maison" />
+      <LegendRow swatch={<HabitatIcon type="PAVILLON" size={16} color="#F97316" />} label="Pavillon" />
     </Card>
   );
 }
@@ -153,9 +154,6 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     borderWidth: 2,
     backgroundColor: colors.infoSoft,
-  },
-  glyph: {
-    fontSize: 15,
   },
   rowLabel: {
     flex: 1,

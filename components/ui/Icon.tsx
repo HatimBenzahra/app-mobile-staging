@@ -7,8 +7,9 @@ type MCIGlyph = ComponentProps<typeof MaterialCommunityIcons>["name"];
 /**
  * Source de vérité UNIQUE du style d'icônes de l'app.
  *
- * Les clés sont les noms sémantiques hérités de Feather (déjà utilisés partout
- * dans le code) ; les valeurs sont les glyphs Material Community Icons. Pour
+ * Les clés sont les noms sémantiques de l'app (dont les anciens noms Feather
+ * déjà utilisés partout dans le code) ; les valeurs sont les glyphs Material
+ * Community Icons. Pour
  * changer l'aspect des icônes dans toute l'app, on édite ce seul mapping —
  * jamais les 62 écrans qui consomment `<Icon name="..." />`.
  *
@@ -36,6 +37,7 @@ const ICON_MAP = {
   "chevron-down": "chevron-down",
   "chevron-left": "chevron-left",
   "chevron-right": "chevron-right",
+  "chevron-up": "chevron-up",
   "chevrons-up": "chevron-double-up",
   circle: "circle-outline",
   clock: "clock-outline",
@@ -44,12 +46,14 @@ const ICON_MAP = {
   crosshair: "crosshairs-gps",
   "edit-3": "pencil",
   eye: "eye",
+  "eye-off": "eye-off",
   "file-text": "file-document-outline",
   filter: "filter-variant",
   grid: "view-grid-outline",
   hash: "pound",
   "help-circle": "help-circle",
   home: "home",
+  "home-group": "home-group",
   inbox: "inbox-outline",
   info: "information-outline",
   key: "key-variant",
@@ -59,13 +63,16 @@ const ICON_MAP = {
   "log-out": "logout",
   mail: "email-outline",
   map: "map-outline",
+  "map-marker-radius": "map-marker-radius",
   "map-pin": "map-marker",
   menu: "menu",
   "message-circle": "message-outline",
   "message-square": "chat-outline",
   minus: "minus",
   "minus-circle": "minus-circle-outline",
+  moon: "weather-night",
   move: "cursor-move",
+  "office-building": "office-building",
   package: "package-variant-closed",
   phone: "phone",
   plus: "plus",
@@ -77,6 +84,7 @@ const ICON_MAP = {
   shield: "shield-outline",
   sliders: "tune",
   star: "star",
+  sun: "weather-sunny",
   target: "target",
   "trash-2": "trash-can-outline",
   "trending-down": "trending-down",

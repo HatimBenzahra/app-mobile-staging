@@ -1,5 +1,4 @@
-import { Feather } from "@expo/vector-icons";
-
+import type { IconName } from "@/components/ui";
 import type { Porte } from "@/types/api";
 
 export type StatusOption = {
@@ -9,7 +8,7 @@ export type StatusOption = {
   bg: string;
   fg: string;
   accent: string;
-  icon: keyof typeof Feather.glyphMap;
+  icon: IconName;
 };
 
 export const STATUS_OPTIONS: StatusOption[] = [

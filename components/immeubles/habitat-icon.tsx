@@ -1,10 +1,8 @@
-import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { Icon, type IconName } from "@/components/ui";
 import type { TypeHabitat } from "@/types/api";
 
-export type HabitatIconName = keyof typeof MaterialCommunityIcons.glyphMap;
-
 /**
- * Retourne le nom d'icône MaterialCommunityIcons pour un type d'habitat.
+ * Retourne le nom d'icône applicative pour un type d'habitat.
  * Centralise le mapping pour éviter la dispersion (DRY).
  *
  * - MAISON   → "home"
@@ -12,7 +10,7 @@ export type HabitatIconName = keyof typeof MaterialCommunityIcons.glyphMap;
  * - IMMEUBLE → "office-building"
  * - QUARTIER → "map-marker-radius"
  */
-export function getHabitatIconName(type?: TypeHabitat | "quartiers"): HabitatIconName {
+export function getHabitatIconName(type?: TypeHabitat | "quartiers"): IconName {
   if (type === "MAISON") return "home";
   if (type === "PAVILLON") return "home-group";
   if (type === "quartiers") return "map-marker-radius";
@@ -26,11 +24,5 @@ type HabitatIconProps = {
 };
 
 export function HabitatIcon({ type, size, color }: HabitatIconProps) {
-  return (
-    <MaterialCommunityIcons
-      name={getHabitatIconName(type)}
-      size={size}
-      color={color}
-    />
-  );
+  return <Icon name={getHabitatIconName(type)} size={size} color={color} />;
 }

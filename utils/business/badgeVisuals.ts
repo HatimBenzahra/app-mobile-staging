@@ -1,4 +1,4 @@
-import { Feather } from "@expo/vector-icons";
+import type { IconName } from "@/components/ui";
 import type { BadgeCategory } from "@/types/graphql-schema";
 
 /**
@@ -130,7 +130,7 @@ export type CategoryStyle = {
   border: string;
   text: string;
   accent: string; // bordure supérieure de carte
-  fallbackIcon: keyof typeof Feather.glyphMap;
+  fallbackIcon: IconName;
 };
 
 export const CATEGORY_STYLE: Record<BadgeCategory, CategoryStyle> = {
