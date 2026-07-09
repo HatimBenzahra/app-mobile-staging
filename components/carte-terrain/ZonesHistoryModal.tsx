@@ -1,7 +1,7 @@
 import { Card, Chip, Icon } from "@/components/ui";
 import { colors, fontSize, fontWeight, radius, spacing } from "@/constants/theme";
+import { useCurrentAssignment } from "@/hooks/api/use-current-assignment";
 import { useUserZoneHistory } from "@/hooks/api/use-user-zone-history";
-import { useZonesForUser } from "@/hooks/api/use-zones-for-user";
 import type { UserType } from "@/types/api";
 import { useCallback, useMemo } from "react";
 import {
@@ -126,13 +126,14 @@ export default function ZonesHistoryModal({
   // Ne déclenche les requêtes qu'à l'ouverture (userId gaté). `useZonesForUser`
   // partage sa cacheKey avec la carte terrain → lecture instantanée du cache.
   const gatedUserId = open ? userId : null;
-  const currentQuery = useZonesForUser(gatedUserId, userType);
+  // « En cours » = l'assignation active UNIQUE (source ZoneEnCours), pas
+  // `zonesForUser` (qui, pour un manager, renvoyait toutes ses zones et les
+  // badgeait toutes « En cours »).
+  const currentQuery = useCurrentAssignment(gatedUserId, userType);
   const historyQuery = useUserZoneHistory(gatedUserId, userType);
 
-  const currentZones = useMemo(
-    () => currentQuery.data ?? [],
-    [currentQuery.data],
-  );
+  const currentZone = currentQuery.data?.zone ?? null;
+  const currentAssignedAt = currentQuery.data?.assignedAt ?? null;
   const sortedHistory = useMemo(() => {
     return [...(historyQuery.data ?? [])].sort((a, b) => {
       const ta = a.unassignedAt ? new Date(a.unassignedAt).getTime() : 0;
@@ -159,7 +160,7 @@ export default function ZonesHistoryModal({
 
   if (!open) return null;
 
-  const isEmpty = currentZones.length === 0 && sortedHistory.length === 0;
+  const isEmpty = !currentZone && sortedHistory.length === 0;
   const isLoading = currentQuery.loading || historyQuery.loading;
 
   return (
@@ -213,21 +214,21 @@ export default function ZonesHistoryModal({
           )
         ) : (
           <>
-            {currentZones.length > 0 ? (
+            {currentZone ? (
               <View style={styles.section}>
-                <Text style={styles.sectionTitle}>
-                  En cours ({currentZones.length})
-                </Text>
-                {currentZones.map((zone) => (
-                  <ZoneEntryRow
-                    key={`current-${zone.id}`}
-                    name={zone.nom}
-                    creatorName={zone.createdByName}
-                    badge="En cours"
-                    onPress={() => handleFocus(zone)}
-                    onViewDetail={() => handleDetail(zone.id)}
-                  />
-                ))}
+                <Text style={styles.sectionTitle}>En cours</Text>
+                <ZoneEntryRow
+                  name={currentZone.nom}
+                  creatorName={currentZone.createdByName}
+                  badge="En cours"
+                  period={
+                    currentAssignedAt
+                      ? `Assignée le ${formatShortDate(currentAssignedAt)}`
+                      : undefined
+                  }
+                  onPress={() => handleFocus(currentZone)}
+                  onViewDetail={() => handleDetail(currentZone.id)}
+                />
               </View>
             ) : null}
 

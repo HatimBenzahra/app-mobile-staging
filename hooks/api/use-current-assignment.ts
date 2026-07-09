@@ -1,12 +1,20 @@
 import { CURRENT_USER_ASSIGNMENT } from "@/services/api/zones/zone.queries";
 import { gql } from "@/services/core/graphql";
-import type { UserType } from "@/types/api";
-import type { ZoneEnCours } from "@/types/graphql-schema";
+import type { UserType, Zone } from "@/types/api";
 import { useCallback } from "react";
 import { useApiCall, type UseApiState } from "./use-api-call";
 
-/** Assignation active de l'utilisateur : on ne consomme que le `zoneId`. */
-export type CurrentUserAssignment = Pick<ZoneEnCours, "zoneId">;
+/**
+ * Assignation active (ZoneEnCours, UNIQUE par utilisateur) : `zoneId`, date
+ * d'assignation, et la zone complète (géométrie) → suffit à dessiner « ma zone
+ * en cours » sur la carte et à l'afficher dans le modal, sans passer par
+ * `zonesForUser`.
+ */
+export type CurrentUserAssignment = {
+  zoneId: number;
+  assignedAt?: string | null;
+  zone: Zone | null;
+};
 
 /**
  * Assignation active (ZoneEnCours) de l'utilisateur courant, via

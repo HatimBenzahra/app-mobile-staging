@@ -5,7 +5,7 @@ import { useMapFocus } from "@/hooks/use-map-focus";
 import { useMobileMapQuartiers } from "@/hooks/api/use-mobile-map-quartiers";
 import { useMobileManagerMapPlaces } from "@/hooks/api/use-mobile-manager-map-places";
 import { useWorkspaceProfile } from "@/hooks/api/use-workspace-profile";
-import { useZonesForUser } from "@/hooks/api/use-zones-for-user";
+import { useUserZoneHistory } from "@/hooks/api/use-user-zone-history";
 import { api } from "@/services/api";
 import { authService } from "@/services/auth";
 import type {
@@ -115,15 +115,16 @@ export function useCarteTerrain({ embedded = false }: UseCarteTerrainParams = {}
     shouldLoadWorkspaceProfile ? userId : null,
     shouldLoadWorkspaceProfile ? role : null,
   );
-  // Zones à afficher : source de vérité `zonesForUser` (commercial = ZoneEnCours ;
-  // manager = possédées OU assignées). Le rôle stocké est en minuscules → on le
-  // convertit vers l'enum `UserType` attendu par le hook.
+  // Zones de la carte = 2 sources, chacune son rôle (pas de `zonesForUser` ici) :
+  //  - `currentUserAssignment` → LA zone en cours (unique), avec sa géométrie ;
+  //  - `userZoneHistory` → les anciennes zones (assignations passées).
+  // Le rôle stocké est en minuscules → conversion vers l'enum `UserType`.
   const userType = useMemo<UserType | null>(
     () => (role == null ? null : role === "manager" ? "MANAGER" : "COMMERCIAL"),
     [role],
   );
-  const { data: userZones } = useZonesForUser(userId, userType);
   const { data: currentAssignment } = useCurrentAssignment(userId, userType);
+  const { data: zoneHistory } = useUserZoneHistory(userId, userType);
   const { data: quartiers, refetch: refetchMapQuartiers } = useMobileMapQuartiers();
   const {
     data: managerMapPlaces,
@@ -345,19 +346,34 @@ export function useCarteTerrain({ embedded = false }: UseCarteTerrainParams = {}
     return full || undefined;
   }, [profile]);
 
-  // Zone(s) à afficher pour l'utilisateur — via `zonesForUser` (cf. userType).
-  const zones = useMemo(() => userZones ?? [], [userZones]);
+  // « Ma zone » = la zone ACTIVE (assignation en cours, UNIQUE). Source directe :
+  // currentUserAssignment.zone (avec géométrie). Plus de fallback sur une liste.
+  const myZone = useMemo(
+    () => currentAssignment?.zone ?? null,
+    [currentAssignment],
+  );
 
-  // « Ma zone » = la zone ACTIVE de l'utilisateur (assignation en cours). À
-  // défaut d'assignation active, on retombe sur la plus récente (zones triées
-  // `createdAt desc` côté backend → premier élément).
-  const myZone = useMemo(() => {
-    if (zones.length === 0) return null;
-    const activeZoneId = currentAssignment?.zoneId;
-    const active =
-      activeZoneId != null ? zones.find((zone) => zone.id === activeZoneId) : undefined;
-    return active ?? zones[0];
-  }, [zones, currentAssignment]);
+  // Anciennes zones = historique, dédupliqué par zoneId et EXCLUANT la zone
+  // active (sinon doublon rouge + bleu sur la carte).
+  const oldZones = useMemo(() => {
+    const activeId = currentAssignment?.zoneId;
+    const seen = new Set<number>();
+    const result: Zone[] = [];
+    for (const entry of zoneHistory ?? []) {
+      const zone = entry.zone;
+      if (!zone || seen.has(zone.id)) continue;
+      if (activeId != null && zone.id === activeId) continue;
+      seen.add(zone.id);
+      result.push(zone as Zone);
+    }
+    return result;
+  }, [zoneHistory, currentAssignment]);
+
+  // Tableau combiné pour ZoneContour : zone active en tête + anciennes.
+  const zones = useMemo(
+    () => (myZone ? [myZone, ...oldZones] : oldZones),
+    [myZone, oldZones],
+  );
 
   // Recentre la carte sur « ma zone » via le focus partagé (fitBounds sur son
   // emprise, réutilise zoneBounds). No-op s'il n'existe aucune zone.
@@ -689,14 +705,12 @@ export function useCarteTerrain({ embedded = false }: UseCarteTerrainParams = {}
       return;
     }
 
-    // Garde-fou : si le bâtiment tombe hors de toute zone assignée à
+    // Garde-fou : si le bâtiment tombe hors de la zone ACTIVE (en cours) de
     // l'utilisateur, on demande confirmation (le backend rattachera zoneId=null).
-    // Aucune zone assignée → pas de garde-fou (rien à comparer).
+    // Pas de zone active → pas de garde-fou (rien à comparer).
     const insideAssignedZone =
-      zones.length === 0 ||
-      zones.some((zone) =>
-        pointInZone(buildingPin.longitude, buildingPin.latitude, zone),
-      );
+      !myZone ||
+      pointInZone(buildingPin.longitude, buildingPin.latitude, myZone);
 
     if (!insideAssignedZone) {
       Alert.alert(
@@ -717,7 +731,7 @@ export function useCarteTerrain({ embedded = false }: UseCarteTerrainParams = {}
     }
 
     await runCreateBatiment();
-  }, [buildingPin, zones, runCreateBatiment]);
+  }, [buildingPin, myZone, runCreateBatiment]);
 
   const handleCreateQuartier = useCallback(async () => {
     if (quartierPins.length === 0) {

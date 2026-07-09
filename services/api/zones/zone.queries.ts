@@ -99,6 +99,16 @@ export const CURRENT_USER_ASSIGNMENT = `
   query CurrentUserAssignment($userId: Int!, $userType: UserType!) {
     currentUserAssignment(userId: $userId, userType: $userType) {
       zoneId
+      assignedAt
+      zone {
+        id
+        nom
+        xOrigin
+        yOrigin
+        rayon
+        polygon
+        createdByName
+      }
     }
   }
 `;

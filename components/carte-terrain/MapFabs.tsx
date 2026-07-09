@@ -93,9 +93,9 @@ export function MapFabs({
         style={[styles.recenterFab, { bottom }]}
         onPress={onOpenZonesHistory}
         accessibilityRole="button"
-        accessibilityLabel="Mes zones"
+        accessibilityLabel="Mes zones (historique)"
       >
-        <Icon name="vector-polygon" size={22} color={colors.primary} />
+        <Icon name="clock" size={22} color={colors.primary} />
       </Pressable>
     ),
   ];
@@ -127,7 +127,7 @@ export function MapFabs({
             accessibilityLabel="Afficher les anciennes zones"
           >
             <Icon
-              name="clock"
+              name={showOldZones ? "eye" : "eye-off"}
               size={22}
               color={showOldZones ? colors.textOnPrimary : colors.primary}
             />

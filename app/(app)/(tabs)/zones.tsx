@@ -1,4 +1,5 @@
 import { Card, Chip, Icon } from "@/components/ui";
+import { CommercialZoneMap } from "@/components/zones/CommercialZoneMap";
 import {
   ZoneListCard,
   type ZoneCommercial,
@@ -88,8 +89,10 @@ export default function ZonesScreen() {
     loading,
     refetch: refetchZones,
   } = useZonesForUser(
-    userId,
-    role === null ? null : isManager ? "MANAGER" : "COMMERCIAL",
+    // La liste ne concerne que le manager. Le commercial voit sa zone en cours
+    // via CommercialZoneMap (source `currentUserAssignment`) → pas de fetch ici.
+    isManager ? userId : null,
+    isManager ? "MANAGER" : null,
   );
   const { data: statsData, refetch: refetchStats } = useZoneStatisticsList();
 
@@ -237,6 +240,17 @@ export default function ZonesScreen() {
           <Text style={styles.stateText}>Récupération de vos zones...</Text>
         </Card>
       </View>
+    );
+  }
+
+  // Commercial : carte de sa zone en cours (pas de liste de cards).
+  if (!isManager) {
+    return (
+      <CommercialZoneMap
+        userId={userId}
+        insets={insets}
+        onViewDetail={openZoneDetail}
+      />
     );
   }
 
