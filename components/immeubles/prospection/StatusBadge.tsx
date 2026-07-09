@@ -24,7 +24,7 @@ function StatusBadgeImpl({ statusKey, size = "sm" }: StatusBadgeProps) {
       style={[
         styles.pill,
         isMd && styles.pillMd,
-        { backgroundColor: `${status.accent}1A`, borderColor: `${status.accent}33` },
+        { backgroundColor: `${status.accent}1A` },
       ]}
     >
       <Icon
@@ -54,7 +54,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 999,
-    borderWidth: 1,
     alignSelf: "flex-start",
   },
   pillMd: {

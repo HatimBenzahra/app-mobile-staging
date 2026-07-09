@@ -74,6 +74,15 @@ function PorteTileImpl({ porte, onPress, isTablet = false, highlighted = false }
         accessibilityRole="button"
         accessibilityLabel={`Porte ${porte.numero}, statut ${status.label}`}
       >
+        {/* Voile de statut très léger (teinte, pas de bordure) pour donner du
+            relief à la card sans contour coloré. */}
+        <View
+          pointerEvents="none"
+          style={[
+            styles.statusTint,
+            { backgroundColor: `${status.accent}0D` },
+          ]}
+        />
         <View style={styles.top}>
           <View style={styles.numberWrap}>
             <Text
@@ -92,10 +101,7 @@ function PorteTileImpl({ porte, onPress, isTablet = false, highlighted = false }
           <View
             style={[
               styles.iconBox,
-              {
-                backgroundColor: `${status.accent}1A`,
-                borderColor: `${status.accent}33`,
-              },
+              { backgroundColor: `${status.accent}1A` },
             ]}
           >
             <Icon name={status.icon} size={14} color={status.accent} />
@@ -103,20 +109,25 @@ function PorteTileImpl({ porte, onPress, isTablet = false, highlighted = false }
         </View>
 
         <View style={styles.bottom}>
-          <Text
-            style={[styles.statusLabel, { color: status.accent }]}
-            numberOfLines={1}
+          <View
+            style={[
+              styles.statusPill,
+              { backgroundColor: `${status.accent}1A` },
+            ]}
           >
-            {status.label}
-          </Text>
+            <Text
+              style={[styles.statusPillLabel, { color: status.accent }]}
+              numberOfLines={1}
+            >
+              {status.label}
+            </Text>
+          </View>
           {porte.commentaire ? (
             <View style={styles.commentChip}>
               <Icon name="message-circle" size={9} color={colors.textMuted} />
             </View>
           ) : null}
         </View>
-
-        <View style={[styles.accentBar, { backgroundColor: status.accent }]} />
 
         {highlighted ? (
           <Animated.View pointerEvents="none" style={[styles.highlightRing, ringStyle]} />
@@ -140,14 +151,27 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.border,
-    overflow: "hidden",
     justifyContent: "space-between",
     gap: 10,
+    // Légère profondeur (remplace l'ancienne barre d'accent colorée).
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    elevation: 2,
   },
   tileTablet: {
     padding: 16,
     paddingBottom: 18,
     minHeight: 110,
+  },
+  statusTint: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    borderRadius: 16,
   },
   top: {
     flexDirection: "row",
@@ -181,18 +205,23 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     alignItems: "center",
     justifyContent: "center",
-    borderWidth: 1,
   },
   bottom: {
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
   },
-  statusLabel: {
+  statusPill: {
+    flexShrink: 1,
+    alignSelf: "flex-start",
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 999,
+  },
+  statusPillLabel: {
     fontSize: 11.5,
     fontWeight: "700",
     letterSpacing: 0.1,
-    flex: 1,
   },
   commentChip: {
     width: 18,
@@ -201,13 +230,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surfaceMuted,
     alignItems: "center",
     justifyContent: "center",
-  },
-  accentBar: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: 3,
   },
   highlightRing: {
     position: "absolute",

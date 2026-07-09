@@ -19,6 +19,9 @@ export type ImmeublesPageFilters = {
   search?: string;
   typeHabitat?: TypeHabitat | null;
   progress?: ImmeubleProgressFilter;
+  /** Bornes ISO de filtrage sur createdAt (createdTo = fin de journée). */
+  createdFrom?: string | null;
+  createdTo?: string | null;
 };
 
 export type UseImmeublesPageResult = {
@@ -42,8 +45,8 @@ export type UseImmeublesPageResult = {
 export function useImmeublesPage(
   filters: ImmeublesPageFilters,
 ): UseImmeublesPageResult {
-  const { search, typeHabitat, progress } = filters;
-  const filterSig = `${search?.trim() ?? ""}|${typeHabitat ?? ""}|${progress ?? "ALL"}`;
+  const { search, typeHabitat, progress, createdFrom, createdTo } = filters;
+  const filterSig = `${search?.trim() ?? ""}|${typeHabitat ?? ""}|${progress ?? "ALL"}|${createdFrom ?? ""}|${createdTo ?? ""}`;
 
   const [items, setItems] = useState<Immeuble[]>([]);
   const [summary, setSummary] = useState<ImmeublesPageSummary | null>(null);
@@ -73,8 +76,10 @@ export function useImmeublesPage(
       search: search?.trim() || null,
       typeHabitat: typeHabitat ?? null,
       progress: progress ?? ("ALL" as ImmeubleProgressFilter),
+      createdFrom: createdFrom ?? null,
+      createdTo: createdTo ?? null,
     }),
-    [search, typeHabitat, progress],
+    [search, typeHabitat, progress, createdFrom, createdTo],
   );
 
   const loadFirstPage = useCallback(async () => {

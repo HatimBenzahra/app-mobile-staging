@@ -3,6 +3,7 @@ import { Card, Chip, ErrorState, PressableCard, Icon, type IconName } from "@/co
 import { useCreateImmeuble } from "@/hooks/api/use-create-immeuble";
 import { useMapFocus } from "@/hooks/use-map-focus";
 import { useImmeublesPage } from "@/hooks/api/use-immeubles-page";
+import { DateRangeSheet } from "@/components/immeubles/DateRangeSheet";
 import { useQuartiers } from "@/hooks/api/use-quartiers";
 import { colors, habitat, progressColors } from "@/constants/theme";
 import { authService } from "@/services/auth";
@@ -51,6 +52,44 @@ function recencyMs(item: {
   const u = item.updatedAt ? Date.parse(item.updatedAt) : NaN;
   const t = Math.max(Number.isNaN(c) ? -Infinity : c, Number.isNaN(u) ? -Infinity : u);
   return Number.isFinite(t) ? t : item.id;
+}
+
+/** Date → "JJ/MM/AA" pour les puces de filtre de période. */
+function formatDateShort(date: Date): string {
+  const dd = date.getDate().toString().padStart(2, "0");
+  const mm = (date.getMonth() + 1).toString().padStart(2, "0");
+  const yy = date.getFullYear().toString().slice(-2);
+  return `${dd}/${mm}/${yy}`;
+}
+
+/** Libellé de la puce « Période » selon les bornes sélectionnées. */
+function dateRangeLabel(from: Date | null, to: Date | null): string {
+  if (from && to) return `${formatDateShort(from)} – ${formatDateShort(to)}`;
+  if (from) return `Depuis ${formatDateShort(from)}`;
+  if (to) return `Jusqu'au ${formatDateShort(to)}`;
+  return "Période";
+}
+
+/**
+ * Bucket de progression (mêmes bornes que le backend `progressPredicateSql`),
+ * appliqué aussi bien aux lieux (serveur) qu'aux quartiers (client) pour un
+ * comportement identique quel que soit le type d'item.
+ */
+function matchProgressBucket(percent: number, filter: string): boolean {
+  switch (filter) {
+    case "incomplete":
+      return percent < 100;
+    case "low":
+      return percent < 35;
+    case "mid":
+      return percent >= 35 && percent < 70;
+    case "high":
+      return percent >= 70 && percent < 100;
+    case "complete":
+      return percent === 100;
+    default:
+      return true; // "all"
+  }
 }
 
 const TYPE_CHIPS: {
@@ -287,6 +326,11 @@ export default function ImmeublesScreen(_props: ImmeublesScreenProps) {
   const [progressFilter, setProgressFilter] = useState("incomplete");
   const [typeFilter, setTypeFilter] = useState<TypeFilterKey>("all");
   const [isAddOpen, setIsAddOpen] = useState(false);
+  // Filtre plage de dates (createdAt). Bornes optionnelles ; `datePickerMode`
+  // indique quel sélecteur natif est ouvert.
+  const [createdFrom, setCreatedFrom] = useState<Date | null>(null);
+  const [createdTo, setCreatedTo] = useState<Date | null>(null);
+  const [dateSheetOpen, setDateSheetOpen] = useState(false);
 
   const getFilterChipAnim = (key: string) => {
     const existing = filterChipAnimsRef.get(key);
@@ -348,6 +392,23 @@ export default function ImmeublesScreen(_props: ImmeublesScreenProps) {
       ? typeFilter
       : null;
   const serverProgress = progressFilter.toUpperCase() as ImmeubleProgressFilter;
+
+  // Bornes ISO envoyées au serveur : `createdFrom` au début de journée,
+  // `createdTo` en fin de journée (borne haute inclusive).
+  const createdFromISO = useMemo(
+    () =>
+      createdFrom
+        ? new Date(new Date(createdFrom).setHours(0, 0, 0, 0)).toISOString()
+        : null,
+    [createdFrom],
+  );
+  const createdToISO = useMemo(
+    () =>
+      createdTo
+        ? new Date(new Date(createdTo).setHours(23, 59, 59, 999)).toISOString()
+        : null,
+    [createdTo],
+  );
   const {
     items,
     summary,
@@ -360,6 +421,8 @@ export default function ImmeublesScreen(_props: ImmeublesScreenProps) {
     search: deferredQuery,
     typeHabitat: serverTypeHabitat,
     progress: serverProgress,
+    createdFrom: createdFromISO,
+    createdTo: createdToISO,
   });
   const isProfileReady = userId !== null && role !== null;
   const isInitialLoading = !isProfileReady || (loadingInitial && items.length === 0);
@@ -381,16 +444,68 @@ export default function ImmeublesScreen(_props: ImmeublesScreenProps) {
     };
   }, []);
 
+  // Progression agrégée par quartier (moyenne pondérée des portes de ses lieux).
+  // Utilisée pour l'affichage ET le filtrage par progression des quartiers.
+  const quartierProgressById = useMemo(() => {
+    const entries: Record<
+      number,
+      { total: number; prospectees: number; percent: number; color: string }
+    > = {};
+    for (const q of quartiersData ?? []) {
+      let total = 0;
+      let prospectees = 0;
+      for (const imm of q.immeubles ?? []) {
+        const p = getImmeubleProgress(imm);
+        total += p.total;
+        prospectees += p.prospectees;
+      }
+      const percent = total === 0 ? 0 : Math.round((prospectees / total) * 100);
+      const color =
+        percent < 35
+          ? progressColors.low
+          : percent < 70
+            ? progressColors.mid
+            : percent < 100
+              ? progressColors.high
+              : progressColors.complete;
+      entries[q.id] = { total, prospectees, percent, color };
+    }
+    return entries;
+  }, [quartiersData]);
+
+  // Filtrage UNIQUE des quartiers (recherche + date + progression), identique
+  // en vue « Tous » et « Quartiers » → les quartiers respectent exactement les
+  // mêmes filtres que les lieux (qui, eux, sont filtrés côté serveur).
+  const filterQuartiers = useCallback(
+    (list: Quartier[]): Quartier[] => {
+      const q = deferredQuery.trim().toLowerCase();
+      const fromMs = createdFrom
+        ? new Date(createdFrom).setHours(0, 0, 0, 0)
+        : null;
+      const toMs = createdTo
+        ? new Date(createdTo).setHours(23, 59, 59, 999)
+        : null;
+      return list.filter((quartier) => {
+        if (q && !(quartier.nom ?? "").toLowerCase().includes(q)) return false;
+        if (fromMs != null || toMs != null) {
+          const c = quartier.createdAt ? Date.parse(quartier.createdAt) : NaN;
+          if (Number.isNaN(c)) return false;
+          if (fromMs != null && c < fromMs) return false;
+          if (toMs != null && c > toMs) return false;
+        }
+        const percent = quartierProgressById[quartier.id]?.percent ?? 0;
+        return matchProgressBucket(percent, progressFilter);
+      });
+    },
+    [deferredQuery, createdFrom, createdTo, progressFilter, quartierProgressById],
+  );
+
   const filteredQuartiers = useMemo((): Quartier[] => {
     if (typeFilter !== "quartiers") return [];
-    const all = quartiersData ?? [];
-    const matched = !deferredQuery.trim()
-      ? all
-      : all.filter((q) =>
-          (q.nom ?? "").toLowerCase().includes(deferredQuery.toLowerCase()),
-        );
-    return [...matched].sort((a, b) => recencyMs(b) - recencyMs(a));
-  }, [quartiersData, deferredQuery, typeFilter]);
+    return [...filterQuartiers(quartiersData ?? [])].sort(
+      (a, b) => recencyMs(b) - recencyMs(a),
+    );
+  }, [typeFilter, quartiersData, filterQuartiers]);
 
   // Pré-calcul unique du progress par immeuble (à partir des lieux `items`
   // renvoyés par le serveur). Sert au rendu des cartes (renderLieuCard) — un
@@ -461,12 +576,7 @@ export default function ImmeublesScreen(_props: ImmeublesScreenProps) {
   // rendu). Les quartiers restent groupés en tête, les lieux suivent.
   const mixedRows = useMemo((): LieuxItem[][] => {
     if (typeFilter !== "all") return [];
-    const matchedQuartiers = !deferredQuery.trim()
-      ? (quartiersData ?? [])
-      : (quartiersData ?? []).filter((q) =>
-          (q.nom ?? "").toLowerCase().includes(deferredQuery.toLowerCase()),
-        );
-    const sortedQuartiers = [...matchedQuartiers].sort(
+    const sortedQuartiers = [...filterQuartiers(quartiersData ?? [])].sort(
       (a, b) => recencyMs(b) - recencyMs(a),
     );
     const mixed: LieuxItem[] = [
@@ -478,7 +588,7 @@ export default function ImmeublesScreen(_props: ImmeublesScreenProps) {
       rows.push(mixed.slice(i, i + columnsPerRow));
     }
     return rows;
-  }, [typeFilter, deferredQuery, quartiersData, items, columnsPerRow]);
+  }, [typeFilter, quartiersData, items, columnsPerRow, filterQuartiers]);
 
   const listData = useMemo<ListRow[]>(() => {
     if (typeFilter === "quartiers") {
@@ -504,30 +614,6 @@ export default function ImmeublesScreen(_props: ImmeublesScreenProps) {
       )
       .join("-");
   }, []);
-
-  const quartierProgressById = useMemo(() => {
-    const entries: Record<number, { total: number; prospectees: number; percent: number; color: string }> = {};
-    for (const q of (quartiersData ?? [])) {
-      let total = 0;
-      let prospectees = 0;
-      for (const imm of (q.immeubles ?? [])) {
-        const p = getImmeubleProgress(imm);
-        total += p.total;
-        prospectees += p.prospectees;
-      }
-      const percent = total === 0 ? 0 : Math.round((prospectees / total) * 100);
-      const color =
-        percent < 35
-          ? progressColors.low
-          : percent < 70
-            ? progressColors.mid
-            : percent < 100
-              ? progressColors.high
-              : progressColors.complete;
-      entries[q.id] = { total, prospectees, percent, color };
-    }
-    return entries;
-  }, [quartiersData]);
 
   const handleOpenImmeuble = useCallback(
     (immeubleId: number) => {
@@ -637,10 +723,9 @@ export default function ImmeublesScreen(_props: ImmeublesScreenProps) {
                   />
                 ))}
               </View>
-              {/* Progress chips — hidden when viewing quartiers */}
-              {typeFilter !== "quartiers" && (
-                <View style={styles.filterRow}>
-                  {FILTER_CHIPS.map((chip) => {
+              {/* Progress chips — applicables aux lieux ET aux quartiers. */}
+              <View style={styles.filterRow}>
+                {FILTER_CHIPS.map((chip) => {
                     const selected = progressFilter === chip.key;
                     const anim = getFilterChipAnim(chip.key);
                     return (
@@ -681,7 +766,50 @@ export default function ImmeublesScreen(_props: ImmeublesScreenProps) {
                     );
                   })}
                 </View>
-              )}
+              {/* Filtre plage de dates (createdAt) — sélecteur maison. */}
+              <View style={styles.filterRow}>
+                <Pressable
+                  style={[
+                    styles.dateChip,
+                    createdFrom || createdTo ? styles.dateChipActive : null,
+                  ]}
+                  onPress={() => setDateSheetOpen(true)}
+                  accessibilityRole="button"
+                  accessibilityLabel="Filtrer par période de création"
+                >
+                  <Icon
+                    name="calendar"
+                    size={13}
+                    color={
+                      createdFrom || createdTo ? colors.primary : colors.textMuted
+                    }
+                  />
+                  <Text
+                    style={[
+                      styles.dateChipText,
+                      createdFrom || createdTo ? styles.dateChipTextActive : null,
+                    ]}
+                    numberOfLines={1}
+                  >
+                    {createdFrom || createdTo
+                      ? dateRangeLabel(createdFrom, createdTo)
+                      : "Période"}
+                  </Text>
+                </Pressable>
+                {createdFrom || createdTo ? (
+                  <Pressable
+                    style={styles.dateClear}
+                    onPress={() => {
+                      setCreatedFrom(null);
+                      setCreatedTo(null);
+                    }}
+                    accessibilityRole="button"
+                    accessibilityLabel="Effacer le filtre de dates"
+                  >
+                    <Icon name="x" size={14} color={colors.textMuted} />
+                  </Pressable>
+                ) : null}
+              </View>
             </View>
           )}
           <View style={styles.searchWrapRow}>
@@ -921,6 +1049,16 @@ export default function ImmeublesScreen(_props: ImmeublesScreenProps) {
             } else {
               console.log("[Immeuble] add failed");
             }
+          }}
+        />
+        <DateRangeSheet
+          open={dateSheetOpen}
+          onClose={() => setDateSheetOpen(false)}
+          initialFrom={createdFrom}
+          initialTo={createdTo}
+          onApply={(nextFrom, nextTo) => {
+            setCreatedFrom(nextFrom);
+            setCreatedTo(nextTo);
           }}
         />
       </View>
@@ -1235,6 +1373,37 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     gap: 8,
+  },
+  dateChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 12,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  dateChipActive: {
+    borderColor: colors.primary,
+    backgroundColor: colors.primarySoft,
+  },
+  dateChipText: {
+    fontSize: 12.5,
+    fontWeight: "700",
+    color: colors.textMuted,
+  },
+  dateChipTextActive: {
+    color: colors.primary,
+  },
+  dateClear: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.surfaceMuted,
   },
   searchWrapRow: {
     flexDirection: "row",

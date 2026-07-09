@@ -198,6 +198,9 @@ export type ImmeublesPageInput = {
   search?: string | null;
   typeHabitat?: TypeHabitat | null;
   progress?: ImmeubleProgressFilter;
+  /** Bornes ISO de filtrage sur createdAt (createdTo attendu en fin de journée). */
+  createdFrom?: string | null;
+  createdTo?: string | null;
 };
 
 export type ImmeublesPageSummary = {
