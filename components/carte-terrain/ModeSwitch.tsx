@@ -8,7 +8,7 @@ import { styles } from "./styles";
 type ModeMeta = { icon: IconName; label: string };
 
 const MODE_META: Record<TerrainMode, ModeMeta> = {
-  VISUALISATION: { icon: "eye", label: "Voir" },
+  VISUALISATION: { icon: "eye", label: "Vue" },
   BATIMENT: { icon: "map-pin", label: "Bâtiment" },
   QUARTIER: { icon: "map", label: "Quartier" },
 };

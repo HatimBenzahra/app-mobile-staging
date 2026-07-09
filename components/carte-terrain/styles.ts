@@ -44,6 +44,56 @@ export const styles = StyleSheet.create({
     backgroundColor: colors.primary,
     borderColor: colors.primary,
   },
+  // Bloc VUE : conteneur unique regroupant les toggles d'affichage (satellite,
+  // équipe). Même axe droit et même largeur visuelle que les FAB d'action.
+  viewToggleGroup: {
+    position: "absolute",
+    right: 16,
+    width: 52,
+    borderRadius: 26,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    overflow: "hidden",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.18,
+    shadowRadius: 10,
+    elevation: 8,
+  },
+  viewToggleCell: {
+    width: "100%",
+    height: 48,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  viewToggleCellActive: {
+    backgroundColor: colors.primary,
+  },
+  viewToggleDivider: {
+    height: 1,
+    width: "100%",
+    backgroundColor: colors.border,
+  },
+  // Label du nom de MA zone (en cours), posé au centroïde. Rouge = cohérent
+  // avec le contour de la zone active.
+  zoneLabelPill: {
+    backgroundColor: colors.danger,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 10,
+    maxWidth: 160,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  zoneLabelText: {
+    color: colors.textOnPrimary,
+    fontSize: 11,
+    fontWeight: "800",
+  },
   locatingOverlay: {
     position: "absolute",
     top: 0,

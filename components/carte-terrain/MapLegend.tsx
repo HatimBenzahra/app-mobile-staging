@@ -59,8 +59,15 @@ export function MapLegend({ insets, role }: MapLegendProps) {
         <LegendRow swatch={<View style={[styles.dot, { backgroundColor: ownership.team.accent }]} />} label="Lieux de l'équipe" />
       )}
 
-      <Text style={styles.sectionLabel}>Zone</Text>
-      <LegendRow swatch={<View style={[styles.zoneSwatch, { borderColor: colors.info }]} />} label="Ma zone" />
+      <Text style={styles.sectionLabel}>Zones</Text>
+      <LegendRow
+        swatch={<View style={[styles.zoneSwatch, { borderColor: colors.danger, backgroundColor: colors.dangerSoft }]} />}
+        label="Ma zone (en cours)"
+      />
+      <LegendRow
+        swatch={<View style={[styles.zoneSwatch, { borderColor: colors.info, backgroundColor: colors.infoSoft }]} />}
+        label="Anciennes zones"
+      />
 
       {/* Sur la carte, l'icône d'habitat est blanche dans une pastille colorée
           par propriétaire : le TYPE est porté par la forme, pas la couleur. On
@@ -168,7 +175,8 @@ const styles = StyleSheet.create({
     height: 16,
     borderRadius: 4,
     borderWidth: 2,
-    backgroundColor: colors.infoSoft,
+    // La couleur (bordure + fond) est fournie par chaque ligne : rouge = ma zone
+    // en cours, bleu = anciennes zones (cf. ZoneContour).
   },
   rowLabel: {
     flex: 1,

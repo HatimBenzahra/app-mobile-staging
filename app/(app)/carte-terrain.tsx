@@ -5,6 +5,7 @@ import { MapFabs } from "@/components/carte-terrain/MapFabs";
 import { MapLegend } from "@/components/carte-terrain/MapLegend";
 import { MapLocatingOverlay } from "@/components/carte-terrain/MapLocatingOverlay";
 import { ModeSwitch } from "@/components/carte-terrain/ModeSwitch";
+import { MyZoneChip } from "@/components/carte-terrain/MyZoneChip";
 import { QuartierContours } from "@/components/carte-terrain/QuartierContours";
 import { ZoneContour } from "@/components/carte-terrain/ZoneContour";
 import ZoneSheet from "@/components/carte-terrain/ZoneSheet";
@@ -21,7 +22,7 @@ import { useZonesHistoryModal } from "@/hooks/use-zones-history-modal";
 import type { Immeuble } from "@/types/api";
 import { useIsFocused } from "@react-navigation/native";
 import { router } from "expo-router";
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Alert, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -105,6 +106,14 @@ export default function CarteTerrainScreen({
     readyToCreateBatiment,
     readyToCreateQuartier,
   } = useCarteTerrain({ embedded });
+
+  // Anciennes zones : masquées par défaut (focus sur ma zone en cours). Le toggle
+  // n'apparaît que s'il existe au moins une zone autre que l'active.
+  const [showOldZones, setShowOldZones] = useState(false);
+  const hasOldZones = useMemo(
+    () => (zones ?? []).some((z) => z.id !== myZone?.id),
+    [zones, myZone],
+  );
 
   // La BuildingSheet est une Card interne à l'écran : sa visibilité dépend
   // uniquement de `selectedExistingLieu`. En allant sur /lieu/[id], la carte est
@@ -200,6 +209,7 @@ export default function CarteTerrainScreen({
           mode={mode}
           onSelectZone={handleSelectZone}
           activeZoneId={myZone?.id}
+          showOldZones={showOldZones}
         />
         <QuartierContours quartiers={quartiers ?? []} immeubles={immeubles} mode={mode} />
         <TerrainMarkers
@@ -227,8 +237,11 @@ export default function CarteTerrainScreen({
           showTeam={showTeam}
           loadingTeam={loadingManagerMapPlaces}
           hasZone={!!myZone}
+          showOldZonesToggle={hasOldZones}
+          showOldZones={showOldZones}
           onToggleSatellite={handleToggleSatellite}
           onToggleTeam={toggleShowTeam}
+          onToggleOldZones={() => setShowOldZones((v) => !v)}
           onRecenter={centerOnCurrentLocation}
           onFocusMyZone={focusMyZone}
           onOpenZonesHistory={openZonesHistory}
@@ -236,6 +249,14 @@ export default function CarteTerrainScreen({
       )}
 
       {mode === "VISUALISATION" && !selectedExistingLieu && <MapLegend insets={insets} role={role} />}
+
+      {myZone && mode === "VISUALISATION" && !selectedExistingLieu && (
+        <MyZoneChip
+          insets={insets}
+          zoneName={myZone.nom}
+          onPress={focusMyZone}
+        />
+      )}
 
       <ModeSwitch
         insets={insets}

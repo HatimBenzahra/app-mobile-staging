@@ -1,7 +1,7 @@
 import { colors } from "@/constants/theme";
 import { Icon } from "@/components/ui";
 import { router } from "expo-router";
-import { ActivityIndicator, Pressable } from "react-native";
+import { ActivityIndicator, Pressable, View } from "react-native";
 import type { EdgeInsets } from "react-native-safe-area-context";
 import { styles } from "./styles";
 
@@ -14,8 +14,12 @@ type MapFabsProps = {
   showTeam: boolean;
   loadingTeam?: boolean;
   hasZone: boolean;
+  /** Afficher le toggle « anciennes zones » (uniquement s'il en existe). */
+  showOldZonesToggle: boolean;
+  showOldZones: boolean;
   onToggleSatellite: () => void;
   onToggleTeam: () => void;
+  onToggleOldZones: () => void;
   onRecenter: () => void;
   onFocusMyZone: () => void;
   onOpenZonesHistory: () => void;
@@ -30,20 +34,26 @@ export function MapFabs({
   showTeam,
   loadingTeam = false,
   hasZone,
+  showOldZonesToggle,
+  showOldZones,
   onToggleSatellite,
   onToggleTeam,
+  onToggleOldZones,
   onRecenter,
   onFocusMyZone,
   onOpenZonesHistory,
 }: MapFabsProps) {
-  // Pile des FAB, du bas vers le haut. On ne garde que ceux visibles puis on
-  // calcule leur position séquentiellement (`bottom`) → aucun trou quand un
-  // bouton conditionnel (ex. « Équipe », réservé manager) est absent.
+  // Deux blocs distincts, alignés sur le même axe droit (`right:16`) :
+  //  - ACTIONS (bas) : FAB ronds individuels, empilés depuis `FAB_BASE`.
+  //  - VUE (haut)    : toggles d'affichage groupés dans un conteneur unique,
+  //                    posé au-dessus du bloc actions avec un `GROUP_GAP` visible.
   const FAB_BASE = insets.bottom + 24;
   const FAB_STEP = 60;
+  const FAB_SIZE = 52;
+  const GROUP_GAP = 14;
 
-  // Chaque entrée reçoit sa position `bottom` calculée et rend son Pressable.
-  const fabs: ((bottom: number) => React.ReactElement)[] = [
+  // --- Bloc ACTIONS (bas → haut). On ne garde que ceux visibles. ---
+  const actions: ((bottom: number) => React.ReactElement)[] = [
     // Recentrer GPS (toujours, tout en bas).
     (bottom) => (
       <Pressable
@@ -60,41 +70,6 @@ export function MapFabs({
         )}
       </Pressable>
     ),
-    // Satellite.
-    (bottom) => (
-      <Pressable
-        key="satellite"
-        style={[styles.recenterFab, { bottom }, satellite && styles.recenterFabActive]}
-        onPress={onToggleSatellite}
-        accessibilityRole="button"
-        accessibilityLabel="Vue satellite"
-      >
-        <Icon name="satellite" size={22} color={satellite ? colors.textOnPrimary : colors.primary} />
-      </Pressable>
-    ),
-    // Équipe (manager uniquement).
-    ...(showTeamToggle
-      ? [
-          (bottom: number) => (
-            <Pressable
-              key="team"
-              style={[styles.recenterFab, { bottom }, showTeam && styles.recenterFabActive]}
-              onPress={onToggleTeam}
-              accessibilityRole="button"
-              accessibilityLabel="Afficher l'équipe"
-            >
-              {loadingTeam ? (
-                <ActivityIndicator
-                  size="small"
-                  color={showTeam ? colors.textOnPrimary : colors.primary}
-                />
-              ) : (
-                <Icon name="users" size={22} color={showTeam ? colors.textOnPrimary : colors.primary} />
-              )}
-            </Pressable>
-          ),
-        ]
-      : []),
     // Recentrer sur ma zone (si l'utilisateur a une zone).
     ...(hasZone
       ? [
@@ -125,6 +100,71 @@ export function MapFabs({
     ),
   ];
 
+  // --- Bloc VUE (toggles d'affichage), rendus dans un conteneur commun. ---
+  const viewToggles: React.ReactElement[] = [
+    <Pressable
+      key="satellite"
+      style={[styles.viewToggleCell, satellite && styles.viewToggleCellActive]}
+      onPress={onToggleSatellite}
+      accessibilityRole="button"
+      accessibilityState={{ selected: satellite }}
+      accessibilityLabel="Vue satellite"
+    >
+      <Icon
+        name="satellite"
+        size={22}
+        color={satellite ? colors.textOnPrimary : colors.primary}
+      />
+    </Pressable>,
+    ...(showOldZonesToggle
+      ? [
+          <Pressable
+            key="old-zones"
+            style={[styles.viewToggleCell, showOldZones && styles.viewToggleCellActive]}
+            onPress={onToggleOldZones}
+            accessibilityRole="button"
+            accessibilityState={{ selected: showOldZones }}
+            accessibilityLabel="Afficher les anciennes zones"
+          >
+            <Icon
+              name="clock"
+              size={22}
+              color={showOldZones ? colors.textOnPrimary : colors.primary}
+            />
+          </Pressable>,
+        ]
+      : []),
+    ...(showTeamToggle
+      ? [
+          <Pressable
+            key="team"
+            style={[styles.viewToggleCell, showTeam && styles.viewToggleCellActive]}
+            onPress={onToggleTeam}
+            accessibilityRole="button"
+            accessibilityState={{ selected: showTeam }}
+            accessibilityLabel="Afficher l'équipe"
+          >
+            {loadingTeam ? (
+              <ActivityIndicator
+                size="small"
+                color={showTeam ? colors.textOnPrimary : colors.primary}
+              />
+            ) : (
+              <Icon
+                name="users"
+                size={22}
+                color={showTeam ? colors.textOnPrimary : colors.primary}
+              />
+            )}
+          </Pressable>,
+        ]
+      : []),
+  ];
+
+  // Le groupe VUE se pose juste au-dessus du sommet du bloc actions.
+  const viewGroupBottom =
+    FAB_BASE + (actions.length - 1) * FAB_STEP + FAB_SIZE + GROUP_GAP;
+
   return (
     <>
       {!embedded && (
@@ -136,7 +176,18 @@ export function MapFabs({
         </Pressable>
       )}
 
-      {fabs.map((render, index) => render(FAB_BASE + index * FAB_STEP))}
+      {actions.map((render, index) => render(FAB_BASE + index * FAB_STEP))}
+
+      <View style={[styles.viewToggleGroup, { bottom: viewGroupBottom }]}>
+        {viewToggles.flatMap((cell, i) =>
+          i === 0
+            ? [cell]
+            : [
+                <View key={`divider-${i}`} style={styles.viewToggleDivider} />,
+                cell,
+              ],
+        )}
+      </View>
     </>
   );
 }
