@@ -80,6 +80,7 @@ const ICON_MAP = {
   "refresh-cw": "refresh",
   repeat: "repeat",
   "rotate-ccw": "rotate-left",
+  satellite: "satellite-variant",
   search: "magnify",
   shield: "shield-outline",
   sliders: "tune",

@@ -47,6 +47,12 @@ export function MapLegend({ insets, role }: MapLegendProps) {
         </Pressable>
       </View>
 
+      {/* Double axe des marqueurs, pour lever l'ambiguïté du code visuel. */}
+      <Text style={styles.hint}>
+        Marqueur : la couleur indique le propriétaire, l&apos;icône le type de
+        lieu.
+      </Text>
+
       <Text style={styles.sectionLabel}>Propriétaire</Text>
       <LegendRow swatch={<View style={[styles.dot, { backgroundColor: ownership.mine.accent }]} />} label="Mes lieux" />
       {role === "manager" && (
@@ -56,10 +62,13 @@ export function MapLegend({ insets, role }: MapLegendProps) {
       <Text style={styles.sectionLabel}>Zone</Text>
       <LegendRow swatch={<View style={[styles.zoneSwatch, { borderColor: colors.info }]} />} label="Ma zone" />
 
-      <Text style={styles.sectionLabel}>Type d&apos;habitat</Text>
-      <LegendRow swatch={<HabitatIcon type="IMMEUBLE" size={16} color={colors.primary} />} label="Immeuble" />
-      <LegendRow swatch={<HabitatIcon type="MAISON" size={16} color={colors.success} />} label="Maison" />
-      <LegendRow swatch={<HabitatIcon type="PAVILLON" size={16} color="#F97316" />} label="Pavillon" />
+      {/* Sur la carte, l'icône d'habitat est blanche dans une pastille colorée
+          par propriétaire : le TYPE est porté par la forme, pas la couleur. On
+          neutralise donc la teinte ici (plus de code couleur trompeur). */}
+      <Text style={styles.sectionLabel}>Type de lieu</Text>
+      <LegendRow swatch={<HabitatIcon type="IMMEUBLE" size={16} color={colors.textStrong} />} label="Immeuble" />
+      <LegendRow swatch={<HabitatIcon type="MAISON" size={16} color={colors.textStrong} />} label="Maison" />
+      <LegendRow swatch={<HabitatIcon type="PAVILLON" size={16} color={colors.textStrong} />} label="Pavillon" />
     </Card>
   );
 }
@@ -121,6 +130,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: colors.surfaceMuted,
+  },
+  hint: {
+    fontSize: 11,
+    lineHeight: 15,
+    color: colors.textMuted,
+    marginBottom: 2,
   },
   sectionLabel: {
     marginTop: 6,

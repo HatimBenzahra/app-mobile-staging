@@ -69,7 +69,7 @@ export function MapFabs({
         accessibilityRole="button"
         accessibilityLabel="Vue satellite"
       >
-        <Icon name="layers" size={22} color={satellite ? colors.textOnPrimary : colors.primary} />
+        <Icon name="satellite" size={22} color={satellite ? colors.textOnPrimary : colors.primary} />
       </Pressable>
     ),
     // Équipe (manager uniquement).
@@ -106,7 +106,7 @@ export function MapFabs({
               accessibilityRole="button"
               accessibilityLabel="Recentrer sur ma zone"
             >
-              <Icon name="map" size={22} color={colors.primary} />
+              <Icon name="target" size={22} color={colors.primary} />
             </Pressable>
           ),
         ]
@@ -120,7 +120,7 @@ export function MapFabs({
         accessibilityRole="button"
         accessibilityLabel="Mes zones"
       >
-        <Icon name="clock" size={22} color={colors.primary} />
+        <Icon name="vector-polygon" size={22} color={colors.primary} />
       </Pressable>
     ),
   ];

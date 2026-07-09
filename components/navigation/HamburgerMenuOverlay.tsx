@@ -169,7 +169,7 @@ export default function HamburgerMenuOverlay({
         : []),
       {
         key: "zones",
-        icon: "grid" as IconName,
+        icon: "vector-polygon" as IconName,
         label: "Zones",
         targetIndex: isManager ? 7 : 6,
         isActive: currentIndex === (isManager ? 7 : 6),

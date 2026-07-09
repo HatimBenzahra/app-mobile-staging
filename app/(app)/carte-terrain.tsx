@@ -241,6 +241,7 @@ export default function CarteTerrainScreen({
         insets={insets}
         mode={mode}
         onSelectMode={handleSelectMode}
+        embedded={embedded}
       />
 
       <BuildingSheet

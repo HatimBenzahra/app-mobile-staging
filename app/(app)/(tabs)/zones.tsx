@@ -354,7 +354,7 @@ export default function ZonesScreen() {
 
       {visibleZones.length === 0 ? (
         <Card variant="outlined" padding="lg" style={styles.stateCard}>
-          <Icon name="layers" size={28} color={colors.textSubtle} />
+          <Icon name="vector-polygon" size={28} color={colors.textSubtle} />
           <Text style={styles.stateTitle}>
             {zones.length === 0
               ? "Aucune zone"

@@ -70,3 +70,5 @@ assets/**/.omc/
 
 # Backups manuels de config
 *.staging-bak
+
+*.md

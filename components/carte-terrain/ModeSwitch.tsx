@@ -9,21 +9,39 @@ type ModeMeta = { icon: IconName; label: string };
 
 const MODE_META: Record<TerrainMode, ModeMeta> = {
   VISUALISATION: { icon: "eye", label: "Voir" },
-  BATIMENT: { icon: "map-pin", label: "Batiment" },
+  BATIMENT: { icon: "map-pin", label: "Bâtiment" },
   QUARTIER: { icon: "map", label: "Quartier" },
 };
+
+// Bouton retour (MapFabs) : left 16 + largeur 42 + marge. On décale le
+// ModeSwitch quand il est présent (route empilée) pour éviter le chevauchement.
+const BACK_FAB_CLEARANCE = 68;
 
 type ModeSwitchProps = {
   insets: EdgeInsets;
   mode: TerrainMode;
   onSelectMode: (nextMode: TerrainMode) => void;
+  /** Carte embarquée (onglet) : pas de bouton retour → le ModeSwitch peut
+   *  prendre toute la largeur. En route empilée, on laisse la place au retour. */
+  embedded: boolean;
 };
 
-export function ModeSwitch({ insets, mode, onSelectMode }: ModeSwitchProps) {
+export function ModeSwitch({
+  insets,
+  mode,
+  onSelectMode,
+  embedded,
+}: ModeSwitchProps) {
   const modes: TerrainMode[] = ["VISUALISATION", "BATIMENT", "QUARTIER"];
 
   return (
-    <View style={[styles.modeSwitch, { top: insets.top + 10 }]}>
+    <View
+      style={[
+        styles.modeSwitch,
+        { top: insets.top + 10 },
+        !embedded && { left: BACK_FAB_CLEARANCE },
+      ]}
+    >
       {modes.map((nextMode) => {
         const selected = mode === nextMode;
         const meta = MODE_META[nextMode];

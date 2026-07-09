@@ -43,7 +43,7 @@ export default function ZoneSheet({ zone, open, onClose, onViewDetail }: ZoneShe
     >
       <View style={sheetStyles.header}>
         <View style={[sheetStyles.headerIcon, styles.headerIconInfo]}>
-          <Icon name="grid" size={22} color={colors.info} />
+          <Icon name="vector-polygon" size={22} color={colors.info} />
         </View>
         <View style={sheetStyles.headerText}>
           <Text style={sheetStyles.title} numberOfLines={1}>

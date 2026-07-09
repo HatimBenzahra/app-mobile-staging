@@ -1,5 +1,7 @@
 import AnimatedHeader from "@/components/navigation/AnimatedHeader";
-import NavigationRail from "@/components/navigation/NavigationRail";
+import NavigationRail, {
+  COLLAPSED_WIDTH,
+} from "@/components/navigation/NavigationRail";
 import SwipeTabs, { buildRoutes } from "@/components/navigation/SwipeTabs";
 import ProfileSheet from "@/components/ProfileSheet";
 import { ZoneDetailView } from "@/components/zones/ZoneDetailView";
@@ -29,6 +31,10 @@ function AppContent() {
   const [role, setRole] = useState<string | null>(null);
   const [showHeader, setShowHeader] = useState(true);
   const [showRail, setShowRail] = useState(true);
+  // Largeur réservée à gauche pour la rail. Mise à jour en UN coup par la rail
+  // (fin d'expansion / début de repli) → la carte ne se redimensionne qu'une
+  // fois, sans glitch pendant l'animation de largeur.
+  const [contentInset, setContentInset] = useState(COLLAPSED_WIDTH);
   const { sheetRef } = useProfileSheet();
   const { focusTarget } = useMapFocus();
   const { requestedTabKey, clearRequestedTab } = useRequestedTab();
@@ -210,9 +216,16 @@ function AppContent() {
             currentIndex={index}
             onNavigate={goToTab}
             position={tabPosition}
+            style={styles.railOverlay}
+            onContentWidthChange={setContentInset}
           />
         ) : null}
-        <View style={styles.mainContent}>
+        <View
+          style={[
+            styles.mainContent,
+            { marginLeft: railVisible ? contentInset : 0 },
+          ]}
+        >
           <SwipeTabs
             index={index}
             onIndexChange={handleIndexChange}
@@ -284,6 +297,16 @@ const styles = StyleSheet.create({
   },
   mainContent: {
     flex: 1,
+  },
+  // La rail est en overlay : elle s'anime AU-DESSUS du contenu sans pousser la
+  // carte frame par frame. zIndex > panneau détail zone (20) pour rester
+  // navigable par-dessus.
+  railOverlay: {
+    position: "absolute",
+    left: 0,
+    top: 0,
+    bottom: 0,
+    zIndex: 30,
   },
   headerOverlay: {
     position: "absolute",

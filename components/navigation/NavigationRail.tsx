@@ -6,9 +6,11 @@ import {
   type LayoutChangeEvent,
   Pressable,
   ScrollView,
+  type StyleProp,
   StyleSheet,
   Text,
   View,
+  type ViewStyle,
 } from "react-native";
 import Reanimated, {
   interpolate,
@@ -27,8 +29,9 @@ const ICON_ACTIVE = sidebar.activeText;
 const PILL_TOP_OFFSET = 8; // padding haut du navItem : place l'indicateur sur la pastille icône
 
 // Collapse : le rail se plie (icônes seules) / se déplie (icône + label à côté).
-const COLLAPSED_WIDTH = 72;
+export const COLLAPSED_WIDTH = 72;
 const EXPANDED_WIDTH = 220;
+const RAIL_ANIM_MS = 220; // durée du plier/déplier — partagée anim + inset contenu
 const INDICATOR_LEFT = 12; // aligne indicateur ET pastille icône dans les deux modes
 const ICON_PILL_WIDTH = 48;
 const LABEL_GAP = 12;
@@ -179,12 +182,20 @@ type NavigationRailProps = {
   onNavigate: (index: number) => void;
   /** Position animée continue du pager, pour un indicateur qui suit le swipe. */
   position?: TabPosition | null;
+  /** Style additionnel du conteneur (ex. positionnement en overlay). */
+  style?: StyleProp<ViewStyle>;
+  /** Notifie la largeur que le contenu doit réserver à gauche (inset). Émise en
+   *  FIN d'expansion et au DÉBUT du repli, pour que le reflow de la carte
+   *  n'ait lieu qu'UNE fois, masqué par le mouvement du rail. */
+  onContentWidthChange?: (width: number) => void;
 };
 
 export default function NavigationRail({
   currentIndex,
   onNavigate,
   position,
+  style,
+  onContentWidthChange,
 }: NavigationRailProps) {
   const insets = useSafeAreaInsets();
   const [isManager, setIsManager] = useState(false);
@@ -194,8 +205,23 @@ export default function NavigationRail({
   // Progression partagée du collapse (thread UI). 0 = étroit, 1 = large.
   const progress = useSharedValue(0);
   useEffect(() => {
-    progress.value = withTiming(expanded ? 1 : 0, { duration: 220 });
-  }, [expanded, progress]);
+    progress.value = withTiming(expanded ? 1 : 0, { duration: RAIL_ANIM_MS });
+    if (!onContentWidthChange) return;
+    if (expanded) {
+      // Expansion : le rail s'élargit AU-DESSUS de la carte, et on ne réserve
+      // l'inset côté contenu qu'à la FIN de l'animation → la carte ne se
+      // redimensionne qu'une fois, cachée sous le rail désormais déplié.
+      const t = setTimeout(
+        () => onContentWidthChange(EXPANDED_WIDTH),
+        RAIL_ANIM_MS,
+      );
+      return () => clearTimeout(t);
+    }
+    // Repli : on rend l'espace au contenu TOUT DE SUITE (la carte est déjà
+    // réagrandie, encore cachée sous le rail large), puis le rail se rétracte
+    // en la dévoilant. Un seul reflow, au tout début.
+    onContentWidthChange(COLLAPSED_WIDTH);
+  }, [expanded, progress, onContentWidthChange]);
 
   const railStyle = useAnimatedStyle(() => ({
     width: interpolate(progress.value, [0, 1], [COLLAPSED_WIDTH, EXPANDED_WIDTH]),
@@ -227,7 +253,7 @@ export default function NavigationRail({
       ...(isManager
         ? [{ key: "equipe", icon: "users" as const, label: "Équipe" }]
         : []),
-      { key: "zones", icon: "grid" as const, label: "Zones" },
+      { key: "zones", icon: "vector-polygon" as const, label: "Zones" },
       { key: "historique", icon: "clock" as const, label: "Historique" },
     ],
     [isManager],
@@ -270,6 +296,7 @@ export default function NavigationRail({
           paddingTop: insets.top + 16,
           paddingBottom: insets.bottom + 12,
         },
+        style,
       ]}
     >
       <View style={styles.logoSection}>
