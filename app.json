@@ -2,7 +2,7 @@
   "expo": {
     "name": "ProWin",
     "slug": "pro-win-staging",
-    "version": "1.1.99",
+    "version": "1.1.100",
     "orientation": "default",
     "scheme": "prospection",
     "userInterfaceStyle": "automatic",
@@ -62,7 +62,7 @@
         "android.permission.BLUETOOTH"
       ],
       "package": "com.aksilsadi.prospection",
-      "versionCode": 108
+      "versionCode": 109
     },
     "web": {
       "output": "static",
