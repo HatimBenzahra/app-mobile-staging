@@ -1,6 +1,8 @@
+import { HabitatIcon } from "@/components/immeubles/habitat-icon";
 import { getImmeubleProgress } from "@/components/immeubles/lieu-progress";
+import { getLieuTerms } from "@/components/immeubles/lieu-terms";
 import { Icon } from "@/components/ui";
-import { colors } from "@/constants/theme";
+import { colors, habitat } from "@/constants/theme";
 import { useQuartiers } from "@/hooks/api/use-quartiers";
 import type { Immeuble } from "@/types/api";
 import {
@@ -22,16 +24,20 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const MAP_STYLE_URL = "https://tiles.openfreemap.org/styles/liberty";
 
-function getTypeLabel(imm: Immeuble): string {
-  if (imm.typeHabitat === "MAISON") return "Maison";
-  if (imm.typeHabitat === "PAVILLON") return "Pavillon";
+// Terminologie + couleur d'habitat : sources PARTAGÉES (getLieuTerms + palette
+// `habitat`) pour rester cohérent avec le reste de l'app (icône `home-group`
+// pour pavillon, couleur token, etc.).
+function habitatLabel(imm: Immeuble): string {
+  const terms = getLieuTerms(imm.typeHabitat);
+  if (terms.isMaison) return "Maison";
+  if (terms.isPavillon) return "Pavillon";
   return "Immeuble";
 }
 
-function getTypeColor(imm: Immeuble): string {
-  if (imm.typeHabitat === "MAISON") return colors.success;
-  if (imm.typeHabitat === "PAVILLON") return "#F97316";
-  return colors.primary;
+function habitatColor(imm: Immeuble): string {
+  if (imm.typeHabitat === "MAISON") return habitat.maison;
+  if (imm.typeHabitat === "PAVILLON") return habitat.pavillon;
+  return habitat.immeuble;
 }
 
 export default function QuartierDetailScreen() {
@@ -97,18 +103,14 @@ export default function QuartierDetailScreen() {
           style={styles.lieuRow}
           onPress={() => router.push(`/lieu/${imm.id}`)}
         >
-          <View style={[styles.lieuIcon, { backgroundColor: `${getTypeColor(imm)}1A` }]}>
-            <Icon
-              name={imm.typeHabitat === "MAISON" ? "home" : imm.typeHabitat === "PAVILLON" ? "grid" : "layers"}
-              size={16}
-              color={getTypeColor(imm)}
-            />
+          <View style={[styles.lieuIcon, { backgroundColor: `${habitatColor(imm)}1A` }]}>
+            <HabitatIcon type={imm.typeHabitat} size={16} color={habitatColor(imm)} />
           </View>
           <View style={styles.lieuInfo}>
             <Text style={styles.lieuAdresse} numberOfLines={1}>
               {imm.adresse}
             </Text>
-            <Text style={styles.lieuType}>{getTypeLabel(imm)}</Text>
+            <Text style={styles.lieuType}>{habitatLabel(imm)}</Text>
           </View>
           <View style={styles.lieuProgress}>
             <Text style={[styles.lieuPercent, { color }]}>{percent}%</Text>

@@ -76,7 +76,7 @@ type RdvItem = {
 };
 
 type StatistiquesScreenProps = {
-  onNavigateToImmeuble?: (immeubleId: number) => void;
+  onNavigateToImmeuble?: (immeubleId: number, porteId?: number) => void;
 };
 
 export default function StatistiquesScreen({
@@ -889,7 +889,9 @@ export default function StatistiquesScreen({
                     variant="outlined"
                     padding="md"
                     style={styles.rdvCardRow}
-                    onPress={() => onNavigateToImmeuble?.(item.immeubleId)}
+                    onPress={() =>
+                      onNavigateToImmeuble?.(item.immeubleId, item.porteId)
+                    }
                   >
                     <View style={styles.rdvTimeCol}>
                       <Chip

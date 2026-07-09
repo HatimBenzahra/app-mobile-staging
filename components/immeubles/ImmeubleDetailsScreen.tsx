@@ -2586,15 +2586,15 @@ const styles = StyleSheet.create({
   },
   sheetHeroRdv: {
     backgroundColor: colors.surface,
-    borderColor: "#CBD5F5",
+    borderColor: colors.border,
   },
   sheetHeroContract: {
     backgroundColor: colors.surface,
-    borderColor: "#CDEBDD",
+    borderColor: colors.border,
   },
   sheetHeroArgument: {
     backgroundColor: colors.surface,
-    borderColor: "#FCD9B8",
+    borderColor: colors.border,
   },
   sheetHeroIcon: {
     width: 40,
@@ -2649,11 +2649,11 @@ const styles = StyleSheet.create({
   },
   sheetCardRdv: {
     backgroundColor: colors.surface,
-    borderColor: "#CBD5F5",
+    borderColor: colors.border,
   },
   sheetCardContract: {
     backgroundColor: colors.surface,
-    borderColor: "#CDEBDD",
+    borderColor: colors.border,
   },
   sheetCardComment: {
     backgroundColor: colors.surface,
@@ -2661,7 +2661,7 @@ const styles = StyleSheet.create({
   },
   sheetCardArgument: {
     backgroundColor: colors.surface,
-    borderColor: "#FCD9B8",
+    borderColor: colors.border,
   },
   inputRow: {
     flexDirection: "row",

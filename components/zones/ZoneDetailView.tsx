@@ -15,6 +15,7 @@ import { useZoneProspections } from "@/hooks/api/use-zone-prospections";
 import { useZoneStatistics } from "@/hooks/api/use-zone-statistics";
 import { useWorkspaceProfile } from "@/hooks/api/use-workspace-profile";
 import { authService } from "@/services/auth";
+import { useRouter } from "expo-router";
 import type { Commercial, Manager, Zone } from "@/types/api";
 import type { ZoneProspection } from "@/types/graphql-schema";
 import { type CameraRef } from "@maplibre/maplibre-react-native";
@@ -190,18 +191,12 @@ export function ZoneDetailView({ zoneId, onBack }: ZoneDetailViewProps) {
 
   const { data: profile } = useWorkspaceProfile(userId, role);
 
-  // Immeubles dépliés (vue portes).
-  const [expandedImmeubles, setExpandedImmeubles] = useState<Set<number>>(
-    () => new Set(),
+  const router = useRouter();
+  // Ouvre la page détail du bâtiment (portes, statuts, temps passé).
+  const openLieu = useCallback(
+    (immeubleId: number) => router.push(`/lieu/${immeubleId}`),
+    [router],
   );
-  const toggleImmeuble = useCallback((immeubleId: number) => {
-    setExpandedImmeubles((prev) => {
-      const next = new Set(prev);
-      if (next.has(immeubleId)) next.delete(immeubleId);
-      else next.add(immeubleId);
-      return next;
-    });
-  }, []);
 
   const zone = zoneQuery.data;
   const stats = statsQuery.data;
@@ -539,8 +534,6 @@ export function ZoneDetailView({ zoneId, onBack }: ZoneDetailViewProps) {
           {immeubles.map((imm, index) => {
             const portes = imm.portes ?? [];
             const breakdown = buildPorteBreakdown(portes);
-            const isExpanded = expandedImmeubles.has(imm.id);
-            const canExpand = portes.length > 0;
             return (
               <View
                 key={imm.id}
@@ -550,10 +543,9 @@ export function ZoneDetailView({ zoneId, onBack }: ZoneDetailViewProps) {
               >
                 <Pressable
                   style={styles.immeubleRow}
-                  onPress={
-                    canExpand ? () => toggleImmeuble(imm.id) : undefined
-                  }
-                  disabled={!canExpand}
+                  onPress={() => openLieu(imm.id)}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Voir le détail : ${imm.adresse}`}
                 >
                   <HabitatIcon
                     type={imm.typeHabitat}
@@ -569,13 +561,11 @@ export function ZoneDetailView({ zoneId, onBack }: ZoneDetailViewProps) {
                       {portes.length !== 1 ? "s" : ""}
                     </Text>
                   </View>
-                  {canExpand ? (
-                    <Icon
-                      name={isExpanded ? "chevron-up" : "chevron-down"}
-                      size={18}
-                      color={colors.textMuted}
-                    />
-                  ) : null}
+                  <Icon
+                    name="chevron-right"
+                    size={18}
+                    color={colors.textMuted}
+                  />
                 </Pressable>
 
                 {breakdown.length > 0 ? (
@@ -590,29 +580,6 @@ export function ZoneDetailView({ zoneId, onBack }: ZoneDetailViewProps) {
                   </View>
                 ) : null}
 
-                {isExpanded ? (
-                  <View style={styles.porteList}>
-                    {portes.map((porte) => {
-                      const meta = porteStatusMeta(porte.statut);
-                      return (
-                        <View key={porte.id} style={styles.porteRow}>
-                          <View
-                            style={[
-                              styles.porteDot,
-                              { backgroundColor: meta.accent },
-                            ]}
-                          />
-                          <Text style={styles.porteLabel} numberOfLines={1}>
-                            Porte {porte.numero} · Étage {porte.etage}
-                          </Text>
-                          <Text style={styles.porteStatut} numberOfLines={1}>
-                            {meta.label}
-                          </Text>
-                        </View>
-                      );
-                    })}
-                  </View>
-                ) : null}
               </View>
             );
           })}

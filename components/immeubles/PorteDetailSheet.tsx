@@ -276,7 +276,7 @@ export default function PorteDetailSheet({
                 <Card
                   variant="filled"
                   padding="md"
-                  style={[styles.detailRow, { backgroundColor: colors.infoSoft, borderColor: "#BAE6FD", borderWidth: 1 }]}
+                  style={[styles.detailRow, { backgroundColor: colors.infoSoft, borderColor: colors.border, borderWidth: 1 }]}
                 >
                   <Icon name="calendar" size={15} color="#0C4A6E" />
                   <View style={{ flex: 1 }}>
