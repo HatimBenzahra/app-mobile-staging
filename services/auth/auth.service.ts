@@ -103,6 +103,17 @@ export class AuthService {
 
   // User-initiated logout: clears everything including saved credentials
   async userLogout(): Promise<void> {
+    // Retire le token push de cet appareil AVANT de purger la session : la
+    // mutation a besoin du token d'auth encore présent. Import différé pour ne
+    // pas charger le module natif de notifications au démarrage de l'app.
+    try {
+      const { unregisterDeviceFromBackend } = await import(
+        '@/services/notifications/notifications.service'
+      );
+      await unregisterDeviceFromBackend();
+    } catch {
+      // best-effort : un échec ne doit pas empêcher la déconnexion
+    }
     await this.clearAuthData();
     await this.clearSavedCredentials();
     graphqlClient.clearAuthToken();

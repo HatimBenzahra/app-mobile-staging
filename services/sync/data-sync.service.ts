@@ -4,6 +4,11 @@ export type DataSyncEventType =
   | "IMMEUBLE_DELETED"
   | "QUARTIER_CREATED"
   | "ZONE_CREATED"
+  // Assignation/retrait d'une zone à l'utilisateur courant (déclenché par la
+  // réception d'une notification push). Force le rechargement de « ma zone en
+  // cours » + historique + zones sur la carte.
+  | "ZONE_ASSIGNED"
+  | "ZONE_UNASSIGNED"
   | "PORTE_CREATED"
   | "PORTE_UPDATED"
   | "PORTE_DELETED";

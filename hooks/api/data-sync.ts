@@ -19,6 +19,16 @@ const QUARTIERS_PREFIX = "quartiers:";
 // (use-api-call) se rechargent alors seuls.
 const ZONES_FOR_USER_PREFIX = "zones-for-user:";
 
+// Caches qui alimentent « ma zone en cours » sur la carte du commercial :
+// l'assignation courante (current-assignment:) et l'historique (user-zone-history:).
+// Une (dé)assignation les rend périmés → la carte se recentre/redessine seule.
+const CURRENT_ASSIGNMENT_PREFIX = "current-assignment:";
+const USER_ZONE_HISTORY_PREFIX = "user-zone-history:";
+
+// Centre de notifications : liste + compteur non-lus (badge de la cloche).
+const NOTIFICATIONS_PREFIX = "notifications:";
+const UNREAD_NOTIFICATIONS_PREFIX = "unread-notification-count:";
+
 function invalidateByEventType(eventType: DataSyncEventType): void {
   // Invalidation ciblée mais volontairement large en cas de doute.
   // - Mutations PORTE_* : les données porte sont périmées, PAS "quartiers:".
@@ -34,6 +44,17 @@ function invalidateByEventType(eventType: DataSyncEventType): void {
   // cache des zones affichées (carte + liste) pour forcer leur rechargement.
   if (eventType === "ZONE_CREATED") {
     invalidateApiCacheByPrefix(ZONES_FOR_USER_PREFIX);
+  }
+  // ZONE_ASSIGNED / ZONE_UNASSIGNED : une zone vient d'être (dé)assignée à
+  // l'utilisateur. On invalide « ma zone en cours » + historique + liste des
+  // zones : la carte fait alors apparaître/disparaître la zone sans redémarrage.
+  if (eventType === "ZONE_ASSIGNED" || eventType === "ZONE_UNASSIGNED") {
+    invalidateApiCacheByPrefix(CURRENT_ASSIGNMENT_PREFIX);
+    invalidateApiCacheByPrefix(USER_ZONE_HISTORY_PREFIX);
+    invalidateApiCacheByPrefix(ZONES_FOR_USER_PREFIX);
+    // Rafraîchit la liste + le badge non-lus de la cloche.
+    invalidateApiCacheByPrefix(NOTIFICATIONS_PREFIX);
+    invalidateApiCacheByPrefix(UNREAD_NOTIFICATIONS_PREFIX);
   }
 }
 

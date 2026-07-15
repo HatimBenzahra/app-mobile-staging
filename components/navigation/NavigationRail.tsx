@@ -21,6 +21,7 @@ import Reanimated, {
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { sidebar } from "@/constants/theme";
+import NotificationBell from "@/components/notifications/NotificationBell";
 import ProwinLogo from "./ProwinLogo";
 
 const COLOR_INACTIVE = sidebar.textMuted;
@@ -336,19 +337,22 @@ export default function NavigationRail({
         ))}
       </ScrollView>
 
-      {/* Toggle plier / déplier. */}
-      <Pressable
-        style={styles.toggleBtn}
-        onPress={() => setExpanded((e) => !e)}
-        accessibilityRole="button"
-        accessibilityLabel={expanded ? "Réduire le menu" : "Agrandir le menu"}
-      >
-        <Icon
-          name={expanded ? "chevron-left" : "chevron-right"}
-          size={22}
-          color={COLOR_INACTIVE}
-        />
-      </Pressable>
+      {/* Bas du rail : cloche notifications + toggle plier/déplier. */}
+      <View style={styles.bottomSection}>
+        <NotificationBell />
+        <Pressable
+          style={styles.toggleBtn}
+          onPress={() => setExpanded((e) => !e)}
+          accessibilityRole="button"
+          accessibilityLabel={expanded ? "Réduire le menu" : "Agrandir le menu"}
+        >
+          <Icon
+            name={expanded ? "chevron-left" : "chevron-right"}
+            size={22}
+            color={COLOR_INACTIVE}
+          />
+        </Pressable>
+      </View>
     </Reanimated.View>
   );
 }
@@ -434,8 +438,11 @@ const styles = StyleSheet.create({
     color: ICON_ACTIVE,
     fontWeight: "700",
   },
+  bottomSection: {
+    alignItems: "center",
+    gap: 8,
+  },
   toggleBtn: {
-    marginTop: 8,
     width: 44,
     height: 44,
     borderRadius: 22,

@@ -3,6 +3,7 @@ import { gamificationApi } from "./gamification/gamification.service";
 import { gpsApi } from "./gps/gps.service";
 import { immeubleApi } from "./immeubles/immeuble.service";
 import { managerApi } from "./managers/manager.service";
+import { notificationApi } from "./notifications/notification.service";
 import { porteApi } from "./portes/porte.service";
 import { recordingApi } from "./recordings/recording.service";
 import { statisticApi } from "./statistics/statistic.service";
@@ -14,6 +15,7 @@ export const api = {
   gps: gpsApi,
   immeubles: immeubleApi,
   managers: managerApi,
+  notifications: notificationApi,
   portes: porteApi,
   recordings: recordingApi,
   statistics: statisticApi,

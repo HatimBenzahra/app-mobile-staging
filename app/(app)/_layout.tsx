@@ -1,3 +1,4 @@
+import { usePushNotifications } from "@/hooks/notifications/use-push-notifications";
 import { MapFocusProvider } from "@/hooks/use-map-focus";
 import { RequestedTabProvider } from "@/hooks/use-requested-tab";
 import { ZoneDetailPanelProvider } from "@/hooks/use-zone-detail-panel";
@@ -16,6 +17,10 @@ export default function AppLayout() {
       void LocationTrackingService.stop();
     };
   }, []);
+
+  // Enregistre le token push, écoute les notifications de zone (refresh carte +
+  // ouverture du centre de notifs au tap) et gère le refocus au premier plan.
+  usePushNotifications();
 
   // MapFocusProvider enveloppe TOUTE la pile (index + zone/create + …) : le focus
   // carte (bâtiment ou zone) doit survivre à la navigation entre routes sœurs.
