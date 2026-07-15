@@ -12,6 +12,10 @@ import {
   useWindowDimensions,
   View,
 } from "react-native";
+import Animated, {
+  useAnimatedKeyboard,
+  useAnimatedStyle,
+} from "react-native-reanimated";
 import type { EdgeInsets } from "react-native-safe-area-context";
 import { styles } from "../styles";
 
@@ -47,15 +51,26 @@ export function ZonePanel({
   // et on borne sa hauteur — le corps devient scrollable (cf. plus bas).
   const landscape = width > height;
 
+  // Le panneau est ancré en bas (position absolue), donc `KeyboardAvoidingView`
+  // ne l'atteindrait pas. On le remonte de la hauteur exacte du clavier via
+  // reanimated : le gap de 14px est conservé, mesuré depuis le haut du clavier.
+  const keyboard = useAnimatedKeyboard();
+  const keyboardStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: -keyboard.height.value }],
+  }));
+
   const totalSommets = zonePins.length;
-  const cardStyle = [
+  // Positionnement + translation portés par le conteneur animé.
+  const containerStyle = [
     styles.panel,
-    { paddingBottom: Math.max(insets.bottom, 12) },
-    landscape && {
-      right: undefined,
-      width: 360,
-      maxHeight: height - insets.top - insets.bottom - 28,
-    },
+    landscape && { right: undefined, width: 360 },
+    keyboardStyle,
+  ];
+  // Rendu visuel de la carte ; en paysage on borne la hauteur pour que le
+  // corps devienne scrollable.
+  const cardStyle = [
+    { gap: 12, paddingBottom: Math.max(insets.bottom, 12) },
+    landscape && { maxHeight: height - insets.top - insets.bottom - 28 },
   ];
   const canCreate = readyToCreateZone && nom.trim().length > 0;
 
@@ -154,17 +169,19 @@ export function ZonePanel({
   );
 
   return (
-    <Card variant="elevated" padding="md" style={cardStyle}>
-      {landscape ? (
-        <ScrollView
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ gap: 12 }}
-        >
-          {body}
-        </ScrollView>
-      ) : (
-        body
-      )}
-    </Card>
+    <Animated.View style={containerStyle}>
+      <Card variant="elevated" padding="md" style={cardStyle}>
+        {landscape ? (
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={{ gap: 12 }}
+          >
+            {body}
+          </ScrollView>
+        ) : (
+          body
+        )}
+      </Card>
+    </Animated.View>
   );
 }
