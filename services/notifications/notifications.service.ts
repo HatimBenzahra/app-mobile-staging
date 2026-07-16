@@ -1,4 +1,3 @@
-import Constants from "expo-constants";
 import * as Device from "expo-device";
 import * as Notifications from "expo-notifications";
 import { Platform } from "react-native";
@@ -28,17 +27,11 @@ const ANDROID_CHANNEL_ID = "default";
 // redemander la permission.
 let cachedToken: string | null = null;
 
-function resolveProjectId(): string | undefined {
-  return (
-    Constants.expoConfig?.extra?.eas?.projectId ??
-    // easConfig existe sur les builds EAS ; fallback défensif.
-    (Constants as { easConfig?: { projectId?: string } }).easConfig?.projectId
-  );
-}
-
 /**
- * Canal Android + permissions + token push Expo. Renvoie null si l'appareil ne
- * peut pas recevoir de push (simulateur, permission refusée, projectId absent).
+ * Canal Android + permissions + token push FCM natif de l'appareil. Renvoie
+ * null si l'appareil ne peut pas recevoir de push (simulateur, permission
+ * refusée). Le token FCM est envoyé au backend, qui pousse directement via
+ * Firebase Admin (sans passer par le service push Expo).
  */
 export async function registerForPushNotificationsAsync(): Promise<string | null> {
   if (Platform.OS === "android") {
@@ -61,17 +54,14 @@ export async function registerForPushNotificationsAsync(): Promise<string | null
   }
   if (finalStatus !== "granted") return null;
 
-  const projectId = resolveProjectId();
-  if (!projectId) {
-    console.warn("[notifications] projectId Expo introuvable");
-    return null;
-  }
-
   try {
-    const { data } = await Notifications.getExpoPushTokenAsync({ projectId });
-    return data;
+    // Token FCM natif de l'appareil (via le SDK Firebase embarqué grâce à
+    // google-services.json). C'est ce token que le backend cible avec
+    // Firebase Admin pour envoyer le push.
+    const { data } = await Notifications.getDevicePushTokenAsync();
+    return typeof data === "string" ? data : null;
   } catch (error) {
-    console.warn("[notifications] getExpoPushTokenAsync a échoué", error);
+    console.warn("[notifications] getDevicePushTokenAsync a échoué", error);
     return null;
   }
 }
