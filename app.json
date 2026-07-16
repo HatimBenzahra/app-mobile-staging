@@ -2,7 +2,7 @@
   "expo": {
     "name": "ProWin",
     "slug": "pro-win-staging",
-    "version": "1.1.135",
+    "version": "1.1.136",
     "orientation": "default",
     "scheme": "prospection",
     "userInterfaceStyle": "automatic",
@@ -64,7 +64,7 @@
       ],
       "package": "com.aksilsadi.prospection",
       "googleServicesFile": "./google-services.json",
-      "versionCode": 144
+      "versionCode": 145
     },
     "web": {
       "output": "static",
