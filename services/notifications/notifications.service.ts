@@ -6,15 +6,15 @@ import type { NotificationData } from "@/services/api/notifications/notification
 import type { UserType } from "@/types/api";
 
 // Comportement quand l'app est AU PREMIER PLAN. On coupe la bannière OS
-// (`shouldShowBanner: false`) : l'app affiche elle-même un bandeau in-app
-// (cf. usePushNotifications → Toast), façon WhatsApp, ce qui reste visible même
-// sur une tablette kiosk où le launcher masque les notifs système. La notif est
-// tout de même déposée dans le centre système (`shouldShowList`) et sonne.
+// (`shouldShowBanner: true`) : au premier plan aussi, on laisse l'OS afficher
+// sa vraie bannière système — elle porte l'icône ProWin (`notification_icon`)
+// et sa couleur, identique à l'état app fermée. La notif est aussi déposée dans
+// le centre système (`shouldShowList`) et sonne.
 // App en arrière-plan / fermée : ce handler ne tourne pas → c'est l'OS qui
 // affiche la notification push normalement.
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
-    shouldShowBanner: false,
+    shouldShowBanner: true,
     shouldShowList: true,
     shouldPlaySound: true,
     shouldSetBadge: false,
@@ -97,29 +97,49 @@ export async function unregisterDeviceFromBackend(): Promise<void> {
   }
 }
 
-export type ZoneNotificationHandlers = {
-  /** Notification reçue app au premier plan. */
-  onForeground?: (data: NotificationData) => void;
-  /** L'utilisateur a tapé la notification (app en arrière-plan / fermée). */
-  onResponse?: (data: NotificationData) => void;
+/**
+ * Notification entrante, générique : le contexte structuré (`data`, dont
+ * `data.type`) + le `title`/`body` affichés. Permet de traiter n'importe quel
+ * type de notification (zone, contrat, RDV, …) de façon uniforme.
+ */
+export type IncomingNotification = {
+  data: NotificationData;
+  title?: string;
+  body?: string;
 };
 
+export type NotificationHandlers = {
+  /** Notification reçue app au premier plan. */
+  onForeground?: (notif: IncomingNotification) => void;
+  /** L'utilisateur a tapé la notification (app en arrière-plan / fermée). */
+  onResponse?: (notif: IncomingNotification) => void;
+};
+
+function toIncoming(content: {
+  data?: unknown;
+  title?: string | null;
+  body?: string | null;
+}): IncomingNotification {
+  return {
+    data: (content.data ?? {}) as NotificationData,
+    title: content.title ?? undefined,
+    body: content.body ?? undefined,
+  };
+}
+
 /**
- * Abonne les listeners de notification. Renvoie une fonction de nettoyage.
+ * Abonne les listeners de notification (générique, tout type). Renvoie une
+ * fonction de nettoyage.
  */
-export function addZoneNotificationListeners(
-  handlers: ZoneNotificationHandlers,
+export function addNotificationListeners(
+  handlers: NotificationHandlers,
 ): () => void {
   const received = Notifications.addNotificationReceivedListener((notif) => {
-    handlers.onForeground?.(
-      (notif.request.content.data ?? {}) as NotificationData,
-    );
+    handlers.onForeground?.(toIncoming(notif.request.content));
   });
   const response = Notifications.addNotificationResponseReceivedListener(
     (resp) => {
-      handlers.onResponse?.(
-        (resp.notification.request.content.data ?? {}) as NotificationData,
-      );
+      handlers.onResponse?.(toIncoming(resp.notification.request.content));
     },
   );
   return () => {
