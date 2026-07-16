@@ -21,7 +21,8 @@ export default function ZoneCreateScreen() {
     zonePins,
     activeZonePinId,
     assignables,
-    existingZones,
+    contextZones,
+    assignedZoneId,
     immeubles,
     loadingLocation,
     creating,
@@ -72,7 +73,7 @@ export default function ZoneCreateScreen() {
         {/* ZoneContour sans mode/onSelectZone → non interactif : son onPress */}
         {/* sort avant tout stopPropagation, donc un tap dans une zone existante */}
         {/* pose quand même un sommet. */}
-        <ZoneContour zones={existingZones} />
+        <ZoneContour zones={contextZones} activeZoneId={assignedZoneId} showOldZones />
         <TerrainMarkers immeubles={immeubles} mode="VISUALISATION" onSelectLieu={() => {}} />
         <ZoneDraft zonePins={zonePins} />
         <ZoneVertexPins
@@ -111,7 +112,7 @@ export default function ZoneCreateScreen() {
 
       {/* Contrôles carte + édition du tracé (colonne droite). */}
       <View style={[styles.fabColumn, { top: insets.top + 116 }]}>
-        <Pressable style={styles.fab} onPress={centerOnCurrentLocation}>
+        <Pressable style={styles.fab} onPress={() => centerOnCurrentLocation()}>
           {loadingLocation ? (
             <ActivityIndicator size="small" color={colors.primary} />
           ) : (

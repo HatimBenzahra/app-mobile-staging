@@ -1,6 +1,7 @@
 import { useToast } from "@/components/ui";
 import { syncWorkspaceMutation } from "@/hooks/api/data-sync";
 import { useCreateZone } from "@/hooks/api/use-create-zone";
+import { useCurrentAssignment } from "@/hooks/api/use-current-assignment";
 import { useMapFocus } from "@/hooks/use-map-focus";
 import { useRequestedTab } from "@/hooks/use-requested-tab";
 import { useWorkspaceProfile } from "@/hooks/api/use-workspace-profile";
@@ -36,6 +37,44 @@ type TeamCommercial = {
   nom: string;
   immeubles?: Immeuble[];
 };
+
+const METERS_PER_DEG = 111_320;
+
+/**
+ * Bornes géographiques d'une zone au format MapLibre `[west, south, east, north]`,
+ * pour cadrer la caméra dessus. Utilise le polygone si présent, sinon le cercle
+ * (centre + rayon). Renvoie null si la géométrie est inexploitable.
+ */
+function zoneBounds(zone: Zone): [number, number, number, number] | null {
+  if (zone.polygon && zone.polygon.length >= 3) {
+    let minLng = Infinity;
+    let minLat = Infinity;
+    let maxLng = -Infinity;
+    let maxLat = -Infinity;
+    for (const [lng, lat] of zone.polygon) {
+      if (lng < minLng) minLng = lng;
+      if (lng > maxLng) maxLng = lng;
+      if (lat < minLat) minLat = lat;
+      if (lat > maxLat) maxLat = lat;
+    }
+    return [minLng, minLat, maxLng, maxLat];
+  }
+  if (
+    zone.xOrigin != null &&
+    zone.yOrigin != null &&
+    zone.rayon != null &&
+    zone.rayon > 0
+  ) {
+    const d = zone.rayon / METERS_PER_DEG;
+    return [
+      zone.xOrigin - d,
+      zone.yOrigin - d,
+      zone.xOrigin + d,
+      zone.yOrigin + d,
+    ];
+  }
+  return null;
+}
 
 /**
  * Tracé d'une zone dans la page dédiée (`/zone/create`). Extrait de
@@ -107,6 +146,27 @@ export function useZoneDraft() {
   // Zones déjà créées, affichées en contexte (lecture seule) pendant le tracé.
   const existingZones = useMemo<Zone[]>(() => profile?.zones ?? [], [profile]);
 
+  // Zone actuellement assignée au manager (ZoneEnCours), affichée comme repère
+  // principal dans l'écran de création pour qu'il y trace ses sous-zones.
+  const { data: assignment } = useCurrentAssignment(
+    userId,
+    role === "manager" ? "MANAGER" : null,
+  );
+  const assignedZone = assignment?.zone ?? null;
+  const assignedZoneId = assignedZone?.id ?? null;
+
+  // Contexte carte : zone assignée (rendue « active ») + zones déjà créées,
+  // dédoublonnées par id (la zone assignée peut déjà figurer dans le profil →
+  // une seule occurrence, conservée en active).
+  const contextZones = useMemo<Zone[]>(() => {
+    const byId = new Map<number, Zone>();
+    if (assignedZone) byId.set(assignedZone.id, assignedZone);
+    for (const zone of existingZones) {
+      if (!byId.has(zone.id)) byId.set(zone.id, zone);
+    }
+    return Array.from(byId.values());
+  }, [assignedZone, existingZones]);
+
   // Bâtiments existants affichés en contexte : dérivation identique à
   // `useCarteTerrain` (mes propres immeubles → MINE, ceux de l'équipe pour un
   // manager → TEAM, stampés depuis leur commercial parent, dédoublonnés par id).
@@ -175,7 +235,13 @@ export function useZoneDraft() {
     setActiveZonePinId(null);
   }, []);
 
-  const centerOnCurrentLocation = useCallback(async () => {
+  // Empêche le recentrage GPS automatique de reprendre le dessus une fois la
+  // caméra cadrée sur la zone assignée (précédence à la zone). Le recentrage
+  // manuel via le FAB reste toujours actif.
+  const hasAutoCenteredRef = useRef(false);
+
+  const centerOnCurrentLocation = useCallback(async (options?: { auto?: boolean }) => {
+    if (options?.auto && hasAutoCenteredRef.current) return;
     setLoadingLocation(true);
     try {
       const { status } = await Location.requestForegroundPermissionsAsync();
@@ -208,10 +274,24 @@ export function useZoneDraft() {
   }, []);
 
   useEffect(() => {
-    void centerOnCurrentLocation();
+    void centerOnCurrentLocation({ auto: true });
     // La géolocalisation initiale ne doit se lancer qu'au montage.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Cadrage initial sur la zone assignée dès qu'elle est chargée (une seule
+  // fois, tant que le manager n'a pas commencé à tracer). Prend le pas sur le
+  // recentrage GPS auto via `hasAutoCenteredRef`.
+  useEffect(() => {
+    if (!assignedZone || zonePins.length > 0 || hasAutoCenteredRef.current) return;
+    const bounds = zoneBounds(assignedZone);
+    if (!bounds) return;
+    cameraRef.current?.fitBounds(bounds, {
+      padding: { top: 80, right: 60, bottom: 80, left: 60 },
+      duration: 500,
+    });
+    hasAutoCenteredRef.current = true;
+  }, [assignedZone, zonePins.length]);
 
   const handleCreateZone = useCallback(
     async (nom: string, selectedKeys: string[]) => {
@@ -284,7 +364,8 @@ export function useZoneDraft() {
     zonePins,
     activeZonePinId,
     assignables,
-    existingZones,
+    contextZones,
+    assignedZoneId,
     immeubles,
     loadingLocation,
     creating,

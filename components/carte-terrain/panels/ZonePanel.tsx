@@ -2,9 +2,10 @@ import { Card, Chip, Icon } from "@/components/ui";
 import { colors } from "@/constants/theme";
 import type { DraftPin } from "@/hooks/carte-terrain/types";
 import type { ZoneAssignable } from "@/hooks/zone/use-zone-draft";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
+  Keyboard,
   Pressable,
   ScrollView,
   Text,
@@ -51,6 +52,24 @@ export function ZonePanel({
   // et on borne sa hauteur — le corps devient scrollable (cf. plus bas).
   const landscape = width > height;
 
+  // Hauteur du clavier (via l'API JS `Keyboard`) pour BORNER la hauteur du
+  // panneau en paysage : le corps scrolle dans l'espace restant au-dessus du
+  // clavier au lieu de déborder hors de l'écran. La remontée fluide, elle, reste
+  // portée par reanimated (`useAnimatedKeyboard`, ci-dessous).
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+  useEffect(() => {
+    const show = Keyboard.addListener("keyboardDidShow", (event) =>
+      setKeyboardHeight(event.endCoordinates.height),
+    );
+    const hide = Keyboard.addListener("keyboardDidHide", () =>
+      setKeyboardHeight(0),
+    );
+    return () => {
+      show.remove();
+      hide.remove();
+    };
+  }, []);
+
   // Le panneau est ancré en bas (position absolue), donc `KeyboardAvoidingView`
   // ne l'atteindrait pas. On le remonte de la hauteur exacte du clavier via
   // reanimated : le gap de 14px est conservé, mesuré depuis le haut du clavier.
@@ -70,7 +89,12 @@ export function ZonePanel({
   // corps devienne scrollable.
   const cardStyle = [
     { gap: 12, paddingBottom: Math.max(insets.bottom, 12) },
-    landscape && { maxHeight: height - insets.top - insets.bottom - 28 },
+    landscape && {
+      maxHeight: Math.max(
+        height - insets.top - insets.bottom - keyboardHeight - 28,
+        160,
+      ),
+    },
   ];
   const canCreate = readyToCreateZone && nom.trim().length > 0;
 
