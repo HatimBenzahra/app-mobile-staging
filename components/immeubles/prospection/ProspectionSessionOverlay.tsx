@@ -63,6 +63,11 @@ type ProspectionSessionOverlayProps = {
 const SCREEN_PAD = 18;
 const TABLET_PAD = 28;
 
+// Statuts finaux irréversibles (ni re-prospectables ni modifiables une fois
+// posés, cf. PorteDetailSheet « closed final states »). On demande une
+// confirmation explicite avant de les valider pour éviter les clics accidentels.
+const FINAL_STATUSES = new Set<StatusKey>(["REFUS", "ARGUMENTE", "CONTRAT_SIGNE"]);
+
 function getTodayDate() {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
@@ -983,11 +988,21 @@ function ActiveView({
     else Haptics.success();
   }, [commentaire, nomPersonnalise, session]);
 
-  const handleSave = useCallback(async () => {
+  const commitStatus = useCallback(
+    async (input: SaveStatusInput) => {
+      if (submittingRef.current) return;
+      submittingRef.current = true;
+      Haptics.medium();
+      const res = await session.saveStatus(input);
+      if (!res.ok) submittingRef.current = false;
+      else Haptics.success();
+    },
+    [session],
+  );
+
+  const handleSave = useCallback(() => {
     if (!selectedStatus) return;
     if (submittingRef.current) return;
-    submittingRef.current = true;
-    Haptics.medium();
 
     const input: SaveStatusInput = {
       statut: selectedStatus,
@@ -1003,10 +1018,22 @@ function ActiveView({
       input.nbContrats = nbContrats;
     }
 
-    const res = await session.saveStatus(input);
-    if (!res.ok) submittingRef.current = false;
-    else Haptics.success();
-  }, [selectedStatus, commentaire, nomPersonnalise, rdvDate, rdvTime, nbContrats, session]);
+    // Statut final irréversible → confirmation explicite avant de le poser.
+    if (selectedStatus !== "ABSENT" && FINAL_STATUSES.has(selectedStatus)) {
+      const label = STATUSES[selectedStatus].label;
+      Alert.alert(
+        `Confirmer « ${label} » ?`,
+        "Ce statut est définitif et ne pourra plus être modifié.",
+        [
+          { text: "Annuler", style: "cancel" },
+          { text: "Confirmer", onPress: () => void commitStatus(input) },
+        ],
+      );
+      return;
+    }
+
+    void commitStatus(input);
+  }, [selectedStatus, commentaire, nomPersonnalise, rdvDate, rdvTime, nbContrats, commitStatus]);
 
   const handleAbort = useCallback(() => {
     Alert.alert(
