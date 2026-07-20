@@ -1,7 +1,5 @@
 export { RecordingService } from "./recording.service";
 export type {
-  RecordingResult,
-  StartRecordingInput,
   RequestRecordingUploadInput,
   RecordingUploadDetails,
   ConfirmRecordingUploadInput,
