@@ -1,27 +1,25 @@
-import type { IconName } from "@/components/ui";
-
 /**
  * Habillage visuel des 8 tiers de points renvoyés par le backend gamification
  * (champ `rankTierKey` de RankSnapshot). Le backend reste la source de vérité
- * pour le seuil/label ; on ne fait que mapper vers des couleurs et icônes.
+ * pour le seuil/label ; on ne fait que mapper vers des couleurs.
+ * L'icône du tier est un SVG local résolu par clé via `gameIcons.ts` (`tierIcon`).
  */
 export type RankTierStyle = {
   key: string;
   label: string;
   color: string; // couleur d'accent du tier
   bg: string; // fond doux pour pastilles
-  icon: IconName;
 };
 
 const TIERS: Record<string, RankTierStyle> = {
-  BRONZE: { key: "BRONZE", label: "Bronze", color: "#C2410C", bg: "#FFEDD5", icon: "shield" },
-  SILVER: { key: "SILVER", label: "Silver", color: "#64748B", bg: "#F1F5F9", icon: "shield" },
-  GOLD: { key: "GOLD", label: "Gold", color: "#B45309", bg: "#FEF3C7", icon: "award" },
-  PLATINUM: { key: "PLATINUM", label: "Platinum", color: "#0891B2", bg: "#CFFAFE", icon: "award" },
-  DIAMOND: { key: "DIAMOND", label: "Diamond", color: "#4F46E5", bg: "#E0E7FF", icon: "star" },
-  MASTER: { key: "MASTER", label: "Master", color: "#7C3AED", bg: "#EDE9FE", icon: "star" },
-  GRANDMASTER: { key: "GRANDMASTER", label: "Grandmaster", color: "#BE185D", bg: "#FCE7F3", icon: "zap" },
-  LEGEND: { key: "LEGEND", label: "Legend", color: "#B91C1C", bg: "#FEE2E2", icon: "zap" },
+  BRONZE: { key: "BRONZE", label: "Bronze", color: "#C2410C", bg: "#FFEDD5" },
+  SILVER: { key: "SILVER", label: "Silver", color: "#64748B", bg: "#F1F5F9" },
+  GOLD: { key: "GOLD", label: "Gold", color: "#B45309", bg: "#FEF3C7" },
+  PLATINUM: { key: "PLATINUM", label: "Platinum", color: "#0891B2", bg: "#CFFAFE" },
+  DIAMOND: { key: "DIAMOND", label: "Diamond", color: "#4F46E5", bg: "#E0E7FF" },
+  MASTER: { key: "MASTER", label: "Master", color: "#7C3AED", bg: "#EDE9FE" },
+  GRANDMASTER: { key: "GRANDMASTER", label: "Grandmaster", color: "#BE185D", bg: "#FCE7F3" },
+  LEGEND: { key: "LEGEND", label: "Legend", color: "#B91C1C", bg: "#FEE2E2" },
 };
 
 const FALLBACK: RankTierStyle = TIERS.BRONZE;

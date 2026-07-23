@@ -3,7 +3,12 @@ import { Image, StyleSheet, Text, View } from "react-native";
 import { Card, Icon } from "@/components/ui";
 import { colors, fontSize, fontWeight, radius, spacing } from "@/constants/theme";
 import type { BadgeDefinitionType } from "@/types/graphql-schema";
-import { categoryStyle, resolveBadgeIconUrl } from "@/utils/business/badgeVisuals";
+import {
+  categoryStyle,
+  resolveBadgeCustomUrl,
+  resolveBadgeIconKey,
+} from "@/utils/business/badgeVisuals";
+import { badgeIcon } from "@/utils/business/gameIcons";
 
 type Props = {
   badge: Pick<BadgeDefinitionType, "code" | "nom" | "description" | "category" | "iconUrl" | "tier">;
@@ -13,7 +18,8 @@ type Props = {
 
 export function BadgeCard({ badge, earned = false }: Props) {
   const style = categoryStyle(badge.category);
-  const iconUrl = resolveBadgeIconUrl(badge);
+  const customUrl = resolveBadgeCustomUrl(badge);
+  const IconSvg = badgeIcon(resolveBadgeIconKey(badge));
   const [imgFailed, setImgFailed] = useState(false);
 
   return (
@@ -23,13 +29,15 @@ export function BadgeCard({ badge, earned = false }: Props) {
       style={[styles.card, !earned && styles.cardLocked]}
     >
       <View style={styles.iconWrap}>
-        {iconUrl && !imgFailed ? (
+        {customUrl && !imgFailed ? (
           <Image
-            source={{ uri: iconUrl }}
+            source={{ uri: customUrl }}
             style={styles.iconImg}
             resizeMode="contain"
             onError={() => setImgFailed(true)}
           />
+        ) : IconSvg ? (
+          <IconSvg width={28} height={28} color={style.text} />
         ) : (
           <Icon name={style.fallbackIcon} size={20} color={colors.textMuted} />
         )}

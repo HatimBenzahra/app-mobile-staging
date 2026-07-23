@@ -1,6 +1,6 @@
 import { StyleSheet, Text, View } from "react-native";
-import { Icon } from "@/components/ui";
 import { fontSize, fontWeight, radius, spacing } from "@/constants/theme";
+import { tierIcon } from "@/utils/business/gameIcons";
 import { tierStyle } from "@/utils/business/rankTiers";
 
 type Props = {
@@ -13,10 +13,11 @@ type Props = {
 /** Pastille de tier (Bronze → Legend) colorée selon le tier serveur. */
 export function RankTierBadge({ tierKey, label, size = "md" }: Props) {
   const t = tierStyle(tierKey);
+  const TierSvg = tierIcon(t.key);
   const iconSize = size === "sm" ? 12 : 14;
   return (
     <View style={[styles.base, { backgroundColor: t.bg }]}>
-      <Icon name={t.icon} size={iconSize} color={t.color} />
+      {TierSvg ? <TierSvg width={iconSize} height={iconSize} color={t.color} /> : null}
       <Text style={[styles.label, { color: t.color, fontSize: size === "sm" ? fontSize.xs : fontSize.sm }]}>
         {label ?? t.label}
       </Text>
