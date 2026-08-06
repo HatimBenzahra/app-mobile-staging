@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { AppState, Platform } from "react-native";
 import { BackgroundAudioService } from "@/services/audio";
 import { authService } from "@/services/auth";
 import {
@@ -141,24 +140,13 @@ export function useRecording({ enabled, immeubleId }: UseRecordingOptions) {
 
   // ── Background service ────────────────────────────────────────────
 
+  // Le gate (Android, RECORD_AUDIO réellement accordée, app au premier plan)
+  // vit dans BackgroundAudioService : c'est le seul endroit qui décide si le
+  // foreground service micro peut démarrer. Ici on ne fait que consommer le
+  // résultat — false signifie « l'échange s'enregistre en avant-plan seulement ».
   const startBackgroundRecordingService = useCallback(async (): Promise<boolean> => {
-    if (Platform.OS !== "android") {
-      return false;
-    }
-
-    if (AppState.currentState !== "active") {
-      if (__DEV__) {
-        console.warn(
-          "[useRecording] Skip background service start: app not active",
-          AppState.currentState,
-        );
-      }
-      return false;
-    }
-
     try {
-      await BackgroundAudioService.start();
-      return BackgroundAudioService.isRunning();
+      return await BackgroundAudioService.start();
     } catch (err) {
       if (__DEV__) {
         console.warn("[useRecording] Failed to start background recording service:", err);
@@ -168,10 +156,6 @@ export function useRecording({ enabled, immeubleId }: UseRecordingOptions) {
   }, []);
 
   const stopBackgroundRecordingService = useCallback(async (): Promise<void> => {
-    if (Platform.OS !== "android") {
-      return;
-    }
-
     try {
       await BackgroundAudioService.stop();
     } catch (err) {
