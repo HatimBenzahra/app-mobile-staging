@@ -673,21 +673,6 @@ export type EtageInStatistics = {
   etage: Scalars['Int']['output'];
 };
 
-export type ExtractionProgressDto = {
-  __typename?: 'ExtractionProgressDto';
-  current: Scalars['Int']['output'];
-  step: Scalars['String']['output'];
-  total: Scalars['Int']['output'];
-};
-
-export type ExtractionQueueItemDto = {
-  __typename?: 'ExtractionQueueItemDto';
-  current: Scalars['Int']['output'];
-  key: Scalars['String']['output'];
-  step: Scalars['String']['output'];
-  total: Scalars['Int']['output'];
-};
-
 export type GlobalSearchResult = {
   __typename?: 'GlobalSearchResult';
   groups: Array<SearchResultGroup>;
@@ -912,8 +897,6 @@ export type Mutation = {
   syncContrats: SyncContratsResult;
   syncManagerStats: Scalars['String']['output'];
   syncOffres: SyncOffresResult;
-  triggerBatchExtraction: Scalars['Int']['output'];
-  triggerConversationExtraction: Scalars['Boolean']['output'];
   unassignUser: Scalars['Boolean']['output'];
   unassignZoneFromCommercial: Scalars['Boolean']['output'];
   updateBadgeDefinition: BadgeDefinitionType;
@@ -1259,14 +1242,6 @@ export type MutationSyncManagerStatsArgs = {
 };
 
 
-export type MutationTriggerBatchExtractionArgs = {
-  keys: Array<Scalars['String']['input']>;
-};
-
-
-export type MutationTriggerConversationExtractionArgs = {
-  key: Scalars['String']['input'];
-};
 
 
 export type MutationUnassignUserArgs = {
@@ -1469,10 +1444,6 @@ export type Query = {
   egressState: EgressState;
   getActiveRooms: Array<ActiveRoom>;
   getActiveSessions: Array<MonitoringSession>;
-  getConversationStreamingUrl?: Maybe<Scalars['String']['output']>;
-  getExtractionProgress?: Maybe<ExtractionProgressDto>;
-  getExtractionQueue: Array<ExtractionQueueItemDto>;
-  getProcessedKeys: Array<Scalars['String']['output']>;
   getRecordingSpeechScores: Array<SpeechScoreDto>;
   getStreamingUrl: Scalars['String']['output'];
   globalSearch: GlobalSearchResult;
@@ -1503,7 +1474,6 @@ export type Query = {
   ranking: Array<RankSnapshotType>;
   recordingSegmentsByCommercial: Array<RecordingSegmentDto>;
   recordingSegmentsByImmeuble: Array<RecordingSegmentDto>;
-  recordingSegmentsByKey: Array<RecordingSegmentDto>;
   recordingSegmentsByManager: Array<RecordingSegmentDto>;
   recordingSegmentsByPorte: Array<RecordingSegmentDto>;
   recordingSegmentsToday: Array<RecordingSegmentDto>;
@@ -1624,19 +1594,7 @@ export type QueryEgressStateArgs = {
 };
 
 
-export type QueryGetConversationStreamingUrlArgs = {
-  key: Scalars['String']['input'];
-};
 
-
-export type QueryGetExtractionProgressArgs = {
-  key: Scalars['String']['input'];
-};
-
-
-export type QueryGetProcessedKeysArgs = {
-  keys: Array<Scalars['String']['input']>;
-};
 
 
 export type QueryGetRecordingSpeechScoresArgs = {
@@ -1758,11 +1716,6 @@ export type QueryRecordingSegmentsByCommercialArgs = {
 
 export type QueryRecordingSegmentsByImmeubleArgs = {
   immeubleId: Scalars['Int']['input'];
-};
-
-
-export type QueryRecordingSegmentsByKeyArgs = {
-  s3Key: Scalars['String']['input'];
 };
 
 
@@ -1894,7 +1847,6 @@ export type RankSnapshotType = {
 
 export type RecordingItem = {
   __typename?: 'RecordingItem';
-  hasConversation?: Maybe<Scalars['Boolean']['output']>;
   key: Scalars['String']['output'];
   lastModified?: Maybe<Scalars['DateTime']['output']>;
   size?: Maybe<Scalars['Float']['output']>;
@@ -1926,12 +1878,10 @@ export type RecordingSegmentDto = {
   porteNumero?: Maybe<Scalars['String']['output']>;
   s3KeyOriginal?: Maybe<Scalars['String']['output']>;
   s3KeySegment?: Maybe<Scalars['String']['output']>;
-  speechScore?: Maybe<Scalars['Int']['output']>;
   startTime: Scalars['Float']['output'];
   status: Scalars['String']['output'];
   statut?: Maybe<Scalars['String']['output']>;
   streamingUrl?: Maybe<Scalars['String']['output']>;
-  transcription?: Maybe<Scalars['String']['output']>;
 };
 
 export type RecordingUploadDetails = {
