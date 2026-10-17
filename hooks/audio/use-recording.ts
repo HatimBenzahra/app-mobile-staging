@@ -6,7 +6,6 @@ import {
   stopLocalRecording,
   isLocalRecording,
   writeRecordingRecovery,
-  deleteRecordingRecovery,
 } from "@/services/audio/recordings/local-recording.service";
 import {
   enqueueUpload,
@@ -219,10 +218,10 @@ export function useRecording({ enabled, immeubleId }: UseRecordingOptions) {
             participantIdentity: ctx.participantName,
             doorSegments: trackerRef.current.getClosedSegments(),
           };
+          // Le `.recovery.json` est supprimé par la file une fois l'envoi confirmé.
           await writeRecordingRecovery(result.fileUri, input);
           try {
             await enqueueUpload(input);
-            await deleteRecordingRecovery(result.fileUri);
           } catch (queueErr) {
             if (__DEV__) {
               console.warn("[useRecording] Failed to enqueue stale recording (recovery preserved):", queueErr);
@@ -312,13 +311,13 @@ export function useRecording({ enabled, immeubleId }: UseRecordingOptions) {
           doorSegments: finalSegments,
         };
 
+        // Le `.recovery.json` est supprimé par la file une fois l'envoi confirmé.
         await writeRecordingRecovery(result.fileUri, input);
 
         try {
           if (__DEV__) console.log("[useRecording] Enqueueing recording for upload queue...");
           await enqueueUpload(input);
           if (__DEV__) console.log("[useRecording] Recording enqueued");
-          await deleteRecordingRecovery(result.fileUri);
         } catch (queueErr) {
           if (__DEV__) console.warn("[useRecording] Failed to enqueue (recovery file preserved):", queueErr);
         }
