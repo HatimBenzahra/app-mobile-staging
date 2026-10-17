@@ -51,6 +51,82 @@ export class GraphQLClientError extends Error {
   }
 }
 
+// Extensions posées par NestJS / Apollo sur une erreur GraphQL (réponse HTTP 200).
+type GraphQLErrorExtensions = {
+  code?: unknown;
+  originalError?: { statusCode?: unknown } | null;
+};
+
+const ERROR_TYPE_BY_EXTENSION_CODE: Record<string, ErrorType> = {
+  UNAUTHENTICATED: ErrorType.AUTHENTICATION,
+  FORBIDDEN: ErrorType.AUTHORIZATION,
+  BAD_USER_INPUT: ErrorType.VALIDATION,
+  NOT_FOUND: ErrorType.NOT_FOUND,
+};
+
+const ERROR_TYPE_BY_STATUS_CODE: Record<number, ErrorType> = {
+  400: ErrorType.VALIDATION,
+  401: ErrorType.AUTHENTICATION,
+  403: ErrorType.AUTHORIZATION,
+  404: ErrorType.NOT_FOUND,
+  422: ErrorType.VALIDATION,
+};
+
+// Type déduit du code structuré renvoyé par le serveur, plus fiable que le
+// texte du message. null si le serveur n'en fournit pas d'exploitable.
+function errorTypeFromExtensions(extensions: unknown): ErrorType | null {
+  if (!extensions || typeof extensions !== "object") return null;
+  const { code, originalError } = extensions as GraphQLErrorExtensions;
+
+  if (typeof code === "string" && code in ERROR_TYPE_BY_EXTENSION_CODE) {
+    return ERROR_TYPE_BY_EXTENSION_CODE[code];
+  }
+  const statusCode = originalError?.statusCode;
+  if (typeof statusCode === "number" && statusCode in ERROR_TYPE_BY_STATUS_CODE) {
+    return ERROR_TYPE_BY_STATUS_CODE[statusCode];
+  }
+  return null;
+}
+
+// Repli quand le serveur ne fournit pas de code : classement par mots-clés du message.
+function errorTypeFromMessage(message: string): ErrorType {
+  const lowerMessage = message.toLowerCase();
+  if (
+    lowerMessage.includes("unauthorized") ||
+    lowerMessage.includes("not authenticated") ||
+    lowerMessage.includes("non authentifie") ||
+    lowerMessage.includes("token invalide") ||
+    lowerMessage.includes("token expir") ||
+    lowerMessage.includes("token expi") ||
+    lowerMessage.includes("authentification")
+  ) {
+    return ErrorType.AUTHENTICATION;
+  }
+  if (
+    lowerMessage.includes("forbidden") ||
+    lowerMessage.includes("not authorized") ||
+    lowerMessage.includes("access denied") ||
+    lowerMessage.includes("acces refuse") ||
+    lowerMessage.includes("accès refuse")
+  ) {
+    return ErrorType.AUTHORIZATION;
+  }
+  if (
+    lowerMessage.includes("not found") ||
+    lowerMessage.includes("introuvable")
+  ) {
+    return ErrorType.NOT_FOUND;
+  }
+  if (
+    lowerMessage.includes("validation") ||
+    lowerMessage.includes("donnees invalides") ||
+    lowerMessage.includes("données invalides")
+  ) {
+    return ErrorType.VALIDATION;
+  }
+  return ErrorType.GRAPHQL;
+}
+
 export class ErrorHandler {
   handleHttpError(status: number, statusText: string): GraphQLClientError {
     let errorType: ErrorType;
@@ -94,38 +170,8 @@ export class ErrorHandler {
   handleGraphQLErrors(errors: any[]): GraphQLClientError {
     const firstError = errors[0];
     const message = firstError.message || "Erreur GraphQL";
-    let errorType = ErrorType.GRAPHQL;
-
-    const lowerMessage = message.toLowerCase();
-    if (
-      lowerMessage.includes("unauthorized") ||
-      lowerMessage.includes("not authenticated") ||
-      lowerMessage.includes("non authentifie") ||
-      lowerMessage.includes("token invalide") ||
-      lowerMessage.includes("token expir") ||
-      lowerMessage.includes("token expi") ||
-      lowerMessage.includes("authentification")
-    ) {
-      errorType = ErrorType.AUTHENTICATION;
-    } else if (
-      lowerMessage.includes("forbidden") ||
-      lowerMessage.includes("not authorized") ||
-      lowerMessage.includes("acces refuse") ||
-      lowerMessage.includes("accès refuse")
-    ) {
-      errorType = ErrorType.AUTHORIZATION;
-    } else if (
-      lowerMessage.includes("not found") ||
-      lowerMessage.includes("introuvable")
-    ) {
-      errorType = ErrorType.NOT_FOUND;
-    } else if (
-      lowerMessage.includes("validation") ||
-      lowerMessage.includes("donnees invalides") ||
-      lowerMessage.includes("données invalides")
-    ) {
-      errorType = ErrorType.VALIDATION;
-    }
+    const errorType =
+      errorTypeFromExtensions(firstError.extensions) ?? errorTypeFromMessage(message);
 
     return new GraphQLClientError(
       message,

@@ -98,14 +98,21 @@ export class GraphQLClient {
     const requestHeaders = { ...this.defaultHeaders, ...headers };
 
     try {
-      const response = await fetch(this.endpoint, {
-        method: 'POST',
-        headers: requestHeaders,
-        body: JSON.stringify({
-          query,
-          variables,
-        }),
-      });
+      let response: Response;
+      try {
+        response = await fetch(this.endpoint, {
+          method: 'POST',
+          headers: requestHeaders,
+          body: JSON.stringify({
+            query,
+            variables,
+          }),
+        });
+      } catch (fetchError) {
+        // Tout échec de fetch est une panne réseau (React Native lève
+        // TypeError("Network request failed"), sans le mot « fetch »).
+        throw errorHandler.handleNetworkError(fetchError);
+      }
 
       if (!response.ok) {
         throw errorHandler.handleHttpError(response.status, response.statusText);
@@ -131,10 +138,6 @@ export class GraphQLClient {
           }
         }
         throw error;
-      }
-
-      if (error instanceof TypeError && error.message.includes('fetch')) {
-        throw errorHandler.handleNetworkError(error);
       }
 
       throw errorHandler.process(error);
