@@ -310,7 +310,7 @@ export default function DashboardScreen() {
                 <View style={styles.rdvRow}>
                   <IconBadge icon="calendar" tone="neutral" size="md" />
                   <View style={styles.rdvInfo}>
-                    <Text style={styles.rdvTitle}>Agenda équipe aujourd'hui</Text>
+                    <Text style={styles.rdvTitle}>Agenda équipe aujourd&apos;hui</Text>
                     <Text style={styles.rdvSub}>
                       {rdvToday.data?.length ?? 0} RDV planifié{(rdvToday.data?.length ?? 0) !== 1 ? "s" : ""}
                     </Text>
@@ -341,7 +341,7 @@ export default function DashboardScreen() {
                 <View style={styles.rdvRow}>
                   <IconBadge icon="calendar" tone="neutral" size="md" />
                   <View style={styles.rdvInfo}>
-                    <Text style={styles.rdvTitle}>Pas de RDV aujourd'hui</Text>
+                    <Text style={styles.rdvTitle}>Pas de RDV aujourd&apos;hui</Text>
                   </View>
                 </View>
               </Card>

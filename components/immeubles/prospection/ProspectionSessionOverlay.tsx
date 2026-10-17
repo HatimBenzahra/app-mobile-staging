@@ -158,7 +158,7 @@ export default function ProspectionSessionOverlay({
                 <ActivityIndicator size="large" color={colors.primary} />
                 <Text style={styles.startingTitle}>Préparez-vous…</Text>
                 <Text style={styles.startingHint}>
-                  Ne sors pas de l'écran, on lance le passage.
+                  Ne sors pas de l&apos;écran, on lance le passage.
                 </Text>
               </View>
             </Animated.View>
@@ -770,23 +770,31 @@ function NamingView({
 //  READY VIEW — confirmation "Prêt à sonner" + bouton Commencer
 // ────────────────────────────────────────────────────────────────────────────
 
-function ReadyView({
-  session,
-  isTablet,
-  insetsTop,
-  insetsBottom,
-  typeHabitat,
-}: {
+type ReadyViewProps = {
   session: ProspectionSessionApi;
   isTablet: boolean;
   insetsTop: number;
   insetsBottom: number;
   typeHabitat?: TypeHabitat;
-}) {
-  const state = session.state;
-  const terms = getLieuTerms(typeHabitat);
+};
+
+// Garde de phase séparée du contenu : les hooks de `ReadyContent` sont ainsi
+// toujours appelés dans le même ordre (règle des hooks).
+function ReadyView(props: ReadyViewProps) {
+  const state = props.session.state;
   if (state.phase !== "READY") return null;
-  const { porte } = state;
+  return <ReadyContent {...props} porte={state.porte} />;
+}
+
+function ReadyContent({
+  session,
+  isTablet,
+  insetsTop,
+  insetsBottom,
+  typeHabitat,
+  porte,
+}: ReadyViewProps & { porte: Porte }) {
+  const terms = getLieuTerms(typeHabitat);
 
   const handleStart = useCallback(() => {
     Haptics.medium();

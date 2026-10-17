@@ -156,7 +156,7 @@ export default function AddPorteSheet({
           <View style={styles.headerText}>
             <Text style={styles.title}>Ajouter une porte</Text>
             <Text style={styles.subtitle}>
-              Renseigne l'etage et le numero
+              Renseigne l&apos;etage et le numero
             </Text>
           </View>
         </View>

@@ -246,7 +246,7 @@ export default function LoginScreen() {
             {/* Footer */}
             <View style={styles.footer}>
               <Text style={styles.footerText}>
-                Besoin d'aide ? Contacte ton administrateur.
+                Besoin d&apos;aide ? Contacte ton administrateur.
               </Text>
               <Text style={styles.versionText}>
                 v{Constants.expoConfig?.version ?? "1.0.0"}

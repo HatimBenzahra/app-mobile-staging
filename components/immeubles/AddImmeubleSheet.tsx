@@ -438,7 +438,7 @@ export default function AddImmeubleSheet({
             <>
               <View style={styles.row}>
                 <View style={styles.field}>
-                  <Text style={styles.label}>Nombre d'étages</Text>
+                  <Text style={styles.label}>Nombre d&apos;étages</Text>
                   <TextInput
                     keyboardType="number-pad"
                     placeholder="5"
@@ -496,7 +496,7 @@ export default function AddImmeubleSheet({
                 <View style={{ flex: 1 }}>
                   <Text style={styles.label}>Ascenseur</Text>
                   <Text style={styles.helper}>
-                    L'immeuble dispose d'un ascenseur ?
+                    L&apos;immeuble dispose d&apos;un ascenseur ?
                   </Text>
                 </View>
                 <Switch
@@ -510,7 +510,7 @@ export default function AddImmeubleSheet({
               </Card>
 
               <View style={styles.field}>
-                <Text style={styles.label}>Code d'accès</Text>
+                <Text style={styles.label}>Code d&apos;accès</Text>
                 <View style={styles.inputRow}>
                   <Icon name="key" size={16} color={colors.textSubtle} />
                   <TextInput
