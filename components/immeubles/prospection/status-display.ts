@@ -49,6 +49,15 @@ export const STATUS_OPTIONS: StatusOption[] = [
     icon: "calendar",
   },
   {
+    value: "NECESSITE_REPASSAGE",
+    label: "Repasse",
+    description: "Décisionnaire absent",
+    bg: "#F5F3FF",
+    fg: "#5B21B6",
+    accent: "#8B5CF6",
+    icon: "rotate-ccw",
+  },
+  {
     value: "ARGUMENTE",
     label: "Argumente",
     description: "Discussion ok",
@@ -67,6 +76,19 @@ export const STATUS_OPTIONS: StatusOption[] = [
     icon: "check-circle",
   },
 ];
+
+/**
+ * Statuts qu'on peut re-prospecter : absent, RDV et repasse (décisionnaire absent).
+ * Refus, Contrat signé et Argumenté sont des états finaux fermés.
+ */
+export const RESUMABLE_STATUSES: ReadonlySet<string> = new Set([
+  "ABSENT",
+  "ABSENT_MATIN",
+  "ABSENT_SOIR",
+  "RENDEZ_VOUS_PRIS",
+  "RDV_PRIS",
+  "NECESSITE_REPASSAGE",
+]);
 
 export const STATUS_DISPLAY: Record<string, StatusOption> = {
   ...Object.fromEntries(STATUS_OPTIONS.map((option) => [option.value, option])),

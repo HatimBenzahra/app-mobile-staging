@@ -94,11 +94,10 @@ function statusToChipTone(accent: string): ChipTone {
 /**
  * Libellé + couleur d'un statut de porte brut (`StatutPorte`).
  * Réutilise `STATUS_DISPLAY` pour les statuts partagés et complète les statuts
- * bruts absents de la palette de prospection (ABSENT / repassage / non visité).
+ * bruts absents de la palette de prospection (ABSENT / non visité).
  */
 const PORTE_STATUS_EXTRA: Record<string, { label: string; accent: string }> = {
   ABSENT: { label: "Absent", accent: "#F59E0B" },
-  NECESSITE_REPASSAGE: { label: "À repasser", accent: "#6366F1" },
   NON_VISITE: {
     label: DEFAULT_STATUS_OPTION.label,
     accent: DEFAULT_STATUS_OPTION.accent,

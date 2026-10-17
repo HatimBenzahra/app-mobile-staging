@@ -47,11 +47,14 @@ type RepassageItem = {
   statut: string;
   commentaire?: string;
   derniereVisite?: string;
+  /** Date de repasse prévue (optionnelle, statut NECESSITE_REPASSAGE). */
+  rdvDate?: string;
+  rdvTime?: string;
 };
 
 const STATUS_LABELS: Record<string, string> = {
   ABSENT: "Absent",
-  NECESSITE_REPASSAGE: "À revoir",
+  NECESSITE_REPASSAGE: "Repasse",
 };
 
 const REPASSAGE_STATUTS = new Set(["ABSENT", "NECESSITE_REPASSAGE"]);
@@ -127,6 +130,12 @@ const RepassageCard = memo(function RepassageCard({ item, onPress }: RepassageCa
         month: "short",
       })
     : null;
+  const plannedRepasse = item.rdvDate
+    ? `Repasse le ${new Date(item.rdvDate).toLocaleDateString("fr-FR", {
+        day: "2-digit",
+        month: "short",
+      })}${item.rdvTime ? ` à ${item.rdvTime}` : ""}`
+    : null;
 
   return (
     <PressableCard
@@ -159,6 +168,14 @@ const RepassageCard = memo(function RepassageCard({ item, onPress }: RepassageCa
           {lastVisit ? ` · ${lastVisit}` : ""}
         </Text>
       </View>
+      {plannedRepasse ? (
+        <View style={styles.rowMeta}>
+          <Icon name="calendar" size={11} color={accentColor} />
+          <Text style={[styles.rowMetaText, { color: accentColor }]} numberOfLines={1}>
+            {plannedRepasse}
+          </Text>
+        </View>
+      ) : null}
       {item.commentaire ? (
         <Text style={styles.rowComment} numberOfLines={2}>
           {item.commentaire}
@@ -309,7 +326,19 @@ export default function AgendaScreen({
         statut: typeof porte.statut === "string" ? porte.statut : "ABSENT",
         commentaire: porte.commentaire ?? undefined,
         derniereVisite: porte.derniereVisite ?? undefined,
-      }));
+        ...(porte.statut === "NECESSITE_REPASSAGE" && {
+          rdvDate: porte.rdvDate ?? undefined,
+          rdvTime: porte.rdvTime ?? undefined,
+        }),
+      }))
+      // Repasses datées d'abord (la plus proche en tête), puis le reste dans l'ordre reçu.
+      .sort((a, b) => {
+        if (!a.rdvDate || !b.rdvDate) return (a.rdvDate ? 0 : 1) - (b.rdvDate ? 0 : 1);
+        return (
+          a.rdvDate.localeCompare(b.rdvDate) ||
+          (a.rdvTime ?? "").localeCompare(b.rdvTime ?? "")
+        );
+      });
   }, [modified.data, addressMap]);
 
   useEffect(() => {

@@ -16,6 +16,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import {
   DEFAULT_STATUS_OPTION,
+  RESUMABLE_STATUSES,
   STATUS_DISPLAY,
   getDisplayStatusKey,
 } from "@/components/immeubles/prospection/status-display";
@@ -37,16 +38,6 @@ type PorteDetailSheetProps = {
    */
   readOnly?: boolean;
 };
-
-// Only ABSENT (matin/soir) and RDV_PRIS are eligible for re-prospection.
-// Refus, Contrat signé and Argumenté are considered closed final states.
-const RESUMABLE_STATUSES = new Set([
-  "ABSENT",
-  "ABSENT_MATIN",
-  "ABSENT_SOIR",
-  "RENDEZ_VOUS_PRIS",
-  "RDV_PRIS",
-]);
 
 function formatDuration(ms?: number | null): string | null {
   if (!ms || ms <= 0) return null;

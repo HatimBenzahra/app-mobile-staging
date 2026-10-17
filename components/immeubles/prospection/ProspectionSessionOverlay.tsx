@@ -40,6 +40,7 @@ import LiveSegmentHeader from "./LiveSegmentHeader";
 import RdvQuickPicker from "./RdvQuickPicker";
 import {
   DEFAULT_STATUS_OPTION,
+  RESUMABLE_STATUSES,
   STATUS_DISPLAY,
   getDisplayStatusKey,
 } from "@/components/immeubles/prospection/status-display";
@@ -400,19 +401,12 @@ function NamingView({
   // commercial would have to delete & re-create if they really need to redo.
   const prospectedOnFloor = useMemo(() => {
     if (selectedEtage === null) return [];
-    const resumable = new Set([
-      "ABSENT",
-      "ABSENT_MATIN",
-      "ABSENT_SOIR",
-      "RENDEZ_VOUS_PRIS",
-      "RDV_PRIS",
-    ]);
     return portes
       .filter(
         (p) =>
           p.etage === selectedEtage &&
           p.statut !== "NON_VISITE" &&
-          resumable.has(p.statut),
+          RESUMABLE_STATUSES.has(p.statut),
       )
       .sort((a, b) =>
         String(a.numero).localeCompare(String(b.numero), "fr", {
@@ -916,25 +910,40 @@ function ReadyView({
 //  ACTIVE VIEW — live header + status grid + commentaire + save
 // ────────────────────────────────────────────────────────────────────────────
 
-function ActiveView({
-  session,
-  isTablet,
-  insetsTop,
-  insetsBottom,
-  typeHabitat,
-}: {
+type ActiveViewProps = {
   session: ProspectionSessionApi;
   isTablet: boolean;
   insetsTop: number;
   insetsBottom: number;
   typeHabitat?: TypeHabitat;
-}) {
-  const state = session.state;
-  const terms = getLieuTerms(typeHabitat);
-  if (state.phase !== "ACTIVE" && state.phase !== "SAVING") return null;
+};
 
-  const { porte, startedAt } = state;
-  const isSaving = state.phase === "SAVING";
+// Garde de phase séparée du formulaire : les hooks de `ActiveForm` sont ainsi
+// toujours appelés dans le même ordre (règle des hooks).
+function ActiveView(props: ActiveViewProps) {
+  const state = props.session.state;
+  if (state.phase !== "ACTIVE" && state.phase !== "SAVING") return null;
+  return (
+    <ActiveForm
+      {...props}
+      porte={state.porte}
+      startedAt={state.startedAt}
+      isSaving={state.phase === "SAVING"}
+    />
+  );
+}
+
+function ActiveForm({
+  session,
+  isTablet,
+  insetsTop,
+  insetsBottom,
+  typeHabitat,
+  porte,
+  startedAt,
+  isSaving,
+}: ActiveViewProps & { porte: Porte; startedAt: number; isSaving: boolean }) {
+  const terms = getLieuTerms(typeHabitat);
 
   const [selectedStatus, setSelectedStatus] = useState<StatusKey | null>(null);
   const [commentaire, setCommentaire] = useState(porte.commentaire || "");
@@ -943,6 +952,18 @@ function ActiveView({
   );
   const [rdvDate, setRdvDate] = useState(porte.rdvDate || getTodayDate());
   const [rdvTime, setRdvTime] = useState(porte.rdvTime || getNowTime());
+  // Date de repasse optionnelle : vide par défaut, reprise si la porte est déjà en repasse.
+  const wasRepasse = porte.statut === "NECESSITE_REPASSAGE";
+  const [repasseDate, setRepasseDate] = useState(
+    wasRepasse && porte.rdvDate ? porte.rdvDate.slice(0, 10) : "",
+  );
+  const [repasseTime, setRepasseTime] = useState(
+    wasRepasse && porte.rdvTime ? porte.rdvTime : "",
+  );
+  const clearRepasse = useCallback(() => {
+    setRepasseDate("");
+    setRepasseTime("");
+  }, []);
   const [nbContrats, setNbContrats] = useState(porte.nbContrats || 1);
 
   const submittingRef = useRef(false);
@@ -1014,6 +1035,11 @@ function ActiveView({
       input.rdvDate = rdvDate;
       input.rdvTime = rdvTime;
     }
+    // Une heure seule n'a pas de sens : elle n'est envoyée qu'avec une date.
+    if (selectedStatus === "NECESSITE_REPASSAGE" && repasseDate) {
+      input.rdvDate = repasseDate;
+      input.rdvTime = repasseTime || undefined;
+    }
     if (selectedStatus === "CONTRAT_SIGNE") {
       input.nbContrats = nbContrats;
     }
@@ -1033,7 +1059,7 @@ function ActiveView({
     }
 
     void commitStatus(input);
-  }, [selectedStatus, commentaire, nomPersonnalise, rdvDate, rdvTime, nbContrats, commitStatus]);
+  }, [selectedStatus, commentaire, nomPersonnalise, rdvDate, rdvTime, repasseDate, repasseTime, nbContrats, commitStatus]);
 
   const handleAbort = useCallback(() => {
     Alert.alert(
@@ -1055,6 +1081,7 @@ function ActiveView({
 
   const pad = isTablet ? TABLET_PAD : SCREEN_PAD;
   const isRdv = selectedStatus === "RENDEZ_VOUS_PRIS";
+  const isRepasse = selectedStatus === "NECESSITE_REPASSAGE";
   const isContrat = selectedStatus === "CONTRAT_SIGNE";
 
   const ctaLabel = useMemo(() => {
@@ -1115,6 +1142,22 @@ function ActiveView({
                 rdvTime={rdvTime}
                 onChangeDate={setRdvDate}
                 onChangeTime={setRdvTime}
+              />
+            </Animated.View>
+          ) : null}
+
+          {isRepasse ? (
+            <Animated.View
+              entering={FadeIn.duration(180)}
+              style={styles.conditionalCard}
+            >
+              <RdvQuickPicker
+                dateTitle="Date de repasse (optionnel)"
+                rdvDate={repasseDate}
+                rdvTime={repasseTime}
+                onChangeDate={setRepasseDate}
+                onChangeTime={setRepasseTime}
+                onClear={clearRepasse}
               />
             </Animated.View>
           ) : null}

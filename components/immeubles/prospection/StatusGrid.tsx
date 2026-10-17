@@ -12,7 +12,8 @@ export type StatusKey =
   | "REFUS"
   | "ARGUMENTE"
   | "RENDEZ_VOUS_PRIS"
-  | "CONTRAT_SIGNE";
+  | "CONTRAT_SIGNE"
+  | "NECESSITE_REPASSAGE";
 
 type StatusDescriptor = {
   key: StatusKey;
@@ -60,6 +61,16 @@ const STATUSES: Record<Exclude<StatusKey, "ABSENT">, StatusDescriptor> = {
     accent: "#059669",
     accentSoft: "#D1FAE5",
     accentInk: "#064E3B",
+  },
+  // En dernier : garde la position des quatre statuts historiques (mémoire du geste).
+  NECESSITE_REPASSAGE: {
+    key: "NECESSITE_REPASSAGE",
+    label: "Repasse",
+    hint: "Décisionnaire absent",
+    icon: "rotate-ccw",
+    accent: "#7C3AED",
+    accentSoft: "#EDE9FE",
+    accentInk: "#4C1D95",
   },
 };
 

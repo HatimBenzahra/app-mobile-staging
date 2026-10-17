@@ -42,7 +42,7 @@ const FILTER_TO_MS: Record<string, number> = {
  * Vocabulaire de statut aligné sur la Carte / le détail immeuble
  * (accents identiques à components/immeubles/prospection/status-display.ts),
  * mais complété pour couvrir toutes les valeurs brutes de StatusHistorique
- * (ABSENT générique, NECESSITE_REPASSAGE, NON_VISITE) qui n'y figurent pas.
+ * (ABSENT générique, NON_VISITE) qui n'y figurent pas.
  */
 type StatusVisual = {
   label: string;
@@ -89,10 +89,10 @@ const STATUS_VISUAL: Record<string, StatusVisual> = {
     icon: "user-x",
   },
   NECESSITE_REPASSAGE: {
-    label: "À repasser",
-    bg: "#FFFBEB",
-    fg: "#92400E",
-    accent: "#F59E0B",
+    label: "Repasse – décisionnaire absent",
+    bg: "#F5F3FF",
+    fg: "#5B21B6",
+    accent: "#8B5CF6",
     icon: "rotate-ccw",
   },
   NON_VISITE: {
@@ -124,7 +124,7 @@ const STATUS_FILTERS = [
   { key: "REFUS", label: "Refus", icon: "x-circle" as const },
   { key: "ARGUMENTE", label: "Argumenté", icon: "message-square" as const },
   { key: "ABSENT", label: "Absent", icon: "user-x" as const },
-  { key: "NECESSITE_REPASSAGE", label: "Repassage", icon: "rotate-ccw" as const },
+  { key: "NECESSITE_REPASSAGE", label: "Repasse", icon: "rotate-ccw" as const },
 ];
 
 type FeedEvent = {

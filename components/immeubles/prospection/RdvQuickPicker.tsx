@@ -11,10 +11,14 @@ import {
 import { colors } from "@/constants/theme";
 
 type RdvQuickPickerProps = {
-  rdvDate: string; // YYYY-MM-DD
-  rdvTime: string; // HH:mm
+  rdvDate: string; // YYYY-MM-DD, "" = aucune date choisie
+  rdvTime: string; // HH:mm, "" = aucune heure choisie
   onChangeDate: (date: string) => void;
   onChangeTime: (time: string) => void;
+  /** Titre de la section date (ex. « Date de repasse (optionnel) »). */
+  dateTitle?: string;
+  /** Si fourni, affiche « Effacer » pour revenir à aucune date ni heure. */
+  onClear?: () => void;
 };
 
 type DayChip = {
@@ -380,9 +384,12 @@ function RdvQuickPickerImpl({
   rdvTime,
   onChangeDate,
   onChangeTime,
+  dateTitle = "Date du rendez-vous",
+  onClear,
 }: RdvQuickPickerProps) {
   const chips = useMemo(() => buildDayChips(10), []);
-  const isInChips = chips.some((c) => c.iso === rdvDate);
+  const isInChips = !rdvDate || chips.some((c) => c.iso === rdvDate);
+  const hasValue = Boolean(rdvDate || rdvTime);
   const isCustomTime = rdvTime ? !QUICK_TIME_SLOTS.has(rdvTime) : false;
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [timeSheetOpen, setTimeSheetOpen] = useState(false);
@@ -395,9 +402,17 @@ function RdvQuickPickerImpl({
             <Icon name="calendar" size={13} color="#0284C7" />
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={styles.sectionTitle}>Date du rendez-vous</Text>
-            <Text style={styles.sectionPick}>{formatLongDate(rdvDate)}</Text>
+            <Text style={styles.sectionTitle}>{dateTitle}</Text>
+            <Text style={styles.sectionPick}>
+              {rdvDate ? formatLongDate(rdvDate) : "—"}
+            </Text>
           </View>
+          {onClear && hasValue ? (
+            <Pressable onPress={onClear} style={styles.clearBtn} hitSlop={8}>
+              <Icon name="x" size={12} color="#475569" />
+              <Text style={styles.clearText}>Effacer</Text>
+            </Pressable>
+          ) : null}
         </View>
         <ScrollView
           horizontal
@@ -581,6 +596,22 @@ const styles = StyleSheet.create({
     fontSize: 11.5,
     color: "#64748B",
     fontWeight: "600",
+  },
+  clearBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 999,
+    backgroundColor: "#F1F5F9",
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+  },
+  clearText: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#475569",
   },
   chipRow: {
     paddingVertical: 2,
