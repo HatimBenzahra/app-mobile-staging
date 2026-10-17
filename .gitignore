@@ -65,8 +65,9 @@ eas.json
 .omc/project-memory.json
 # (on garde .omc/plans/ versionne : ce sont des docs utiles)
 
-# .omc parasites poses dans assets/ (ceux d'android/ sont deja ignores via /android)
-assets/**/.omc/
+# .omc parasites poses dans les sous-dossiers (assets/, components/, services/…) :
+# seul le .omc/ racine porte des docs versionnees (.omc/plans/).
+*/**/.omc/
 
 # Backups manuels de config
 *.staging-bak

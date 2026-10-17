@@ -89,6 +89,26 @@ SERVER_SSH="${DEPLOY_SERVER_SSH:-${SERVER_SSH_DEFAULT}}"
 [ -n "${KIOSK_USER}" ] && [ -n "${KIOSK_PASS}" ] || \
   fail "KIOSK_USER/KIOSK_PASS absents. Ajoute-les dans ${ROOT}/.env.local"
 
+# ── Barrière avant déploiement ───────────────────────────────────────────
+# AVANT le bump de version : un échec ne laisse ni version consommée ni commit.
+# En prod, l'APK doit sortir d'un code committé ET poussé (on sait ce qui tourne).
+if [ "${ENV}" = "prod" ]; then
+  log "Barrière : code committé et poussé ?"
+  DIRTY="$(git status --porcelain)"
+  if [ -n "${DIRTY}" ]; then
+    echo "${DIRTY}" | sed 's/^/    /'
+    fail "Barrière : des fichiers ne sont pas committés (ci-dessus). Déploiement refusé."
+  fi
+  git fetch --quiet origin || fail "Barrière : impossible de joindre origin pour vérifier le push."
+  UPSTREAM="$(git rev-parse --abbrev-ref --symbolic-full-name '@{u}' 2>/dev/null)" \
+    || fail "Barrière : la branche courante n'a pas de branche distante associée."
+  git merge-base --is-ancestor HEAD "${UPSTREAM}" \
+    || fail "Barrière : HEAD ($(git rev-parse --short HEAD)) n'est pas poussé sur ${UPSTREAM}. Lance git push."
+  ok "Barrière : $(git rev-parse --short HEAD) committé et poussé"
+fi
+log "Barrière : vérifications (npm run verify)..."
+npm run --silent verify || fail "Barrière : des vérifications échouent (détail ci-dessus). Déploiement refusé."
+
 # ── Confirmation PROD ────────────────────────────────────────────────────
 echo ""
 echo "${BOLD}Cible    :${NC} ${ENV}"
