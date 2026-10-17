@@ -16,6 +16,19 @@ export type UploadRecordingInput = {
   doorSegments?: DoorSegment[];
 };
 
+// Segments envoyés à la confirmation : uniquement ceux clôturés (endTime connu)
+// et d'au moins 5 s — les passages plus courts ne sont pas exploitables.
+export function filterSegmentsForUpload(
+  segments: DoorSegment[] | undefined,
+): (DoorSegment & { endTime: number })[] {
+  return (
+    segments?.filter(
+      (s): s is DoorSegment & { endTime: number } =>
+        s.endTime !== null && s.endTime - s.startTime >= 5,
+    ) ?? []
+  );
+}
+
 export async function uploadRecording(
   input: UploadRecordingInput,
 ): Promise<RecordingItem> {
@@ -54,9 +67,7 @@ export async function uploadRecording(
   }
 
   if (__DEV__) console.log("[Upload] Confirming upload...");
-  const closedSegments = input.doorSegments
-    ?.filter((s): s is DoorSegment & { endTime: number } => s.endTime !== null && s.endTime - s.startTime >= 5)
-    ?? [];
+  const closedSegments = filterSegmentsForUpload(input.doorSegments);
   if (__DEV__ && closedSegments.length > 0) {
     console.log("[Upload] Door segments:", closedSegments.length, JSON.stringify(closedSegments));
   }

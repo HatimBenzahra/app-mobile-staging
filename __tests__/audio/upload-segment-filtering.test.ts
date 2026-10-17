@@ -1,13 +1,13 @@
+import { filterSegmentsForUpload } from "@/services/audio/recordings/recording-upload.service";
 import type { DoorSegment } from "@/services/audio/recordings/recording.types";
 
-function filterSegmentsForUpload(segments: DoorSegment[] | undefined): DoorSegment[] {
-  return (
-    segments?.filter(
-      (s): s is DoorSegment & { endTime: number } =>
-        s.endTime !== null && s.endTime - s.startTime >= 5,
-    ) ?? []
-  );
-}
+// Le service importe le système de fichiers natif et l'API GraphQL : on ne
+// teste ici que le filtre pur, ces dépendances sont donc neutralisées
+// (jest.mock est remonté avant les imports).
+jest.mock("expo-file-system/legacy", () => ({}));
+jest.mock("@/services/audio/recordings/recording.service", () => ({
+  RecordingService: {},
+}));
 
 const segment = (
   porteId: number,
