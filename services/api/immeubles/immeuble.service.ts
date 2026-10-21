@@ -1,10 +1,12 @@
 import { gql } from "@/services/core/graphql";
 import type {
+  Coequipier,
   CreateImmeubleInput,
   CreateQuartierInput,
   Immeuble,
   ImmeublesPage,
   ImmeublesPageInput,
+  ImmeubleMembre,
   MobileMapPlace,
   Quartier,
   UpdateImmeubleInput,
@@ -15,6 +17,8 @@ import {
   CREATE_IMMEUBLE,
   CREATE_MAISON_FROM_IMMEUBLE_INPUT,
   CREATE_QUARTIER,
+  PARTAGER_IMMEUBLE,
+  QUITTER_IMMEUBLE,
   REMOVE_TERRAIN_LIEU,
   REMOVE_ETAGE_FROM_IMMEUBLE,
   REMOVE_PORTE_FROM_ETAGE,
@@ -22,6 +26,7 @@ import {
 } from "./immeuble.mutations";
 import {
   GET_IMMEUBLES_PAGE,
+  GET_MES_COEQUIPIERS,
   GET_MOBILE_IMMEUBLE_DETAIL,
   GET_MOBILE_MAP_QUARTIERS,
   GET_MOBILE_MANAGER_MAP_PLACES,
@@ -134,6 +139,33 @@ export const immeubleApi = {
       Record<string, never>
     >(GET_MOBILE_MAP_QUARTIERS, {});
     return response.mobileMapQuartiers;
+  },
+
+  async getMesCoequipiers(): Promise<Coequipier[]> {
+    const response = await gql<
+      { mesCoequipiers: Coequipier[] },
+      Record<string, never>
+    >(GET_MES_COEQUIPIERS, {});
+    return response.mesCoequipiers;
+  },
+
+  async partager(
+    immeubleId: number,
+    commercialId: number,
+  ): Promise<{ id: number; membres: ImmeubleMembre[] }> {
+    const response = await gql<
+      { partagerImmeuble: { id: number; membres: ImmeubleMembre[] } },
+      { immeubleId: number; commercialId: number }
+    >(PARTAGER_IMMEUBLE, { immeubleId, commercialId });
+    return response.partagerImmeuble;
+  },
+
+  async quitter(immeubleId: number): Promise<boolean> {
+    const response = await gql<
+      { quitterImmeuble: boolean },
+      { immeubleId: number }
+    >(QUITTER_IMMEUBLE, { immeubleId });
+    return response.quitterImmeuble;
   },
 
   async getQuartiers(): Promise<Quartier[]> {

@@ -151,3 +151,24 @@ export const REMOVE_PORTE_FROM_ETAGE = `
     }
   }
 `;
+
+// Partage : renvoie l'immeuble avec ses membres à jour (idempotent backend).
+export const PARTAGER_IMMEUBLE = `
+  mutation PartagerImmeuble($immeubleId: Int!, $commercialId: Int!) {
+    partagerImmeuble(immeubleId: $immeubleId, commercialId: $commercialId) {
+      id
+      membres {
+        id
+        nom
+        prenom
+        type
+      }
+    }
+  }
+`;
+
+export const QUITTER_IMMEUBLE = `
+  mutation QuitterImmeuble($immeubleId: Int!) {
+    quitterImmeuble(immeubleId: $immeubleId)
+  }
+`;

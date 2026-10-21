@@ -5,7 +5,10 @@ import { invalidateApiCacheByPrefix } from "@/hooks/api/use-api-call";
 import { useZonesForUser } from "@/hooks/api/use-zones-for-user";
 import { useMapFocus } from "@/hooks/use-map-focus";
 import { api } from "@/services/api";
-import type { AppNotification } from "@/services/api/notifications/notification.service";
+import {
+  getNotificationImmeubleId,
+  type AppNotification,
+} from "@/services/api/notifications/notification.service";
 import type { ZoneForUser } from "@/services/api/zones/zone.service";
 import { authService } from "@/services/auth";
 import type { UserType } from "@/types/api";
@@ -49,6 +52,7 @@ type NotificationCardProps = {
   canViewOnMap: boolean;
   onViewOnMap: (notif: AppNotification) => void;
   onViewDetail: (notif: AppNotification) => void;
+  onOpenImmeuble: (notif: AppNotification) => void;
 };
 
 function NotificationCard({
@@ -56,10 +60,12 @@ function NotificationCard({
   canViewOnMap,
   onViewOnMap,
   onViewDetail,
+  onOpenImmeuble,
 }: NotificationCardProps) {
   const unread = !notif.readAt;
   const isUnassign = notif.type === "ZONE_UNASSIGNED";
   const hasZone = notif.data?.zoneId != null;
+  const hasImmeuble = getNotificationImmeubleId(notif.data) !== null;
 
   return (
     <View style={[styles.card, unread && styles.cardUnread]}>
@@ -71,7 +77,7 @@ function NotificationCard({
           ]}
         >
           <Icon
-            name={isUnassign ? "alert-circle" : "map"}
+            name={isUnassign ? "alert-circle" : hasImmeuble ? "users" : "map"}
             size={20}
             color={isUnassign ? colors.danger : colors.primary}
           />
@@ -107,6 +113,19 @@ function NotificationCard({
           >
             <Icon name="eye" size={16} color={colors.info} />
             <Text style={styles.actionText}>Voir les détails</Text>
+          </Pressable>
+        </View>
+      ) : null}
+
+      {hasImmeuble ? (
+        <View style={styles.actionsRow}>
+          <Pressable
+            style={styles.action}
+            onPress={() => onOpenImmeuble(notif)}
+            accessibilityRole="button"
+          >
+            <Icon name="eye" size={16} color={colors.info} />
+            <Text style={styles.actionText}>Ouvrir l&apos;immeuble</Text>
           </Pressable>
         </View>
       ) : null}
@@ -193,6 +212,16 @@ export default function NotificationsScreen() {
     [markReadIfNeeded],
   );
 
+  const handleOpenImmeuble = useCallback(
+    (notif: AppNotification) => {
+      const immeubleId = getNotificationImmeubleId(notif.data);
+      if (immeubleId === null) return;
+      void markReadIfNeeded(notif);
+      router.push(`/lieu/${immeubleId}`);
+    },
+    [markReadIfNeeded],
+  );
+
   const handleMarkAllRead = useCallback(async () => {
     try {
       await api.notifications.markAllRead();
@@ -214,10 +243,11 @@ export default function NotificationsScreen() {
           canViewOnMap={canViewOnMap}
           onViewOnMap={handleViewOnMap}
           onViewDetail={handleViewDetail}
+          onOpenImmeuble={handleOpenImmeuble}
         />
       );
     },
-    [zonesById, handleViewOnMap, handleViewDetail],
+    [zonesById, handleViewOnMap, handleViewDetail, handleOpenImmeuble],
   );
 
   return (

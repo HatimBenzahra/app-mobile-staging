@@ -46,6 +46,7 @@ export default function CarteTerrainScreen({
     navigatingRef,
     userId,
     role,
+    viewer,
     userType,
     mode,
     setMode,
@@ -271,6 +272,7 @@ export default function CarteTerrainScreen({
         highlightedPorteId={highlightedPorteId}
         updatingLieu={updatingLieu}
         currentUserName={currentUserName}
+        viewer={viewer}
         loadingDetail={selectedLieuLoading}
         detailError={selectedLieuError}
         onRetryDetail={retrySelectedLieuDetail}

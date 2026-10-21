@@ -11,7 +11,10 @@ import {
   UNREGISTER_DEVICE_TOKEN,
 } from "./notification.mutations";
 
-export type NotificationType = "ZONE_ASSIGNED" | "ZONE_UNASSIGNED";
+export type NotificationType =
+  | "IMMEUBLE_PARTAGE"
+  | "ZONE_ASSIGNED"
+  | "ZONE_UNASSIGNED";
 
 /** Contexte transporté par la notification (aligné sur le backend). */
 export type NotificationData = {
@@ -19,7 +22,19 @@ export type NotificationData = {
   zoneId?: number;
   zoneName?: string;
   targetCount?: number;
+  /** IMMEUBLE_PARTAGE. Chaîne dans un push FCM (data en string), nombre en base. */
+  immeubleId?: number | string;
+  adresse?: string;
 };
+
+/** Immeuble ciblé par une notification de partage, `null` sinon. */
+export function getNotificationImmeubleId(
+  data: NotificationData | null | undefined,
+): number | null {
+  if (data?.type !== "IMMEUBLE_PARTAGE" || data.immeubleId == null) return null;
+  const immeubleId = Number(data.immeubleId);
+  return Number.isInteger(immeubleId) && immeubleId > 0 ? immeubleId : null;
+}
 
 /** Notification in-app (centre de notifications). */
 export type AppNotification = {

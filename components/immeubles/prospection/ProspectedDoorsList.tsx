@@ -19,6 +19,7 @@ type ProspectedDoorsListProps = {
   nbPortesParEtage?: number;
   typeHabitat?: TypeHabitat;
   nbMaisonsPrevu?: number | null;
+  getAuteurLabel?: (porte: Porte) => string | null;
 };
 
 function groupByEtage(portes: Porte[]): Array<{ etage: number; portes: Porte[] }> {
@@ -42,6 +43,7 @@ function ProspectedDoorsListImpl({
   nbEtages,
   nbPortesParEtage,
   typeHabitat,
+  getAuteurLabel,
 }: ProspectedDoorsListProps) {
   const terms = getLieuTerms(typeHabitat);
   const sections = useMemo(() => groupByEtage(portes), [portes]);
@@ -125,6 +127,7 @@ function ProspectedDoorsListImpl({
               isTablet={isTablet}
               isFocused={focusedEtage === section.etage}
               typeHabitat={typeHabitat}
+              getAuteurLabel={getAuteurLabel}
             />
           ))}
         </View>

@@ -28,6 +28,12 @@ export const GET_COMMERCIAL_FULL = `
         commercialId
         zoneId
         updatedAt
+        membres {
+          id
+          nom
+          prenom
+          type
+        }
         portes {
           id
           numero
@@ -40,6 +46,8 @@ export const GET_COMMERCIAL_FULL = `
           rdvTime
           commentaire
           derniereVisite
+          dernierCommercialId
+          dernierManagerId
         }
       }
       statistics {

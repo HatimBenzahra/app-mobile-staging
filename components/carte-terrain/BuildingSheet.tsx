@@ -16,6 +16,11 @@ import {
   getLieuTerms,
 } from "@/components/immeubles/lieu-terms";
 import type { Immeuble, Porte } from "@/types/api";
+import {
+  getAutresMembres,
+  getPorteAuteurLabel,
+  type ImmeubleViewer,
+} from "@/utils/business/immeuble-membres";
 import { router } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -41,6 +46,8 @@ type BuildingSheetProps = {
   onDelete?: (immeuble: Immeuble) => void;
   updatingLieu?: boolean;
   currentUserName?: string;
+  /** Utilisateur connecté : membres affichés et libellé « Fait par ». */
+  viewer?: ImmeubleViewer | null;
   loadingDetail?: boolean;
   detailError?: string | null;
   onRetryDetail?: () => void;
@@ -137,6 +144,7 @@ export default function BuildingSheet({
   onDelete,
   updatingLieu = false,
   currentUserName,
+  viewer = null,
   loadingDetail = false,
   detailError = null,
   onRetryDetail,
@@ -312,6 +320,16 @@ export default function BuildingSheet({
   // Porte affichée dans le modal de détail READ-ONLY (bâtiment d'équipe).
   const [detailPorte, setDetailPorte] = useState<Porte | null>(null);
 
+  const membres = immeuble?.membres;
+  const autresMembres = useMemo(
+    () => getAutresMembres(membres, viewer),
+    [membres, viewer],
+  );
+  const getAuteurLabel = useCallback(
+    (porte: Porte) => getPorteAuteurLabel(porte, membres, viewer),
+    [membres, viewer],
+  );
+
   const handlePorteTap = useCallback(
     (porte: Porte) => {
       if (!immeuble) return;
@@ -328,7 +346,17 @@ export default function BuildingSheet({
 
   if (!open || !immeuble) return null;
 
-  const ownershipChip = isMine ? (
+  // Partagé = je suis membre avec d'autres : on nomme les coéquipiers plutôt
+  // que « Moi », puisqu'il n'y a pas de propriétaire.
+  const ownershipChip = isMine && autresMembres.length > 0 ? (
+    <Chip
+      tone="neutral"
+      icon="users"
+      accent={own.accent}
+      label={`Partagé · ${autresMembres.map((membre) => membre.prenom).join(", ")}`}
+      style={[styles.ownChip, { backgroundColor: own.soft, borderColor: own.ring }]}
+    />
+  ) : isMine ? (
     <Chip
       tone="neutral"
       icon="user"
@@ -512,6 +540,7 @@ export default function BuildingSheet({
                       onPorteTap={handlePorteTap}
                       typeHabitat={habitatType}
                       highlightedPorteId={highlightedPorteId}
+                      getAuteurLabel={getAuteurLabel}
                     />
                   </View>
                 );
@@ -573,6 +602,7 @@ export default function BuildingSheet({
         durationMs={detailPorte?.duree != null ? detailPorte.duree * 1000 : null}
         typeHabitat={habitatType}
         readOnly
+        auteurLabel={detailPorte ? getAuteurLabel(detailPorte) : null}
         onClose={() => setDetailPorte(null)}
         onResume={() => {}}
         onEdit={() => {}}

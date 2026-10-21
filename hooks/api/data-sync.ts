@@ -5,6 +5,7 @@ import { invalidateApiCacheByPrefix } from "./use-api-call";
 // profil). Toujours invalidés quel que soit le type de mutation.
 const PORTE_RELATED_PREFIXES = [
   "workspace-profile:",
+  "immeuble-detail:",
   "commercial-activity:",
   "commercial-statistics:",
   "commercial-timeline:",
@@ -25,6 +26,10 @@ const ZONES_FOR_USER_PREFIX = "zones-for-user:";
 const CURRENT_ASSIGNMENT_PREFIX = "current-assignment:";
 const USER_ZONE_HISTORY_PREFIX = "user-zone-history:";
 
+// Bâtiments de la carte manager : un immeuble créé, quitté ou partagé change
+// la liste (appartenance), pas une simple mutation de porte.
+const MANAGER_MAP_PLACES_PREFIX = "mobile-manager-map-places:";
+
 // Centre de notifications : liste + compteur non-lus (badge de la cloche).
 const NOTIFICATIONS_PREFIX = "notifications:";
 const UNREAD_NOTIFICATIONS_PREFIX = "unread-notification-count:";
@@ -39,6 +44,9 @@ function invalidateByEventType(eventType: DataSyncEventType): void {
   }
   if (!eventType.startsWith("PORTE")) {
     invalidateApiCacheByPrefix(QUARTIERS_PREFIX);
+  }
+  if (eventType.startsWith("IMMEUBLE")) {
+    invalidateApiCacheByPrefix(MANAGER_MAP_PLACES_PREFIX);
   }
   // ZONE_CREATED : la géométrie/les assignés des zones changent → on invalide le
   // cache des zones affichées (carte + liste) pour forcer leur rechargement.

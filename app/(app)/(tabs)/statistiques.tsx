@@ -3,6 +3,7 @@ import { useWorkspaceProfile } from "@/hooks/api/use-workspace-profile";
 import { authService } from "@/services/auth";
 import { dataSyncService } from "@/services/sync/data-sync.service";
 import type { TimelinePoint } from "@/types/api";
+import { isPorteFaitePar, toImmeubleViewer } from "@/utils/business/immeuble-membres";
 import { Card, Chip, ErrorState, Funnel, IconBadge, PeriodSelector, PressableCard, StatTile, useToast, Icon } from "@/components/ui";
 import { colors, fontSize, fontWeight, radius, spacing } from "@/constants/theme";
 import {
@@ -117,6 +118,9 @@ export default function StatistiquesScreen({
 
   const isManager = role === "manager";
   const commercialId = role === "commercial" ? userId : null;
+  // Le profil inclut les portes des coéquipiers sur les immeubles partagés :
+  // tout ce qui en est dérivé ici se limite à mes portes (dernier passage).
+  const viewer = useMemo(() => toImmeubleViewer(userId, role), [userId, role]);
 
   const todayKey = useMemo(() => new Date().toISOString().slice(0, 10), []);
 
@@ -141,10 +145,11 @@ export default function StatistiquesScreen({
 
   const allRdvPortes = useMemo<RdvItem[]>(() => {
     const items: RdvItem[] = [];
+    if (!viewer) return items;
     const immeubles = workspaceState.data?.immeubles ?? [];
     for (const imm of immeubles) {
       for (const porte of imm.portes ?? []) {
-        if (porte.rdvDate) {
+        if (porte.rdvDate && isPorteFaitePar(porte, viewer)) {
           items.push({
             porteId: porte.id,
             immeubleId: imm.id,
@@ -165,7 +170,7 @@ export default function StatistiquesScreen({
       if (dc !== 0) return dc;
       return (a.rdvTime ?? "").localeCompare(b.rdvTime ?? "");
     });
-  }, [workspaceState.data]);
+  }, [workspaceState.data, viewer]);
 
   const weekDays = useMemo(() => {
     const today = new Date(`${todayKey}T12:00:00`);
@@ -329,7 +334,10 @@ export default function StatistiquesScreen({
   const totals = useMemo(() => sumTimeline(currentPoints), [currentPoints]);
   const prevTotals = useMemo(() => sumTimeline(previousPoints), [previousPoints]);
 
+  // Immeubles partagés : un immeuble est « visité » si j'y ai fait au moins
+  // une porte (dernier passage), pas si un coéquipier y a prospecté.
   const immeublesDerivedFromWorkspace = useMemo(() => {
+    if (!viewer) return 0;
     const immeubles = workspaceState.data?.immeubles ?? [];
     const rangeFrom = currentRange.from.toISOString().slice(0, 10);
     const rangeTo = currentRange.to.toISOString().slice(0, 10);
@@ -337,15 +345,16 @@ export default function StatistiquesScreen({
     for (const imm of immeubles) {
       for (const porte of imm.portes ?? []) {
         const dv = porte.derniereVisite?.slice(0, 10);
-        if (dv && dv >= rangeFrom && dv <= rangeTo) {
+        if (dv && dv >= rangeFrom && dv <= rangeTo && isPorteFaitePar(porte, viewer)) {
           set.add(imm.id);
         }
       }
     }
     return set.size;
-  }, [workspaceState.data, currentRange]);
+  }, [workspaceState.data, currentRange, viewer]);
 
   const prevImmeublesCount = useMemo(() => {
+    if (!viewer) return 0;
     const immeubles = workspaceState.data?.immeubles ?? [];
     const rangeFrom = previousRange.from.toISOString().slice(0, 10);
     const rangeTo = previousRange.to.toISOString().slice(0, 10);
@@ -353,13 +362,13 @@ export default function StatistiquesScreen({
     for (const imm of immeubles) {
       for (const porte of imm.portes ?? []) {
         const dv = porte.derniereVisite?.slice(0, 10);
-        if (dv && dv >= rangeFrom && dv <= rangeTo) {
+        if (dv && dv >= rangeFrom && dv <= rangeTo && isPorteFaitePar(porte, viewer)) {
           set.add(imm.id);
         }
       }
     }
     return set.size;
-  }, [workspaceState.data, previousRange]);
+  }, [workspaceState.data, previousRange, viewer]);
 
   const contentWidth = width - (isLandscape ? 120 : 40);
   const chartWidth = isLandscape

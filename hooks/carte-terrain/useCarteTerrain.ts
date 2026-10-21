@@ -6,6 +6,7 @@ import { useMobileMapQuartiers } from "@/hooks/api/use-mobile-map-quartiers";
 import { useMobileManagerMapPlaces } from "@/hooks/api/use-mobile-manager-map-places";
 import { useWorkspaceProfile } from "@/hooks/api/use-workspace-profile";
 import { useUserZoneHistory } from "@/hooks/api/use-user-zone-history";
+import { useSharedImmeublePolling } from "@/hooks/immeubles/use-shared-immeuble-polling";
 import { api } from "@/services/api";
 import { authService } from "@/services/auth";
 import type {
@@ -32,6 +33,7 @@ import {
   getIsOnline,
   subscribeConnectivity,
 } from "@/services/network/connectivity.service";
+import { toImmeubleViewer } from "@/utils/business/immeuble-membres";
 import { DEFAULT_REGION } from "./constants";
 import { createBuildingInput, makeDraftPin } from "./helpers";
 import type { AdresseFeature, DraftPin, TerrainMode, TerrainPoint } from "./types";
@@ -326,6 +328,42 @@ export function useCarteTerrain({ embedded = false }: UseCarteTerrainParams = {}
     if (!selectedExistingLieu) return;
     openExistingLieu(selectedExistingLieu);
   }, [openExistingLieu, selectedExistingLieu]);
+
+  // Rechargement silencieux du bâtiment ouvert (portes des coéquipiers d'un
+  // immeuble partagé) : pas d'état de chargement, et un échec garde l'affichage
+  // courant. Ignoré si le sheet a changé de bâtiment entre-temps.
+  const selectedLieuId = selectedExistingLieu?.id ?? null;
+  const refreshSelectedLieu = useCallback(async () => {
+    if (selectedLieuId == null) return;
+    try {
+      const detail = await api.immeubles.getMobileDetail(selectedLieuId);
+      setSelectedExistingLieu((current) =>
+        current && current.id === detail.id
+          ? {
+              ...detail,
+              ownership: current.ownership,
+              creatorName: current.creatorName,
+              commercialId: detail.commercialId ?? current.commercialId,
+              managerId: detail.managerId ?? current.managerId,
+            }
+          : current,
+      );
+    } catch {
+      // Hors ligne ou erreur réseau : on retentera au prochain cycle.
+    }
+  }, [selectedLieuId]);
+
+  useSharedImmeublePolling(
+    selectedExistingLieu != null &&
+      (selectedExistingLieu.membres?.length ?? 0) > 1 &&
+      !selectedLieuLoading &&
+      movingLieu === null &&
+      editingLieu === null &&
+      !updatingLieu,
+    refreshSelectedLieu,
+  );
+
+  const viewer = useMemo(() => toImmeubleViewer(userId, role), [userId, role]);
 
   // Ouverture différée du BuildingSheet sur la cible d'un focus porte : on attend
   // que le bâtiment soit présent dans `immeubles` (profil chargé), puis on ouvre
@@ -857,6 +895,7 @@ export function useCarteTerrain({ embedded = false }: UseCarteTerrainParams = {}
     userId,
     role,
     userType,
+    viewer,
     mode,
     setMode,
     mapCenter,

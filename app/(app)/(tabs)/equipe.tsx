@@ -7,6 +7,7 @@ import { authService } from "@/services/auth";
 import { api } from "@/services/api";
 import type { Commercial, Manager, Statistic } from "@/types/api";
 import type { RankPeriod, RankSnapshotType } from "@/types/graphql-schema";
+import { isPorteFaitePar } from "@/utils/business/immeuble-membres";
 import {
   memo,
   useCallback,
@@ -127,11 +128,14 @@ const computeTeamSnapshot = (
   const immeubles = detailedCommercial.immeubles || [];
   const totals = { ...INITIAL_STATS };
   const visitedImmeubles = new Set<number>();
+  // Immeubles partagés : une porte compte pour l'auteur de son dernier passage.
+  const auteur = { id: commercial.id, type: "COMMERCIAL" as const };
 
   for (const immeuble of immeubles) {
     for (const porte of immeuble.portes || []) {
       const statut = typeof porte.statut === "string" ? porte.statut : "";
       if (!statut || statut === "NON_VISITE") continue;
+      if (!isPorteFaitePar(porte, auteur)) continue;
 
       const visitDay = porte.derniereVisite?.slice(0, 10);
       if (period !== "all") {

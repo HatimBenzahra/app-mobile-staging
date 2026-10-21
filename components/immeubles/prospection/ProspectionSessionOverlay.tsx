@@ -59,6 +59,8 @@ type ProspectionSessionOverlayProps = {
   portes?: Porte[];
   typeHabitat?: TypeHabitat;
   nbMaisonsPrevu?: number | null;
+  /** Libellé « Fait par » d'une porte (immeuble partagé), cf. getPorteAuteurLabel. */
+  getAuteurLabel?: (porte: Porte) => string | null;
 };
 
 const SCREEN_PAD = 18;
@@ -86,6 +88,7 @@ export default function ProspectionSessionOverlay({
   portes = [],
   typeHabitat,
   nbMaisonsPrevu,
+  getAuteurLabel,
 }: ProspectionSessionOverlayProps) {
   const { state } = session;
   const insets = useSafeAreaInsets();
@@ -130,6 +133,7 @@ export default function ProspectionSessionOverlay({
               portes={portes}
               typeHabitat={typeHabitat}
               nbMaisonsPrevu={nbMaisonsPrevu}
+              getAuteurLabel={getAuteurLabel}
             />
           ) : null}
 
@@ -291,9 +295,11 @@ function FloorCard({
 function PorteChip({
   porte,
   onPress,
+  auteurLabel,
 }: {
   porte: Porte;
   onPress: () => void;
+  auteurLabel?: string | null;
 }) {
   const key = getDisplayStatusKey(porte);
   const status = key
@@ -325,6 +331,11 @@ function PorteChip({
       >
         {status.label}
       </Text>
+      {auteurLabel ? (
+        <Text style={styles.porteChipAuteur} numberOfLines={1}>
+          {auteurLabel}
+        </Text>
+      ) : null}
       <View
         style={[
           styles.porteChipAccent,
@@ -344,6 +355,7 @@ function NamingView({
   nbPortesParEtage,
   portes,
   typeHabitat,
+  getAuteurLabel,
 }: {
   session: ProspectionSessionApi;
   isTablet: boolean;
@@ -354,6 +366,7 @@ function NamingView({
   portes: Porte[];
   typeHabitat?: TypeHabitat;
   nbMaisonsPrevu?: number | null;
+  getAuteurLabel?: (porte: Porte) => string | null;
 }) {
   const state = session.state;
   const isCreating = state.phase === "CREATING";
@@ -643,6 +656,7 @@ function NamingView({
                       <PorteChip
                         porte={porte}
                         onPress={() => handleExistingTap(porte)}
+                        auteurLabel={getAuteurLabel?.(porte)}
                       />
                     </View>
                   ))}
@@ -1840,6 +1854,12 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: "700",
     letterSpacing: 0.1,
+  },
+  porteChipAuteur: {
+    marginTop: 2,
+    fontSize: 10.5,
+    fontWeight: "600",
+    color: colors.textSubtle,
   },
   porteChipAccent: {
     position: "absolute",

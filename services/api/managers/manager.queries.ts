@@ -26,6 +26,12 @@ export const GET_MANAGER_PERSONAL = `
         longitude
         managerId
         updatedAt
+        membres {
+          id
+          nom
+          prenom
+          type
+        }
         portes {
           id
           numero
@@ -38,6 +44,8 @@ export const GET_MANAGER_PERSONAL = `
           rdvTime
           commentaire
           derniereVisite
+          dernierCommercialId
+          dernierManagerId
         }
       }
       commercials {
@@ -73,6 +81,8 @@ export const GET_MANAGER_PERSONAL = `
             commentaire
             derniereVisite
             duree
+            dernierCommercialId
+            dernierManagerId
           }
         }
         statistics {

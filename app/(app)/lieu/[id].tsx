@@ -1,7 +1,9 @@
 import ImmeubleDetailsView from "@/components/immeubles/ImmeubleDetailsScreen";
+import { useImmeubleDetail } from "@/hooks/api/use-immeuble-detail";
 import { useWorkspaceProfile } from "@/hooks/api/use-workspace-profile";
 import { authService } from "@/services/auth";
 import type { Immeuble } from "@/types/api";
+import { toImmeubleViewer } from "@/utils/business/immeuble-membres";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
@@ -34,7 +36,17 @@ export default function LieuDetailScreen() {
     void loadIdentity();
   }, []);
 
-  const { data: profile, refetch } = useWorkspaceProfile(userId, role);
+  const {
+    data: profile,
+    loading: profileLoading,
+    refetch,
+  } = useWorkspaceProfile(userId, role);
+  const {
+    data: detail,
+    loading: detailLoading,
+    refetch: refetchDetail,
+  } = useImmeubleDetail(immeubleId);
+  const viewer = useMemo(() => toImmeubleViewer(userId, role), [userId, role]);
 
   const allImmeubles = useMemo((): Immeuble[] => {
     if (!profile) return [];
@@ -48,18 +60,30 @@ export default function LieuDetailScreen() {
     return Array.from(byId.values());
   }, [profile]);
 
-  const immeuble = useMemo(
+  const profileImmeuble = useMemo(
     () => (immeubleId != null ? allImmeubles.find((imm) => imm.id === immeubleId) ?? null : null),
     [allImmeubles, immeubleId],
   );
 
-  const isLoading = userId === null || role === null || (profile === undefined && allImmeubles.length === 0);
+  // Le détail fait foi (membres, auteur de chaque porte, portes des coéquipiers)
+  // et couvre un immeuble absent du profil. Le profil sert d'affichage immédiat
+  // et de repli hors ligne.
+  const immeuble = detail ?? profileImmeuble;
+
+  const isLoading =
+    userId === null ||
+    role === null ||
+    (!immeuble && (detailLoading || profileLoading));
 
   const handleBack = useCallback(() => {
     router.back();
   }, [router]);
 
   const handleRefresh = useCallback(() => {
+    void refetchDetail();
+  }, [refetchDetail]);
+
+  const handleDirtyChange = useCallback(() => {
     void refetch();
   }, [refetch]);
 
@@ -89,8 +113,9 @@ export default function LieuDetailScreen() {
   return (
     <ImmeubleDetailsView
       immeuble={immeuble}
+      viewer={viewer}
       onBack={handleBack}
-      onDirtyChange={() => void refetch()}
+      onDirtyChange={handleDirtyChange}
       onRefreshImmeuble={handleRefresh}
       autoOpenPorteId={porteConsumed ? null : autoOpenPorteId}
       onAutoOpenPorteConsumed={handleAutoOpenPorteConsumed}

@@ -3,7 +3,8 @@ import { Icon } from "@/components/ui";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { colors } from "@/constants/theme";
 import { getLieuTerms } from "@/components/immeubles/lieu-terms";
-import type { TypeHabitat } from "@/types/api";
+import { MembresAvatars } from "@/components/immeubles/details/MembreAvatar";
+import type { ImmeubleMembre, TypeHabitat } from "@/types/api";
 
 type DetailsHeaderProps = {
   topInset: number;
@@ -13,6 +14,10 @@ type DetailsHeaderProps = {
   onBack: () => void;
   typeHabitat?: TypeHabitat;
   nbMaisonsPrevu?: number | null;
+  /** Membres de l'immeuble : avatars affichés dès qu'il est partagé. */
+  membres?: ImmeubleMembre[];
+  /** Ouvre la feuille de partage ; sans callback, pas de bouton. */
+  onShare?: () => void;
 };
 
 function DetailsHeader({
@@ -23,6 +28,8 @@ function DetailsHeader({
   onBack,
   typeHabitat,
   nbMaisonsPrevu,
+  membres,
+  onShare,
 }: DetailsHeaderProps) {
   const terms = getLieuTerms(typeHabitat);
   const portesText = terms.headerSubtitle(
@@ -30,6 +37,8 @@ function DetailsHeader({
     nbPortesParEtage,
     nbMaisonsPrevu,
   );
+  const nbAutres = Math.max(0, (membres?.length ?? 0) - 1);
+  const isShared = nbAutres > 0;
 
   return (
     <View style={[styles.header, { paddingTop: topInset + 10 }]}>
@@ -57,6 +66,30 @@ function DetailsHeader({
           </Text>
         </View>
       </View>
+
+      {onShare ? (
+        <Pressable
+          style={({ pressed }) => [
+            styles.shareButton,
+            pressed && styles.shareButtonPressed,
+          ]}
+          onPress={onShare}
+          hitSlop={8}
+          accessibilityRole="button"
+          accessibilityLabel={
+            isShared
+              ? `Partagé avec ${nbAutres} coéquipier${nbAutres > 1 ? "s" : ""}`
+              : "Partager"
+          }
+        >
+          {isShared && membres ? (
+            <MembresAvatars membres={membres} size={26} />
+          ) : null}
+          <View style={styles.shareIcon}>
+            <Icon name="user-plus" size={17} color={colors.text} />
+          </View>
+        </Pressable>
+      ) : null}
     </View>
   );
 }
@@ -110,6 +143,23 @@ const styles = StyleSheet.create({
     height: 5,
     borderRadius: 999,
     backgroundColor: colors.textSubtle,
+  },
+  shareButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    borderRadius: 999,
+  },
+  shareButtonPressed: {
+    opacity: 0.7,
+  },
+  shareIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 14,
+    backgroundColor: colors.surfaceMuted,
+    alignItems: "center",
+    justifyContent: "center",
   },
   subtitle: {
     fontSize: 12.5,

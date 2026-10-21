@@ -1,5 +1,5 @@
 import { colors, palette } from "@/constants/theme";
-import { Icon, type IconName } from "@/components/ui";
+import { Icon, useToast, type IconName } from "@/components/ui";
 import ConfirmActionOverlay from "@/components/immeubles/ConfirmActionOverlay";
 import PorteDetailSheet from "@/components/immeubles/PorteDetailSheet";
 import PortePickerOverlay from "@/components/immeubles/PortePickerOverlay";
@@ -18,16 +18,25 @@ import ActionToast from "@/components/immeubles/details/ActionToast";
 import DetailsHeader from "@/components/immeubles/details/DetailsHeader";
 import EditPorteSheet from "@/components/immeubles/details/EditPorteSheet";
 import FloorPlanSheet from "@/components/immeubles/details/FloorPlanSheet";
+import PartageSheet from "@/components/immeubles/details/PartageSheet";
 import StatusFilterSheet from "@/components/immeubles/details/StatusFilterSheet";
 import { useAddEtageToImmeuble } from "@/hooks/api/use-add-etage-to-immeuble";
 import { useRemoveEtageFromImmeuble } from "@/hooks/api/use-remove-etage-from-immeuble";
+import { useQuitterImmeuble } from "@/hooks/api/use-quitter-immeuble";
 import { useLastPorteRecordingDuration } from "@/hooks/api/use-recording-segments-by-porte";
 import { useRemovePorte } from "@/hooks/api/use-remove-porte";
 import { useUpdatePorte } from "@/hooks/api/use-update-porte";
 import { useRecording } from "@/hooks/audio/use-recording";
+import { useSharedImmeublePolling } from "@/hooks/immeubles/use-shared-immeuble-polling";
 import { useConnectivity } from "@/hooks/network/use-connectivity";
+import { useOfflineQueueCount } from "@/hooks/network/use-offline-queue";
 import { queuePorteUpdate } from "@/services/offline/offline-queue.service";
 import type { Immeuble, Porte, UpdatePorteInput } from "@/types/api";
+import {
+  getPorteAuteurLabel,
+  isViewerMembre,
+  type ImmeubleViewer,
+} from "@/utils/business/immeuble-membres";
 import { BottomSheetBackdrop, BottomSheetModal } from "@gorhom/bottom-sheet";
 import type { ComponentType } from "react";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -181,6 +190,8 @@ const ProgressCard = memo(function ProgressCard({
 
 type ImmeubleDetailsViewProps = {
   immeuble: Immeuble;
+  /** Utilisateur connecté : membres, « Fait par » et partage. */
+  viewer: ImmeubleViewer | null;
   onBack: () => void;
   onDirtyChange?: (dirty: boolean) => void;
   onRefreshImmeuble?: () => void | Promise<void>;
@@ -190,6 +201,7 @@ type ImmeubleDetailsViewProps = {
 
 function ImmeubleDetailsView({
   immeuble,
+  viewer,
   onBack,
   onDirtyChange,
   onRefreshImmeuble,
@@ -310,7 +322,25 @@ function ImmeubleDetailsView({
   const { isOnline } = useConnectivity();
   const { remove: removeEtageFromImmeuble, loading: removingEtage } =
     useRemoveEtageFromImmeuble();
-  const { remove: removePorteById } = useRemovePorte();
+  const { remove: removePorteById, loading: removingPorte } = useRemovePorte();
+  const { quitter, loading: quittingImmeuble } = useQuitterImmeuble();
+  const { pendingCount: pendingOfflineCount } = useOfflineQueueCount();
+  const toast = useToast();
+  const membres = useMemo(() => immeuble.membres ?? [], [immeuble.membres]);
+  const isShared = membres.length > 1;
+  const isMembre =
+    viewer !== null && membres.some((membre) => isViewerMembre(membre, viewer));
+  const getAuteurLabel = useCallback(
+    (porte: Porte) => getPorteAuteurLabel(porte, membres, viewer),
+    [membres, viewer],
+  );
+  const partageSheetRef = useRef<BottomSheetModal>(null);
+  const partageSnapPoints = useMemo(
+    () => (isTablet ? ["55%", "85%"] : ["60%", "90%"]),
+    [isTablet],
+  );
+  const [isPartageOpen, setIsPartageOpen] = useState(false);
+  const [showQuitConfirm, setShowQuitConfirm] = useState(false);
   const [isPortePickerOpen, setIsPortePickerOpen] = useState(false);
   const editSheetRef = useRef<BottomSheetModal>(null);
   const editSnapPoints = useMemo(
@@ -353,11 +383,35 @@ function ImmeubleDetailsView({
     setPendingStatusFilter(statusFilters[0] ?? null);
   }, [statusFilters]);
 
+  // Immeuble partagé : rafraîchissement périodique pour voir les portes des
+  // coéquipiers. Un rechargement remplace l'état local des portes : on le
+  // suspend dès qu'une écriture locale n'est pas encore confirmée par le
+  // serveur (session de prospection, sauvegarde, file hors ligne).
+  const hasPendingLocalWrite =
+    prospectionSession.isVisible ||
+    editPorte !== null ||
+    savingPorte ||
+    addingEtage ||
+    removingEtage ||
+    removingPorte ||
+    pendingOfflineCount > 0;
+  const refreshSharedImmeuble = useCallback(() => {
+    void onRefreshImmeuble?.();
+  }, [onRefreshImmeuble]);
+  useSharedImmeublePolling(
+    isShared && isOnline && !hasPendingLocalWrite,
+    refreshSharedImmeuble,
+  );
+
   useEffect(() => {
+    const isNewImmeuble = immeubleIdRef.current !== immeuble.id;
+    // Un rechargement du même immeuble (polling, data-sync) arrivé pendant une
+    // écriture locale non confirmée écraserait l'état optimiste : on diffère son
+    // application, l'effet repasse dès que l'écriture est terminée.
+    if (!isNewImmeuble && hasPendingLocalWrite) return;
     const nextPortes = immeuble.portes?.length
       ? immeuble.portes
       : buildFallbackPortes(immeuble);
-    const isNewImmeuble = immeubleIdRef.current !== immeuble.id;
     immeubleIdRef.current = immeuble.id;
     setPortesState(nextPortes);
     setCurrentIndex((prev) => {
@@ -377,7 +431,7 @@ function ImmeubleDetailsView({
         contentOpacity.setValue(0);
       }
     }
-  }, [immeuble, onDirtyChange, contentOpacity]);
+  }, [immeuble, hasPendingLocalWrite, onDirtyChange, contentOpacity]);
 
   useEffect(() => {
     return () => {
@@ -1038,6 +1092,38 @@ function ImmeubleDetailsView({
 
 
 
+  const openPartageSheet = useCallback(() => {
+    setIsPartageOpen(true);
+    requestAnimationFrame(() => {
+      partageSheetRef.current?.present();
+    });
+  }, []);
+
+  const requestQuitter = useCallback(() => {
+    partageSheetRef.current?.dismiss();
+    setShowQuitConfirm(true);
+  }, []);
+
+  const confirmQuitter = useCallback(async () => {
+    setShowQuitConfirm(false);
+    if (quittingImmeuble) return;
+    const left = await quitter(immeuble.id);
+    if (!left) {
+      showToast("Erreur", `Impossible de quitter ${terms.lieuLabel}`);
+      return;
+    }
+    toast.show({ message: `Tu as quitté ${terms.lieuLabel}`, variant: "success" });
+    onBack();
+  }, [
+    immeuble.id,
+    onBack,
+    quitter,
+    quittingImmeuble,
+    showToast,
+    terms.lieuLabel,
+    toast,
+  ]);
+
   const fabRotation = fabAnim.interpolate({
     inputRange: [0, 1],
     outputRange: ["0deg", "180deg"],
@@ -1202,6 +1288,8 @@ function ImmeubleDetailsView({
         onBack={() => setShowExitConfirm(true)}
         typeHabitat={effectiveType}
         nbMaisonsPrevu={immeuble.nbMaisonsPrevu}
+        membres={membres}
+        onShare={isMembre ? openPartageSheet : undefined}
       />
 
       {actionToast ? (
@@ -1288,6 +1376,7 @@ function ImmeubleDetailsView({
                 }
                 typeHabitat={effectiveType}
                 nbMaisonsPrevu={immeuble.nbMaisonsPrevu}
+                getAuteurLabel={getAuteurLabel}
               />
             </ScrollView>
           </Animated.View>
@@ -1367,6 +1456,36 @@ function ImmeubleDetailsView({
         portes={realPortes}
         typeHabitat={effectiveType}
         nbMaisonsPrevu={immeuble.nbMaisonsPrevu}
+        getAuteurLabel={getAuteurLabel}
+      />
+
+      {isPartageOpen ? (
+        <PartageSheet
+          sheetRef={partageSheetRef}
+          snapPoints={partageSnapPoints}
+          renderSheetBackdrop={renderSheetBackdrop}
+          immeubleId={immeuble.id}
+          membres={membres}
+          viewer={viewer}
+          lieuLabel={terms.lieuLabel}
+          isTablet={isTablet}
+          onQuitter={requestQuitter}
+          onSheetClose={() => setIsPartageOpen(false)}
+        />
+      ) : null}
+
+      <ConfirmActionOverlay
+        open={showQuitConfirm}
+        title={`Quitter ${terms.lieuLabel} ?`}
+        description="Ce lieu disparaîtra de tes Lieux et de ta carte. Tes coéquipiers pourront continuer à le prospecter."
+        icon="log-out"
+        confirmLabel="Quitter"
+        cancelLabel="Annuler"
+        tone="danger"
+        onConfirm={() => {
+          void confirmQuitter();
+        }}
+        onClose={() => setShowQuitConfirm(false)}
       />
 
       <ConfirmActionOverlay
@@ -1431,6 +1550,7 @@ function ImmeubleDetailsView({
         onResume={handleDetailResume}
         onEdit={handleDetailEdit}
         typeHabitat={effectiveType}
+        auteurLabel={detailPorte ? getAuteurLabel(detailPorte) : null}
       />
 
       {hasNativePicker && showDatePicker && DateTimePicker ? (

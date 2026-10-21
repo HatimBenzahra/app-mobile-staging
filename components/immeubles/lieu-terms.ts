@@ -49,6 +49,8 @@ export type LieuTerms = {
   ) => string;
   /** Titre du plan ("Plan de l'immeuble" / "Plan du lieu"). */
   planTitle: string;
+  /** Le lieu avec son article ("l'immeuble", "la maison", "le pavillon"). */
+  lieuLabel: string;
   /** Libellé de l'action FAB d'ajout d'unité. */
   addUnitLabel: string;
   /** Libellé de l'action FAB de suppression d'unité. */
@@ -68,6 +70,7 @@ export function getLieuTerms(typeHabitat?: TypeHabitat): LieuTerms {
       unitLabelPlural: "foyers",
       headerSubtitle: () => "Maison individuelle",
       planTitle: "Plan du lieu",
+      lieuLabel: "la maison",
       addUnitLabel: "Ajouter",
       removeUnitLabel: "Supprimer",
     };
@@ -86,6 +89,7 @@ export function getLieuTerms(typeHabitat?: TypeHabitat): LieuTerms {
         return `${n} maison${n > 1 ? "s" : ""}`;
       },
       planTitle: "Plan du lieu",
+      lieuLabel: "le pavillon",
       addUnitLabel: "Ajouter maison",
       removeUnitLabel: "Supprimer maison",
     };
@@ -102,6 +106,7 @@ export function getLieuTerms(typeHabitat?: TypeHabitat): LieuTerms {
         ? `${nbEtages} étage${nbEtages > 1 ? "s" : ""} · ${nbPortesParEtage} portes/étage`
         : `${nbEtages} étage${nbEtages > 1 ? "s" : ""}`,
     planTitle: "Plan de l'immeuble",
+    lieuLabel: "l'immeuble",
     addUnitLabel: "Ajouter etage",
     removeUnitLabel: "Supprimer etage",
   };

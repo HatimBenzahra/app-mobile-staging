@@ -12,6 +12,7 @@ import type {
   StatusHistorique as SchemaStatusHistorique,
   TeamRanking as SchemaTeamRanking,
   UpdatePorteInput as SchemaUpdatePorteInput,
+  UserType,
   Zone as SchemaZone,
   ZoneEnCours as SchemaZoneEnCours,
 } from './graphql-schema';
@@ -126,6 +127,11 @@ export type Porte = {
   commentaire?: SchemaPorte['commentaire'];
   derniereVisite?: SchemaPorte['derniereVisite'];
   duree?: SchemaPorte['duree'];
+  /** Auteur du dernier passage (un seul des deux est renseigné). */
+  dernierCommercialId?: number | null;
+  dernierManagerId?: number | null;
+  /** Prénom de l'auteur du dernier passage. Seul `mobileImmeubleDetail` le sélectionne. */
+  dernierActeurPrenom?: string | null;
 };
 
 export type CreatePorteInput = {
@@ -159,10 +165,29 @@ export type Immeuble = {
   managerId?: SchemaImmeuble['managerId'];
   zoneId?: SchemaImmeuble['zoneId'];
   portes?: Porte[];
+  /** Membres à égalité de l'immeuble (commercialId/managerId = créateur seulement). */
+  membres?: ImmeubleMembre[];
   /** Stamped client-side: who owns this building on the field map. */
   ownership?: "MINE" | "TEAM";
   /** Stamped client-side for TEAM buildings: parent commercial display name. */
   creatorName?: string;
+};
+
+// Partage d'immeuble. Absent du schéma généré (codegen pointe sur le SDL de
+// staging) : typé à la main d'après le contrat backend `ImmeubleMembre`,
+// `Coequipier`, `mesCoequipiers`, `partagerImmeuble` et `quitterImmeuble`.
+export type ImmeubleMembre = {
+  /** Id du commercial ou du manager, selon `type`. */
+  id: number;
+  nom: string;
+  prenom: string;
+  type: UserType;
+};
+
+export type Coequipier = {
+  id: number;
+  nom: string;
+  prenom: string;
 };
 
 export type MobileMapPlace = Pick<

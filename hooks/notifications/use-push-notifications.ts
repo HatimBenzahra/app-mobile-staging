@@ -1,13 +1,16 @@
 import { syncWorkspaceMutation } from "@/hooks/api/data-sync";
 import { invalidateApiCacheByPrefix } from "@/hooks/api/use-api-call";
-import type { NotificationData } from "@/services/api/notifications/notification.service";
+import {
+  getNotificationImmeubleId,
+  type NotificationData,
+} from "@/services/api/notifications/notification.service";
 import { authService } from "@/services/auth";
 import {
   addNotificationListeners,
   registerDeviceWithBackend,
 } from "@/services/notifications/notifications.service";
 import type { UserType } from "@/types/api";
-import { useRouter } from "expo-router";
+import { useRouter, type Href } from "expo-router";
 import { useEffect } from "react";
 import { AppState } from "react-native";
 
@@ -29,9 +32,26 @@ function eventFromData(data: NotificationData) {
 
 // Écran ouvert au tap, selon le type. Table extensible : ajouter une entrée par
 // nouveau type pour un deep-link dédié. Défaut = centre de notifications.
-function routeForType(_type?: string): "/notifications" {
-  // ex. futur : if (_type === "CONTRACT_CREATED") return "/contrats/[id]";
+function routeForData(data: NotificationData): Href {
+  const immeubleId = getNotificationImmeubleId(data);
+  if (immeubleId !== null) return `/lieu/${immeubleId}`;
   return "/notifications";
+}
+
+// Rafraîchit ce que la notification rend périmé : la carte pour une zone ;
+// Lieux, carte et profil pour un immeuble partagé (il vient d'apparaître dans
+// l'espace de l'utilisateur), plus le badge de la cloche.
+function syncForData(data: NotificationData): void {
+  if (isZoneType(data?.type)) {
+    syncWorkspaceMutation(eventFromData(data));
+    return;
+  }
+  const immeubleId = getNotificationImmeubleId(data);
+  if (immeubleId !== null) {
+    syncWorkspaceMutation("IMMEUBLE_CREATED", { immeubleId });
+    invalidateApiCacheByPrefix("notifications:");
+    invalidateApiCacheByPrefix("unread-notification-count:");
+  }
 }
 
 // Caches à rafraîchir au retour au premier plan (filet de sécurité pour un push
@@ -85,17 +105,12 @@ export function usePushNotifications(): void {
     return addNotificationListeners({
       onForeground: (notif) => {
         // L'OS affiche la bannière système (icône ProWin). Ici on ne fait que
-        // rafraîchir carte + badge pour les notifs de zone ; les autres types
-        // ne touchent pas au workspace terrain.
-        if (isZoneType(notif.data?.type)) {
-          syncWorkspaceMutation(eventFromData(notif.data));
-        }
+        // rafraîchir les données concernées (zone, immeuble partagé).
+        syncForData(notif.data);
       },
       onResponse: (notif) => {
-        if (isZoneType(notif.data?.type)) {
-          syncWorkspaceMutation(eventFromData(notif.data));
-        }
-        router.push(routeForType(notif.data?.type));
+        syncForData(notif.data);
+        router.push(routeForData(notif.data));
       },
     });
   }, [router]);

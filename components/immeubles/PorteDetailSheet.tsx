@@ -37,6 +37,8 @@ type PorteDetailSheetProps = {
    * reste visible. Aucune modification possible.
    */
   readOnly?: boolean;
+  /** « Fait par Prénom » quand un coéquipier a fait le dernier passage. */
+  auteurLabel?: string | null;
 };
 
 function formatDuration(ms?: number | null): string | null {
@@ -90,6 +92,7 @@ export default function PorteDetailSheet({
   onEdit,
   typeHabitat,
   readOnly = false,
+  auteurLabel,
 }: PorteDetailSheetProps) {
   const opacity = useRef(new Animated.Value(0)).current;
   const translateY = useRef(new Animated.Value(36)).current;
@@ -200,6 +203,11 @@ export default function PorteDetailSheet({
                 {porte.nomPersonnalise ? (
                   <Text style={styles.porteName} numberOfLines={1}>
                     {porte.nomPersonnalise}
+                  </Text>
+                ) : null}
+                {auteurLabel ? (
+                  <Text style={styles.auteur} numberOfLines={1}>
+                    {auteurLabel}
                   </Text>
                 ) : null}
               </View>
@@ -451,6 +459,12 @@ const styles = StyleSheet.create({
     marginTop: 2,
     fontSize: 13,
     color: colors.textStrong,
+    fontWeight: "600",
+  },
+  auteur: {
+    marginTop: 4,
+    fontSize: 12.5,
+    color: colors.textSubtle,
     fontWeight: "600",
   },
   factsGrid: {

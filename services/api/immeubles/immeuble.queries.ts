@@ -125,6 +125,12 @@ export const GET_MOBILE_IMMEUBLE_DETAIL = `
       ascenseurPresent
       digitalCode
       updatedAt
+      membres {
+        id
+        nom
+        prenom
+        type
+      }
       portes {
         id
         numero
@@ -139,7 +145,20 @@ export const GET_MOBILE_IMMEUBLE_DETAIL = `
         commentaire
         derniereVisite
         duree
+        dernierCommercialId
+        dernierManagerId
+        dernierActeurPrenom
       }
+    }
+  }
+`;
+
+export const GET_MES_COEQUIPIERS = `
+  query GetMesCoequipiers {
+    mesCoequipiers {
+      id
+      nom
+      prenom
     }
   }
 `;

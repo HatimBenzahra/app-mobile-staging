@@ -16,6 +16,8 @@ type FloorSectionProps = {
   isFocused?: boolean;
   typeHabitat?: TypeHabitat;
   highlightedPorteId?: number | null;
+  /** Libellé « Fait par » d'une porte (immeuble partagé), cf. getPorteAuteurLabel. */
+  getAuteurLabel?: (porte: Porte) => string | null;
 };
 
 function FloorSectionImpl({
@@ -27,6 +29,7 @@ function FloorSectionImpl({
   isFocused = false,
   typeHabitat,
   highlightedPorteId,
+  getAuteurLabel,
 }: FloorSectionProps) {
   const tiles = useMemo(
     () =>
@@ -37,9 +40,10 @@ function FloorSectionImpl({
           onPress={onPorteTap}
           isTablet={isTablet}
           highlighted={porte.id === highlightedPorteId}
+          auteurLabel={getAuteurLabel?.(porte)}
         />
       )),
-    [portes, onPorteTap, isTablet, highlightedPorteId],
+    [portes, onPorteTap, isTablet, highlightedPorteId, getAuteurLabel],
   );
 
   if (portes.length === 0) return null;

@@ -92,6 +92,7 @@ const ICON_MAP = {
   "trending-up": "trending-up",
   user: "account",
   "user-check": "account-check",
+  "user-plus": "account-plus",
   "user-x": "account-remove",
   users: "account-multiple",
   "vector-polygon": "vector-polygon",

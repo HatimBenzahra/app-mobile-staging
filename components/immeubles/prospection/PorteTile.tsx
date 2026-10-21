@@ -22,9 +22,17 @@ type PorteTileProps = {
   onPress: (porte: Porte) => void;
   isTablet?: boolean;
   highlighted?: boolean;
+  /** « Fait par Prénom » quand un coéquipier a fait le dernier passage. */
+  auteurLabel?: string | null;
 };
 
-function PorteTileImpl({ porte, onPress, isTablet = false, highlighted = false }: PorteTileProps) {
+function PorteTileImpl({
+  porte,
+  onPress,
+  isTablet = false,
+  highlighted = false,
+  auteurLabel,
+}: PorteTileProps) {
   const statusKey = getDisplayStatusKey(porte);
   const status = statusKey
     ? (STATUS_DISPLAY[statusKey] ?? DEFAULT_STATUS_OPTION)
@@ -72,7 +80,9 @@ function PorteTileImpl({ porte, onPress, isTablet = false, highlighted = false }
         onPressOut={handlePressOut}
         style={[styles.tile, isTablet && styles.tileTablet]}
         accessibilityRole="button"
-        accessibilityLabel={`Porte ${porte.numero}, statut ${status.label}`}
+        accessibilityLabel={`Porte ${porte.numero}, statut ${status.label}${
+          auteurLabel ? `, ${auteurLabel}` : ""
+        }`}
       >
         {/* Voile de statut très léger (teinte, pas de bordure) pour donner du
             relief à la card sans contour coloré. */}
@@ -128,6 +138,12 @@ function PorteTileImpl({ porte, onPress, isTablet = false, highlighted = false }
             </View>
           ) : null}
         </View>
+
+        {auteurLabel ? (
+          <Text style={styles.auteur} numberOfLines={1}>
+            {auteurLabel}
+          </Text>
+        ) : null}
 
         {highlighted ? (
           <Animated.View pointerEvents="none" style={[styles.highlightRing, ringStyle]} />
@@ -222,6 +238,12 @@ const styles = StyleSheet.create({
     fontSize: 11.5,
     fontWeight: "700",
     letterSpacing: 0.1,
+  },
+  auteur: {
+    marginTop: -4,
+    fontSize: 11,
+    fontWeight: "600",
+    color: colors.textSubtle,
   },
   commentChip: {
     width: 18,

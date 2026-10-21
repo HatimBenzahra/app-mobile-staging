@@ -4,6 +4,7 @@ import {
   readPersistentCache,
   writePersistentCache,
 } from "@/services/offline/persistent-cache.service";
+import { dataSyncService } from "@/services/sync/data-sync.service";
 import type {
   Immeuble,
   ImmeubleProgressFilter,
@@ -137,6 +138,19 @@ export function useImmeublesPage(
     setHasMore(false);
     setTotalCount(0);
     void loadFirstPage();
+  }, [loadFirstPage]);
+
+  // Un lieu qui entre dans l'espace de l'utilisateur ou en sort (création,
+  // suppression, partage reçu, immeuble quitté) change la liste : on recharge
+  // la première page.
+  useEffect(() => {
+    return dataSyncService.subscribe((event) => {
+      if (event.type !== "IMMEUBLE_CREATED" && event.type !== "IMMEUBLE_DELETED") {
+        return;
+      }
+      cursorRef.current = null;
+      void loadFirstPage();
+    });
   }, [loadFirstPage]);
 
   const loadMore = useCallback(() => {

@@ -4,6 +4,7 @@ import { useLeaderboard } from "@/hooks/api/use-leaderboard";
 import { useWorkspaceProfile } from "@/hooks/api/use-workspace-profile";
 import { authService } from "@/services/auth";
 import type { Commercial, Manager } from "@/types/api";
+import { isPorteFaitePar, toImmeubleViewer } from "@/utils/business/immeuble-membres";
 import { tierProgress } from "@/utils/business/rankTiers";
 import {
   findBestDay,
@@ -176,7 +177,8 @@ export default function DashboardScreen() {
   }, [contentOpacity, loading, profile]);
 
   const { weeklyData, weeklyContracts, conversionRate } = useMemo(() => {
-    if (!profile) {
+    const viewer = toImmeubleViewer(userId, role);
+    if (!profile || !viewer) {
       return { weeklyData: [], weeklyContracts: [], conversionRate: "0.0" };
     }
 
@@ -184,7 +186,10 @@ export default function DashboardScreen() {
       ? (profile as Manager).immeubles || []
       : (profile as Commercial).immeubles || [];
 
-    const allDoors = immeubles.flatMap((immeuble) => immeuble.portes || []);
+    // Immeubles partagés : seules MES portes (dernier passage) comptent.
+    const allDoors = immeubles
+      .flatMap((immeuble) => immeuble.portes || [])
+      .filter((porte) => isPorteFaitePar(porte, viewer));
 
     const today = new Date();
     const last7Days = Array.from({ length: 7 }, (_, i) => {
@@ -228,7 +233,7 @@ export default function DashboardScreen() {
       weeklyContracts: contractsPerDay,
       conversionRate: rate,
     };
-  }, [profile, isManager]);
+  }, [profile, isManager, userId, role]);
 
   const nextRdvCountdown = useMemo(
     () => getNextRdvCountdown(rdvToday.data ?? [], new Date()),
